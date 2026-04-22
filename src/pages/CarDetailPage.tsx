@@ -13,6 +13,7 @@ import {
   Paper,
   Stack,
   Typography,
+  useTheme,
 } from '@mui/material'
 import dayjs from 'dayjs'
 import { motion } from 'framer-motion'
@@ -32,8 +33,11 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { formatPeso } from '../utils/formatCurrency'
+import PageHeader from '../components/layout/PageHeader'
+import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 
 export default function CarDetailPage() {
+  const theme = useTheme()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const cars = useCarsStore((s) => s.cars)
@@ -59,11 +63,15 @@ export default function CarDetailPage() {
 
   if (!car) {
     return (
-      <Box p={4}>
-        <Typography>Car not found.</Typography>
-        <Button component={RouterLink} to="/search">
-          Back to search
-        </Button>
+      <Box sx={{ bgcolor: 'background.default', minHeight: '50vh', py: 6 }}>
+        <Container maxWidth="sm" sx={containerGutters}>
+          <Paper elevation={0} sx={{ p: 4, ...softInteractiveSurface(theme, false) }}>
+            <PageHeader title="We couldn’t find that car" subtitle="It may have been removed. Head back to listings and keep browsing." dense />
+            <Button component={RouterLink} to="/search" variant="contained" size="large" sx={{ mt: 2, borderRadius: 2, ...primaryCtaShadow(theme) }}>
+              Back to browse
+            </Button>
+          </Paper>
+        </Container>
       </Box>
     )
   }
@@ -79,11 +87,11 @@ export default function CarDetailPage() {
   }
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 8 }}>
-      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: { xs: 8, md: 10 } }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 4 }, ...containerGutters }}>
         <Breadcrumbs
           separator={<ChevronRight fontSize="small" />}
-          sx={{ mb: 3, flexWrap: 'wrap', '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}
+          sx={{ mb: { xs: 2, md: 3 }, flexWrap: 'wrap', '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}
         >
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
             Home
@@ -107,9 +115,10 @@ export default function CarDetailPage() {
                   width: '100%',
                   height: { xs: 240, sm: 360, md: 520 },
                   objectFit: 'cover',
-                  borderRadius: '16px',
+                  borderRadius: 3,
                   border: '1px solid',
                   borderColor: 'divider',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
                 }}
               />
             </motion.div>
@@ -129,6 +138,8 @@ export default function CarDetailPage() {
                     opacity: activeImg === i ? 1 : 0.6,
                     border: activeImg === i ? '2px solid' : '1px solid',
                     borderColor: activeImg === i ? 'primary.main' : 'divider',
+                    transition: 'opacity 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+                    '&:hover': { opacity: 1 },
                   }}
                 />
               ))}
@@ -150,14 +161,17 @@ export default function CarDetailPage() {
             </Stack>
             <Chip icon={<LocationOn />} label={car.location} sx={{ mt: 2 }} />
 
-            <Typography variant="h4" sx={{ mt: 4, mb: 1 }}>
+            <Typography variant="overline" color="primary" sx={{ mt: 4, display: 'block', fontWeight: 700, letterSpacing: '0.08em' }}>
+              Details
+            </Typography>
+            <Typography variant="h5" component="h2" sx={{ mb: 1, fontWeight: 700, letterSpacing: '-0.02em' }}>
               About this car
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {car.description}
             </Typography>
 
-            <Typography variant="h4" sx={{ mt: 4, mb: 2 }}>
+            <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 700, letterSpacing: '-0.02em' }}>
               What&apos;s included
             </Typography>
             <Stack direction="row" flexWrap="wrap" gap={1}>
@@ -168,7 +182,7 @@ export default function CarDetailPage() {
 
             <AvailabilityCalendar car={car} pickup={pickup} dropoff={dropoff} />
 
-            <Paper sx={{ p: 3, bgcolor: 'grey.50', borderRadius: 2, mt: 4 }}>
+            <Paper elevation={0} sx={{ p: 3, mt: 4, ...listRowSurface(theme) }}>
               <Stack direction="row" spacing={1} alignItems="flex-start">
                 <LocationOn color="primary" />
                 <Box>
@@ -204,14 +218,18 @@ export default function CarDetailPage() {
 
           <Grid item xs={12} md={4} order={{ xs: 1, md: 2 }}>
             <Paper
+              elevation={0}
               sx={{
                 p: { xs: 2.5, md: 3 },
-                borderRadius: '20px',
                 position: { xs: 'static', md: 'sticky' },
                 top: { md: 96 },
+                ...softInteractiveSurface(theme),
               }}
             >
-              <Typography variant="h3" color="primary.main">
+              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                Book
+              </Typography>
+              <Typography variant="h3" color="primary.main" sx={{ mt: 0.5, fontWeight: 800 }}>
                 {formatPeso(car.pricePerDay)}
                 <Typography component="span" variant="body1" color="text.secondary">
                   {' '}
@@ -246,7 +264,7 @@ export default function CarDetailPage() {
                 fullWidth
                 size="large"
                 variant="contained"
-                sx={{ mt: 2 }}
+                sx={{ mt: 2, py: 1.25, borderRadius: 2, fontSize: '1rem', ...primaryCtaShadow(theme) }}
                 disabled={!pickup || !dropoff || conflict || !car.available}
                 onClick={reserve}
               >
@@ -279,7 +297,7 @@ export default function CarDetailPage() {
                   </Typography>
                 </Box>
               </Stack>
-              <Button fullWidth variant="outlined" sx={{ mt: 2 }} disabled>
+              <Button fullWidth variant="outlined" color="primary" sx={{ mt: 2, borderRadius: 2, borderWidth: 2, '&:hover': { borderWidth: 2 } }} disabled>
                 Message (coming soon)
               </Button>
             </Paper>

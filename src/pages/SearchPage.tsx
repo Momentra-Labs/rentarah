@@ -1,24 +1,11 @@
 import FilterAlt from '@mui/icons-material/FilterAlt'
-import {
-  Box,
-  Button,
-  Container,
-  Fab,
-  Grid,
-  Pagination,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+import { Box, Container, Fab, Grid, Pagination, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
-import DateRangePicker from '../components/common/DateRangePicker'
+import BrowseCarSearch from '../components/browse/BrowseCarSearch'
 import EmptyState from '../components/common/EmptyState'
 import CarGridSkeleton from '../components/skeletons/CarGridSkeleton'
 import FilterDrawer from '../components/search/FilterDrawer'
@@ -28,6 +15,7 @@ import { useFilteredCars } from '../hooks/useFilteredCars'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import type { SearchFilters } from '../types'
+import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
 
 const PAGE_SIZE = 6
 
@@ -112,75 +100,43 @@ export default function SearchPage() {
     setLocation('Metro Manila')
   }
 
-  const areaLabel = location || 'Metro Manila'
-
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 6 }}>
-      <Paper elevation={1} sx={{ position: 'sticky', top: 0, zIndex: 10, borderRadius: 0 }}>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: { xs: 8, md: 6 } }}>
+      <Paper elevation={0} sx={stickyToolbarPaper(theme)}>
         <Container
           maxWidth="lg"
           sx={{
-            py: { xs: 1.25, md: 2 },
-            px: { xs: 1.5, sm: 3 },
+            py: { xs: 1.5, md: 2 },
+            ...containerGutters,
           }}
         >
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 1.25, md: 2 }} alignItems={{ md: 'flex-end' }}>
-            <TextField
-              label="Location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              size={isMd ? 'small' : 'medium'}
-              sx={{ flex: 1, bgcolor: 'grey.50' }}
-              InputLabelProps={{ shrink: true }}
-            />
-            <Box sx={{ flex: { xs: 1, md: 2 }, width: '100%' }}>
-              <DateRangePicker
-                pickup={pickup}
-                dropoff={dropoff}
-                onChange={({ pickup: p, dropoff: d }) => setDates(p, d)}
-                minDate={dayjs()}
-                spacing={isMd ? 1 : 2}
-                size={isMd ? 'small' : 'medium'}
-                pickupLabel="Pick-up"
-                dropoffLabel="Return"
-              />
-            </Box>
-            <Button
-              variant="contained"
-              size={isMd ? 'medium' : 'large'}
-              sx={{
-                minHeight: { xs: 40, md: 48 },
-                px: { xs: 2, md: 3 },
-                alignSelf: { xs: 'stretch', md: 'auto' },
-                flexShrink: 0,
-              }}
-              onClick={() => navigate(`/search?${searchParams.toString()}`)}
-            >
-              Update
-            </Button>
-          </Stack>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mt: { xs: 0.75, md: 1 },
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              lineHeight: 1.35,
-            }}
-          >
-            {totalCount} cars in {areaLabel.split(',')[0]}
-          </Typography>
+          <BrowseCarSearch />
         </Container>
       </Paper>
 
-      <Container maxWidth="lg" sx={{ mt: 3, px: { xs: 2, sm: 3 }, pb: { xs: 10, md: 6 } }}>
-        <Grid container spacing={3}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 }, pb: { xs: 10, md: 6 }, ...containerGutters }}>
+        <Grid container spacing={{ xs: 2.5, md: 3 }}>
           {!isMd && (
             <Grid item xs={12} md={3}>
-              <Paper sx={{ p: 2, position: 'sticky', top: 140, maxHeight: 'calc(100vh - 120px)', overflowY: 'auto' }}>
-                <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                  Filters
-                </Typography>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  position: 'sticky',
+                  top: 112,
+                  maxHeight: 'calc(100vh - 100px)',
+                  overflowY: 'auto',
+                  ...softInteractiveSurface(theme, false),
+                }}
+              >
+                <Stack spacing={0.5} sx={{ mb: 2 }}>
+                  <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                    Refine
+                  </Typography>
+                  <Typography variant="subtitle1" fontWeight={700} component="h2">
+                    Filters
+                  </Typography>
+                </Stack>
                 <FilterPanel
                   filters={filters}
                   onChange={setFilter}
@@ -193,6 +149,7 @@ export default function SearchPage() {
           <Grid item xs={12} md={isMd ? 12 : 9}>
             <SortBar
               total={totalCount}
+              areaLabel={(location || 'Metro Manila').split(',')[0]?.trim() || 'Metro Manila'}
               sortBy={sortBy}
               viewMode={viewMode}
               onSort={setSortBy}
@@ -212,15 +169,17 @@ export default function SearchPage() {
               />
             ) : (
               <>
-                <Grid container spacing={2}>
+                <Grid container spacing={{ xs: 2.5, md: 3 }}>
                   {pageItems.map((car) => (
                     <Grid item xs={12} sm={viewMode === 'grid' ? 6 : 12} md={viewMode === 'grid' ? 4 : 12} key={car.id}>
-                      <CarCard
-                        car={car}
-                        layout={viewMode}
-                        onNavigate={(c) => navigate(`/cars/${c.id}`)}
-                        onReserve={(c) => navigate(`/cars/${c.id}`)}
-                      />
+                      <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: 3, height: '100%' } }}>
+                        <CarCard
+                          car={car}
+                          layout={viewMode}
+                          onNavigate={(c) => navigate(`/cars/${c.id}`)}
+                          onReserve={(c) => navigate(`/cars/${c.id}`)}
+                        />
+                      </Box>
                     </Grid>
                   ))}
                 </Grid>

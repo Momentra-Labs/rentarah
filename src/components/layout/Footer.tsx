@@ -3,7 +3,7 @@ import { Link as RouterLink } from 'react-router-dom'
 
 export default function Footer() {
   return (
-    <Box component="footer" sx={{ bgcolor: 'grey.50', borderTop: 1, borderColor: 'divider', py: 6, mt: 'auto' }}>
+    <Box component="footer" sx={{ bgcolor: 'grey.50', borderTop: 1, borderColor: 'divider', py: { xs: 5, md: 6 }, mt: 'auto' }}>
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={4} justifyContent="space-between">
           <Typography variant="body2" color="text.secondary">

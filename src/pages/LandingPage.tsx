@@ -1,4 +1,5 @@
 import AirportShuttle from '@mui/icons-material/AirportShuttle'
+import ArrowForward from '@mui/icons-material/ArrowForward'
 import Bolt from '@mui/icons-material/Bolt'
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import Key from '@mui/icons-material/Key'
@@ -8,20 +9,24 @@ import Shield from '@mui/icons-material/Shield'
 import Star from '@mui/icons-material/Star'
 import Verified from '@mui/icons-material/Verified'
 import {
+  alpha,
   Autocomplete,
   Box,
   Button,
   Chip,
   Container,
   Grid,
+  Link,
   Paper,
   Skeleton,
   Stack,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
+import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
@@ -29,6 +34,7 @@ import CarCard from '../components/common/CarCard'
 import DateRangePicker from '../components/common/DateRangePicker'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
+import { softShadow, softShadowHover } from '../theme/pageStyles'
 
 const LOCATIONS = ['Makati', 'BGC', 'Ortigas', 'Quezon City', 'Pasig', 'Taguig']
 
@@ -41,7 +47,15 @@ const CATS = [
   { icon: AirportShuttle, label: 'Truck', type: 'Truck' },
 ] as const
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0 },
+}
+
+const viewport = { once: true, amount: 0.15 }
+
 export default function LandingPage() {
+  const theme = useTheme()
   const navigate = useNavigate()
   const cars = useCarsStore((s) => s.cars)
   const setLocation = useSearchStore((s) => s.setLocation)
@@ -74,212 +88,471 @@ export default function LandingPage() {
   }
 
   return (
-    <Box>
+    <Box component="main">
+      {/* Hero + trip planner */}
       <Box
         sx={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.96), rgba(255,255,255,0.96)),
-            repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(0,0,0,0.04) 24px, rgba(0,0,0,0.04) 25px),
-            repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(0,0,0,0.04) 24px, rgba(0,0,0,0.04) 25px)
-          `,
-          py: { xs: 6, md: 10 },
+          position: 'relative',
+          overflow: 'hidden',
+          background: `linear-gradient(165deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${theme.palette.background.default} 42%, ${alpha(theme.palette.grey[50], 1)} 100%)`,
+          pt: { xs: 5, md: 8 },
+          pb: { xs: 6, md: 9 },
         }}
       >
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
-          <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
-            <Grid item xs={12} md={7}>
-              <Chip label="🇵🇭 Available in Metro Manila" color="primary" sx={{ mb: 2, fontWeight: 600 }} />
-              <Typography variant="h1" sx={{ mb: 2, whiteSpace: { xs: 'normal', sm: 'pre-line' } }}>
-                {'Rent any car,\nanywhere in the city.'}
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 520 }}>
-                Browse trusted hosts, transparent PHP pricing, and flexible pickup across NCR — no hidden fees on Day 1.
-              </Typography>
-              <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>2,400+</strong> cars
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>98%</strong> satisfaction
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <strong>₱0</strong> hidden fees
-                </Typography>
-              </Stack>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 3,
-                  borderRadius: '20px',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Stack spacing={2}>
-                  <Autocomplete
-                    options={LOCATIONS}
-                    value={loc}
-                    onChange={(_, v) => setLoc(v ?? 'Makati')}
-                    renderInput={(params) => <TextField {...params} label="Location" />}
-                  />
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <Box flex={1}>
-                      <DateRangePicker
-                        pickup={pickup}
-                        dropoff={dropoff}
-                        onChange={({ pickup: p, dropoff: d }) => {
-                          setPickup(p)
-                          setDropoff(d)
-                        }}
-                        minDate={dayjs()}
-                        spacing={1}
-                      />
-                    </Box>
-                  </Stack>
-                  <Button variant="contained" size="large" fullWidth onClick={search}>
-                    Search Available Cars
-                  </Button>
-                  <Typography variant="body2" textAlign="center">
-                    <RouterLink to="/search" style={{ color: '#1A56DB', textDecoration: 'none', fontWeight: 600 }}>
-                      or browse all cars →
-                    </RouterLink>
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      <Box sx={{ bgcolor: 'grey.50', py: 10 }}>
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
-          <Typography variant="h4" sx={{ mb: 4, textAlign: 'center' }}>
-            Browse by category
-          </Typography>
-          <Grid container spacing={2}>
-            {CATS.map(({ icon: Icon, label, type }) => (
-              <Grid item xs={6} sm={4} md={2} key={type}>
-                <Paper
-                  sx={{
-                    p: 2,
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      boxShadow: 4,
-                    },
-                  }}
-                  onClick={() => {
-                    setFilter({ types: [type] })
-                    navigate('/search?types=' + encodeURIComponent(type))
-                  }}
-                >
-                  <Icon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                  <Typography fontWeight={700}>{label}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {catCounts[type] ?? 0} cars
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
-
-      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 }, px: { xs: 2, sm: 3 } }}>
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          justifyContent="space-between"
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          spacing={{ xs: 2, sm: 0 }}
-          sx={{ mb: 3 }}
-        >
-          <Typography variant="h4">Top picks this week</Typography>
-          <Button component={RouterLink} to="/search" color="primary" sx={{ alignSelf: { xs: 'flex-start', sm: 'auto' } }}>
-            View all →
-          </Button>
-        </Stack>
-        <Grid container spacing={3}>
-          {cars.length === 0
-            ? [0, 1, 2].map((i) => (
-                <Grid item xs={12} md={4} key={i}>
-                  <Skeleton variant="rectangular" height={340} sx={{ borderRadius: 2 }} />
-                </Grid>
-              ))
-            : featured.map((car) => (
-                <Grid item xs={12} md={4} key={car.id}>
-                  <CarCard car={car} onNavigate={(c) => navigate(`/cars/${c.id}`)} onReserve={(c) => navigate(`/cars/${c.id}`)} />
-                </Grid>
-              ))}
-        </Grid>
-      </Container>
-
-      <Box id="how" sx={{ bgcolor: 'grey.50', py: 10 }}>
-        <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
-          <Typography variant="h4" textAlign="center" sx={{ mb: 4 }}>
-            How it works
-          </Typography>
-          <Grid container spacing={4}>
-            {[
-              { n: '1', t: 'Search', d: 'Pick location & dates that fit your trip.' },
-              { n: '2', t: 'Book', d: 'Verify driver details and pay securely (test mode).' },
-              { n: '3', t: 'Drive', d: 'Meet your host, grab the keys, and hit the road.' },
-            ].map((s) => (
-              <Grid item xs={12} md={4} key={s.n}>
-                <Paper sx={{ p: 3, textAlign: 'center', height: '100%' }}>
-                  <Typography variant="h3" color="primary.main">
-                    {s.n}
-                  </Typography>
-                  <Typography variant="h6" sx={{ my: 1 }}>
-                    {s.t}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {s.d}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
-
-      <Box sx={{ py: 10 }}>
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
-          <Grid container spacing={4}>
-            {[
-              { icon: Shield, t: 'Insured trips', d: 'Protection options on every booking.' },
-              { icon: Verified, t: 'Verified hosts', d: 'Profiles and reviews you can trust.' },
-              { icon: Security, t: 'Secure payments', d: 'Stripe test mode — card never stored here.' },
-              { icon: Key, t: 'Flexible pickup', d: 'Metro Manila locations with clear addresses.' },
-            ].map(({ icon: Icon, t, d }) => (
-              <Grid item xs={12} sm={6} md={3} key={t}>
-                <Stack spacing={1} alignItems="flex-start">
-                  <Box
+          <Grid container spacing={{ xs: 4, md: 5 }} alignItems="stretch">
+            <Grid item xs={12} md={6} lg={7}>
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.45 }}>
+                <Stack spacing={{ xs: 2.5, md: 3 }} sx={{ maxWidth: 560 }}>
+                  <Chip
+                    label="Available in Metro Manila"
+                    color="primary"
+                    size="small"
                     sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: '50%',
-                      bgcolor: '#EFF6FF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'primary.main',
+                      alignSelf: 'flex-start',
+                      fontWeight: 600,
+                      borderRadius: '999px',
+                      px: 0.5,
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      color: 'primary.dark',
+                      border: '1px solid',
+                      borderColor: alpha(theme.palette.primary.main, 0.2),
+                    }}
+                  />
+                  <Typography
+                    variant="h1"
+                    sx={{
+                      letterSpacing: '-0.03em',
+                      lineHeight: 1.08,
+                      whiteSpace: { xs: 'normal', sm: 'pre-line' },
                     }}
                   >
-                    <Icon />
-                  </Box>
-                  <Typography variant="h6">{t}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {d}
+                    {'Rent the right car,\nfor every city trip.'}
                   </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ fontSize: { md: '1.0625rem' }, lineHeight: 1.65 }}>
+                    Transparent pricing in PHP, verified hosts, and pickup across NCR — book in minutes, drive with
+                    confidence.
+                  </Typography>
+
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ pt: 0.5 }}>
+                    <Button
+                      component={RouterLink}
+                      to="/search"
+                      variant="contained"
+                      size="large"
+                      endIcon={<ArrowForward />}
+                      sx={{
+                        py: 1.35,
+                        px: 2.5,
+                        borderRadius: 2,
+                        fontSize: '1rem',
+                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.35)}`,
+                        '&:hover': {
+                          boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+                        },
+                      }}
+                    >
+                      Browse cars
+                    </Button>
+                    <Button
+                      href="#trip-search"
+                      variant="outlined"
+                      color="primary"
+                      size="large"
+                      sx={{ py: 1.35, px: 2.5, borderRadius: 2, fontSize: '1rem', borderWidth: 2, '&:hover': { borderWidth: 2 } }}
+                    >
+                      Plan a trip
+                    </Button>
+                  </Stack>
+
+                  <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5} sx={{ pt: 1 }}>
+                    {[
+                      { k: '2,400+', l: 'cars listed' },
+                      { k: '98%', l: 'happy renters' },
+                      { k: '₱0', l: 'hidden fees' },
+                    ].map((s) => (
+                      <Paper
+                        key={s.k}
+                        elevation={0}
+                        sx={{
+                          px: 2,
+                          py: 1.25,
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: alpha(theme.palette.background.default, 0.85),
+                          backdropFilter: 'blur(8px)',
+                          transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                          '&:hover': {
+                            borderColor: alpha(theme.palette.primary.main, 0.35),
+                            boxShadow: softShadow,
+                          },
+                        }}
+                      >
+                        <Typography variant="subtitle2" fontWeight={800} color="text.primary" sx={{ lineHeight: 1.2 }}>
+                          {s.k}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                          {s.l}
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Stack>
                 </Stack>
-              </Grid>
-            ))}
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12} md={6} lg={5}>
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={fadeUp}
+                transition={{ duration: 0.45, delay: 0.08 }}
+                style={{ height: '100%' }}
+              >
+                <Paper
+                  id="trip-search"
+                  elevation={0}
+                  sx={{
+                    height: '100%',
+                    p: { xs: 2.5, sm: 3 },
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: softShadow,
+                    transition: 'box-shadow 0.25s ease, border-color 0.2s ease',
+                    '&:hover': {
+                      boxShadow: softShadowHover,
+                      borderColor: alpha(theme.palette.primary.main, 0.15),
+                    },
+                  }}
+                >
+                  <Stack spacing={2.5}>
+                    <Box>
+                      <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                        Plan a trip
+                      </Typography>
+                      <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700, letterSpacing: '-0.02em' }}>
+                        Where & when?
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+                        Add dates to see cars that match your schedule.
+                      </Typography>
+                    </Box>
+
+                    <Autocomplete
+                      options={LOCATIONS}
+                      value={loc}
+                      onChange={(_, v) => setLoc(v ?? 'Makati')}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Pick-up area"
+                          placeholder="Choose area"
+                          inputProps={{ ...params.inputProps, 'aria-label': 'Pick-up area' }}
+                        />
+                      )}
+                    />
+
+                    <DateRangePicker
+                      pickup={pickup}
+                      dropoff={dropoff}
+                      onChange={({ pickup: p, dropoff: d }) => {
+                        setPickup(p)
+                        setDropoff(d)
+                      }}
+                      minDate={dayjs()}
+                      spacing={1.5}
+                      pickupLabel="Pick-up date"
+                      dropoffLabel="Return date"
+                    />
+
+                    <Button
+                      variant="contained"
+                      size="large"
+                      fullWidth
+                      onClick={search}
+                      endIcon={<ArrowForward />}
+                      sx={{
+                        py: 1.35,
+                        borderRadius: 2,
+                        fontSize: '1rem',
+                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.3)}`,
+                        '&:hover': {
+                          boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
+                        },
+                      }}
+                    >
+                      Search available cars
+                    </Button>
+
+                    <Typography variant="body2" textAlign="center" color="text.secondary">
+                      <Link component={RouterLink} to="/search" underline="hover" fontWeight={600} color="primary">
+                        Skip dates — browse all cars
+                      </Link>
+                    </Typography>
+                  </Stack>
+                </Paper>
+              </motion.div>
+            </Grid>
           </Grid>
+        </Container>
+      </Box>
+
+      {/* Categories */}
+      <Box id="categories" sx={{ bgcolor: 'grey.50', py: { xs: 7, md: 9 } }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={fadeUp}
+            transition={{ duration: 0.4 }}
+          >
+            <Stack spacing={1} sx={{ mb: { xs: 3, md: 4 }, textAlign: 'center', maxWidth: 640, mx: 'auto' }}>
+              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                Explore
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                Browse by category
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Jump into the fleet that fits your plans — SUVs, sedans, EVs, and more.
+              </Typography>
+            </Stack>
+            <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+              {CATS.map(({ icon: Icon, label, type }) => (
+                <Grid item xs={6} sm={4} md={2} key={type}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.25,
+                      height: '100%',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      borderRadius: 2.5,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.default',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+                      '&:hover': {
+                        borderColor: alpha(theme.palette.primary.main, 0.45),
+                        boxShadow: softShadowHover,
+                        transform: 'translateY(-3px)',
+                      },
+                      '&:active': { transform: 'translateY(-1px)' },
+                    }}
+                    onClick={() => {
+                      setFilter({ types: [type] })
+                      navigate('/search?types=' + encodeURIComponent(type))
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 44, color: 'primary.main', mb: 1 }} />
+                    <Typography fontWeight={700} sx={{ fontSize: '0.9375rem' }}>
+                      {label}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      {catCounts[type] ?? 0} cars
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </motion.div>
+        </Container>
+      </Box>
+
+      {/* Featured */}
+      <Container maxWidth="lg" sx={{ py: { xs: 7, md: 9 }, px: { xs: 2, sm: 3 } }}>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={fadeUp}
+          transition={{ duration: 0.4 }}
+        >
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
+            spacing={2}
+            sx={{ mb: { xs: 3, md: 4 }, gap: 2 }}
+          >
+            <Box sx={{ maxWidth: 520 }}>
+              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                Hand-picked
+              </Typography>
+              <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700, letterSpacing: '-0.02em' }}>
+                Top picks this week
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
+                Highly rated vehicles with clear pricing — tap a card for details and booking.
+              </Typography>
+            </Box>
+            <Button
+              component={RouterLink}
+              to="/search"
+              variant="outlined"
+              color="primary"
+              size="medium"
+              endIcon={<ArrowForward />}
+              sx={{ flexShrink: 0, borderWidth: 2, borderRadius: 2, '&:hover': { borderWidth: 2 } }}
+            >
+              View all
+            </Button>
+          </Stack>
+          <Grid container spacing={{ xs: 2.5, md: 3.5 }}>
+            {cars.length === 0
+              ? [0, 1, 2].map((i) => (
+                  <Grid item xs={12} md={4} key={i}>
+                    <Skeleton variant="rounded" height={380} sx={{ borderRadius: 3 }} />
+                  </Grid>
+                ))
+              : featured.map((car) => (
+                  <Grid item xs={12} sm={6} md={4} key={car.id}>
+                    <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: 3, height: '100%' } }}>
+                      <CarCard car={car} onNavigate={(c) => navigate(`/cars/${c.id}`)} onReserve={(c) => navigate(`/cars/${c.id}`)} />
+                    </Box>
+                  </Grid>
+                ))}
+          </Grid>
+        </motion.div>
+      </Container>
+
+      {/* How it works */}
+      <Box id="how" sx={{ bgcolor: 'grey.50', py: { xs: 7, md: 9 } }}>
+        <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={fadeUp}
+            transition={{ duration: 0.4 }}
+          >
+            <Stack spacing={1} sx={{ mb: 4, textAlign: 'center' }}>
+              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                Simple flow
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                How it works
+              </Typography>
+            </Stack>
+            <Grid container spacing={3}>
+              {[
+                { n: '1', t: 'Search', d: 'Choose area and dates that fit your trip.' },
+                { n: '2', t: 'Book', d: 'Confirm details and pay securely (test mode).' },
+                { n: '3', t: 'Drive', d: 'Meet your host, grab the keys, and go.' },
+              ].map((s) => (
+                <Grid item xs={12} md={4} key={s.n}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      height: '100%',
+                      textAlign: 'center',
+                      borderRadius: 3,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: 'background.default',
+                      transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+                      '&:hover': {
+                        boxShadow: softShadow,
+                        borderColor: alpha(theme.palette.primary.main, 0.12),
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="h3"
+                      color="primary"
+                      sx={{
+                        fontWeight: 800,
+                        opacity: 0.9,
+                        fontSize: { xs: '2.25rem', md: '2.5rem' },
+                        lineHeight: 1,
+                      }}
+                    >
+                      {s.n}
+                    </Typography>
+                    <Typography variant="h6" sx={{ my: 1.5, fontWeight: 700 }}>
+                      {s.t}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                      {s.d}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </motion.div>
+        </Container>
+      </Box>
+
+      {/* Trust */}
+      <Box sx={{ py: { xs: 7, md: 9 } }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={fadeUp}
+            transition={{ duration: 0.4 }}
+          >
+            <Stack spacing={1} sx={{ mb: { xs: 4, md: 5 }, textAlign: 'center', maxWidth: 560, mx: 'auto' }}>
+              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                Why renters choose us
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+                Trust built into every trip
+              </Typography>
+            </Stack>
+            <Grid container spacing={{ xs: 3, md: 4 }}>
+              {[
+                { icon: Shield, t: 'Insured trips', d: 'Protection options on every booking.' },
+                { icon: Verified, t: 'Verified hosts', d: 'Profiles and reviews you can trust.' },
+                { icon: Security, t: 'Secure payments', d: 'Stripe test mode — your card stays with Stripe.' },
+                { icon: Key, t: 'Flexible pickup', d: 'Metro Manila locations with clear addresses.' },
+              ].map(({ icon: Icon, t, d }) => (
+                <Grid item xs={12} sm={6} md={3} key={t}>
+                  <Stack
+                    spacing={1.5}
+                    alignItems="flex-start"
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 3,
+                      height: '100%',
+                      border: '1px solid transparent',
+                      transition: 'background-color 0.2s ease, border-color 0.2s ease',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                        borderColor: alpha(theme.palette.primary.main, 0.12),
+                      },
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        bgcolor: 'primary.light',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'primary.main',
+                      }}
+                    >
+                      <Icon fontSize="small" />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.05rem' }}>
+                      {t}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                      {d}
+                    </Typography>
+                  </Stack>
+                </Grid>
+              ))}
+            </Grid>
+          </motion.div>
         </Container>
       </Box>
     </Box>

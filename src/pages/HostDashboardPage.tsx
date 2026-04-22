@@ -20,18 +20,22 @@ import {
   Tab,
   Tabs,
   Typography,
+  useTheme,
 } from '@mui/material'
 import { useMemo, useState } from 'react'
 
 import ListingForm from '../components/host/ListingForm'
+import PageHeader from '../components/layout/PageHeader'
 import EarningsCard, { EarningsPlaceholderChart } from '../components/host/EarningsCard'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
+import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 
 export default function HostDashboardPage() {
+  const theme = useTheme()
   const user = useAuthStore((s) => s.user)
   const becomeHost = useAuthStore((s) => s.becomeHost)
   const cars = useCarsStore((s) => s.cars)
@@ -65,17 +69,17 @@ export default function HostDashboardPage() {
 
   if (!user.isHost) {
     return (
-      <Box sx={{ bgcolor: 'grey.50', py: 8 }}>
-        <Container maxWidth="md">
-          <Typography variant="h3" align="center" gutterBottom fontWeight={800}>
-            Become a host
-          </Typography>
-          <Typography align="center" color="text.secondary" sx={{ mb: 4 }}>
-            Turn your idle car into income with rentaHub.
-          </Typography>
-          <Grid container spacing={3}>
+      <Box sx={{ bgcolor: 'grey.50', py: { xs: 7, md: 9 } }}>
+        <Container maxWidth="md" sx={containerGutters}>
+          <PageHeader
+            title="Become a host"
+            subtitle="Turn your idle car into income with rentaHub — same polished experience as the renter app."
+            dense
+            align="center"
+          />
+          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 1 }}>
             <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, height: '100%', borderRadius: 3 }}>
+              <Paper elevation={0} sx={{ p: 3, height: '100%', ...listRowSurface(theme) }}>
                 <MonetizationOn sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Earn money
@@ -86,7 +90,7 @@ export default function HostDashboardPage() {
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, height: '100%', borderRadius: 3 }}>
+              <Paper elevation={0} sx={{ p: 3, height: '100%', ...listRowSurface(theme) }}>
                 <Speed sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Easy management
@@ -97,7 +101,7 @@ export default function HostDashboardPage() {
               </Paper>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 3, height: '100%', borderRadius: 3 }}>
+              <Paper elevation={0} sx={{ p: 3, height: '100%', ...listRowSurface(theme) }}>
                 <Shield sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Protection
@@ -109,7 +113,7 @@ export default function HostDashboardPage() {
             </Grid>
           </Grid>
           <Stack alignItems="center" sx={{ mt: 4 }}>
-            <Button size="large" variant="contained" onClick={() => becomeHost()}>
+            <Button size="large" variant="contained" onClick={() => becomeHost()} sx={{ borderRadius: 2, py: 1.25, px: 3, ...primaryCtaShadow(theme) }}>
               Start listing
             </Button>
           </Stack>
@@ -119,19 +123,16 @@ export default function HostDashboardPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3, px: { xs: 2, sm: 3 }, pb: { xs: 12, md: 10 } }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            Host dashboard
-          </Typography>
-          <Typography color="text.secondary">
-            Manage listings and driver requests for {user.firstName}.
-          </Typography>
-        </Box>
-      </Stack>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: 12, md: 10 }, ...containerGutters }}>
+        <PageHeader
+          overline="Host"
+          title="Host dashboard"
+          subtitle={`Manage listings and driver requests for ${user.firstName}.`}
+          dense
+        />
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tab icon={<DirectionsCar />} iconPosition="start" label="My listings" />
         <Tab icon={<MonetizationOn />} iconPosition="start" label="Earnings" />
         <Tab icon={<EventAvailable />} iconPosition="start" label="Booking requests" />
@@ -139,10 +140,10 @@ export default function HostDashboardPage() {
       </Tabs>
 
       {tab === 0 && (
-        <Grid container spacing={2}>
+        <Grid container spacing={{ xs: 2.5, md: 3 }}>
           {hostCars.map((car) => (
             <Grid item xs={12} md={6} key={car.id}>
-              <Card variant="outlined">
+              <Card elevation={0} sx={listRowSurface(theme)}>
                 <CardContent>
                   <Stack direction="row" spacing={2}>
                     <Box component="img" src={car.images[0]} sx={{ width: 140, height: 88, objectFit: 'cover', borderRadius: 2 }} />
@@ -177,7 +178,7 @@ export default function HostDashboardPage() {
 
       {tab === 1 && (
         <Stack spacing={3}>
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 2, md: 2.5 }}>
             <Grid item xs={12} sm={6} md={3}>
               <EarningsCard title="Total earned" value={earningsMock.total} icon="money" />
             </Grid>
@@ -191,7 +192,7 @@ export default function HostDashboardPage() {
               <EarningsCard title="Avg. rating" value="4.9 ★" icon="star" />
             </Grid>
           </Grid>
-          <Paper sx={{ p: 2 }}>
+          <Paper elevation={0} sx={{ p: 2.5, ...softInteractiveSurface(theme, false) }}>
             <Typography variant="subtitle1" fontWeight={700}>
               Weekly performance (mock)
             </Typography>
@@ -207,7 +208,7 @@ export default function HostDashboardPage() {
         <Stack spacing={2}>
           {hostBookings.length === 0 && <Typography color="text.secondary">No bookings for your vehicles yet.</Typography>}
           {hostBookings.map((b) => (
-            <Card key={b.id} variant="outlined">
+            <Card key={b.id} elevation={0} sx={listRowSurface(theme)}>
               <CardContent>
                 <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}>
                   <Box>
@@ -255,7 +256,7 @@ export default function HostDashboardPage() {
       )}
 
       {tab === 3 && (
-        <Paper sx={{ p: 3 }}>
+        <Paper elevation={0} sx={{ p: 3, ...softInteractiveSurface(theme, false) }}>
           <Typography variant="body1" color="text.secondary">
             Listing policies, instant book, and guest requirements would live here — mock only for MVP.
           </Typography>
@@ -277,6 +278,7 @@ export default function HostDashboardPage() {
       >
         <Add />
       </Fab>
-    </Container>
+      </Container>
+    </Box>
   )
 }

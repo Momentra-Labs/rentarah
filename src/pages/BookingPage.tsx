@@ -7,12 +7,14 @@ import {
   Card,
   CardContent,
   Container,
+  Paper,
   Stack,
   Step,
   StepLabel,
   Stepper,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material'
 import { Elements } from '@stripe/react-stripe-js'
 import { motion } from 'framer-motion'
@@ -31,6 +33,8 @@ import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
 import { useDateValidation } from '../hooks/useDateValidation'
 import { usePricing } from '../hooks/usePricing'
+import PageHeader from '../components/layout/PageHeader'
+import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 
 const driverSchema = z.object({
   firstName: z.string().min(2, 'Required'),
@@ -46,6 +50,7 @@ type DriverValues = z.infer<typeof driverSchema>
 const steps = ['Review trip', 'Driver details', 'Payment', 'Confirmed']
 
 export default function BookingPage() {
+  const theme = useTheme()
   const { carId } = useParams<{ carId: string }>()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
@@ -136,35 +141,35 @@ export default function BookingPage() {
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: { xs: 2, sm: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 } }}>
-      <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ overflowX: 'auto', pb: 1, mb: { xs: 3, md: 4 } }}>
-          <Stepper
-            activeStep={step}
-            alternativeLabel
-            sx={{
-              minWidth: { xs: 520, md: '100%' },
-              '& .MuiStepLabel-label': { fontSize: { xs: '0.65rem', sm: '0.75rem' }, whiteSpace: 'nowrap' },
-            }}
-          >
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </Box>
+      <Container maxWidth="md" sx={containerGutters}>
+        <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: { xs: 3, md: 4 }, ...listRowSurface(theme) }}>
+          <Box sx={{ overflowX: 'auto', pb: 0.5 }}>
+            <Stepper
+              activeStep={step}
+              alternativeLabel
+              sx={{
+                minWidth: { xs: 520, md: '100%' },
+                '& .MuiStepLabel-label': { fontSize: { xs: '0.65rem', sm: '0.75rem' }, whiteSpace: 'nowrap' },
+              }}
+            >
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Box>
+        </Paper>
 
         {step === 0 && (
-          <Stack spacing={2}>
-            <Typography variant="h4" sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}>
-              Review your trip
-            </Typography>
+          <Stack spacing={2.5}>
+            <PageHeader overline="Checkout" title="Review your trip" subtitle="Confirm dates and pricing before driver details." dense />
             {conflict && (
               <Alert severity="error" action={<Button onClick={() => navigate(`/cars/${car.id}`)}>Change dates</Button>}>
                 Selected dates have a conflict with existing bookings.
               </Alert>
             )}
-            <Card variant="outlined">
+            <Card elevation={0} sx={listRowSurface(theme)}>
               <CardContent>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                   <Box component="img" src={car.images[0]} sx={{ width: { xs: '100%', sm: 120 }, height: { xs: 160, sm: 80 }, objectFit: 'cover', borderRadius: 2 }} />
@@ -186,7 +191,12 @@ export default function BookingPage() {
               <Button onClick={() => navigate(`/cars/${car.id}`)} sx={{ order: { xs: 2, sm: 1 } }}>
                 Back
               </Button>
-              <Button variant="contained" disabled={conflict} onClick={next} sx={{ order: { xs: 1, sm: 2 }, minHeight: 48 }}>
+              <Button
+                variant="contained"
+                disabled={conflict}
+                onClick={next}
+                sx={{ order: { xs: 1, sm: 2 }, minHeight: 48, borderRadius: 2, ...primaryCtaShadow(theme) }}
+              >
                 Continue
               </Button>
             </Stack>
@@ -194,10 +204,8 @@ export default function BookingPage() {
         )}
 
         {step === 1 && (
-          <Stack component="form" spacing={2} onSubmit={onDriverSubmit}>
-            <Typography variant="h4" sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}>
-              Driver details
-            </Typography>
+          <Stack component="form" spacing={2.5} onSubmit={onDriverSubmit}>
+            <PageHeader overline="Checkout" title="Driver details" subtitle="We’ll use this for the rental agreement and host contact." dense />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField label="First name" fullWidth {...df.register('firstName')} error={!!df.formState.errors.firstName} helperText={df.formState.errors.firstName?.message} />
               <TextField label="Last name" fullWidth {...df.register('lastName')} error={!!df.formState.errors.lastName} helperText={df.formState.errors.lastName?.message} />
@@ -210,7 +218,11 @@ export default function BookingPage() {
               <Button type="button" variant="outlined" onClick={back} sx={{ order: { xs: 2, sm: 1 } }}>
                 Back
               </Button>
-              <Button type="submit" variant="contained" sx={{ order: { xs: 1, sm: 2 }, minHeight: 48 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                sx={{ order: { xs: 1, sm: 2 }, minHeight: 48, borderRadius: 2, ...primaryCtaShadow(theme) }}
+              >
                 Continue
               </Button>
             </Stack>
@@ -218,14 +230,9 @@ export default function BookingPage() {
         )}
 
         {step === 2 && (
-          <Stack spacing={2}>
-            <Typography variant="h4" sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}>
-              Payment
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Test mode only — no real charges.
-            </Typography>
-            <Card variant="outlined" sx={{ mb: 2 }}>
+          <Stack spacing={2.5}>
+            <PageHeader overline="Checkout" title="Payment" subtitle="Test mode only — no real charges." dense />
+            <Card elevation={0} sx={{ mb: 2, ...listRowSurface(theme) }}>
               <CardContent>
                 <Typography fontWeight={700}>Order total</Typography>
                 <Typography variant="h5" color="primary">
@@ -266,7 +273,7 @@ export default function BookingPage() {
                 {bookingRef}
               </Typography>
               <Typography variant="body1">Your plate: {car.plateNumber}</Typography>
-              <Card variant="outlined" sx={{ width: '100%', maxWidth: 420 }}>
+              <Card elevation={0} sx={{ width: '100%', maxWidth: 420, ...listRowSurface(theme) }}>
                 <CardContent>
                   <Typography fontWeight={700}>
                     {car.make} {car.model}
@@ -280,7 +287,7 @@ export default function BookingPage() {
                 </CardContent>
               </Card>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <Button variant="contained" onClick={() => { resetFlow(); navigate('/dashboard') }}>
+                <Button variant="contained" onClick={() => { resetFlow(); navigate('/dashboard') }} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>
                   View My Trips
                 </Button>
                 <Button variant="outlined" onClick={() => { resetFlow(); navigate('/search') }}>

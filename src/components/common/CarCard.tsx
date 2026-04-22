@@ -1,5 +1,6 @@
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder'
 import Favorite from '@mui/icons-material/Favorite'
+import PlaceOutlined from '@mui/icons-material/PlaceOutlined'
 import {
   Box,
   Button,
@@ -135,10 +136,23 @@ export default function CarCard({
             </Typography>
           </Typography>
         </Stack>
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0 }}>
+          <PlaceOutlined sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0, opacity: 0.9 }} aria-hidden />
+          <Typography
+            variant="body2"
+            color="text.primary"
+            fontWeight={600}
+            sx={{ fontSize: { xs: '0.75rem', sm: '0.8125rem' }, lineHeight: 1.35, minWidth: 0 }}
+            noWrap
+            title={car.location}
+          >
+            {car.location.split(',')[0]}
+          </Typography>
+        </Stack>
         <Typography
           variant="body2"
           color="text.secondary"
-          sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.35 }}
+          sx={{ fontSize: { xs: '0.7rem', sm: '0.8125rem' }, lineHeight: 1.35 }}
         >
           {car.year} · {car.type} · {car.hostName}
         </Typography>
@@ -178,9 +192,9 @@ export default function CarCard({
               maxWidth: { xs: '52%', sm: '55%' },
               textAlign: 'right',
             }}
-            title={`${car.hostTrips}+ trips · ${car.location}`}
+            title={`${car.hostTrips}+ trips with ${car.hostName}`}
           >
-            {car.hostTrips}+ trips · {car.location.split(',')[0]}
+            {car.hostTrips}+ trips
           </Typography>
         </Stack>
       </Stack>
@@ -205,11 +219,13 @@ export default function CarCard({
 
   const cardSx = {
     cursor: 'pointer',
+    borderColor: 'divider',
     '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.08)',
+      transform: 'translateY(-3px)',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06)',
+      borderColor: 'action.hover',
     },
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.2s ease',
   }
 
   if (layout === 'list') {
