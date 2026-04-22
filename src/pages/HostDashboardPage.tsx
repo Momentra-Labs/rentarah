@@ -119,7 +119,7 @@ export default function HostDashboardPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3, pb: 10 }}>
+    <Container maxWidth="lg" sx={{ py: 3, px: { xs: 2, sm: 3 }, pb: { xs: 12, md: 10 } }}>
       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight={800}>
@@ -266,7 +266,12 @@ export default function HostDashboardPage() {
 
       <Fab
         color="primary"
-        sx={{ position: 'fixed', bottom: 24, right: 24, display: tab === 0 ? 'inline-flex' : 'none' }}
+        sx={{
+          position: 'fixed',
+          right: 16,
+          bottom: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
+          display: tab === 0 ? 'inline-flex' : 'none',
+        }}
         onClick={() => setListingOpen(true)}
         aria-label="add listing"
       >

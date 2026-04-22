@@ -116,34 +116,64 @@ export default function SearchPage() {
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 6 }}>
-      <Paper elevation={1} sx={{ position: 'sticky', top: 56, zIndex: 10, borderRadius: 0 }}>
-        <Container maxWidth="lg" sx={{ py: 2 }}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'flex-end' }}>
+      <Paper elevation={1} sx={{ position: 'sticky', top: 0, zIndex: 10, borderRadius: 0 }}>
+        <Container
+          maxWidth="lg"
+          sx={{
+            py: { xs: 1.25, md: 2 },
+            px: { xs: 1.5, sm: 3 },
+          }}
+        >
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 1.25, md: 2 }} alignItems={{ md: 'flex-end' }}>
             <TextField
               label="Location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              size={isMd ? 'small' : 'medium'}
               sx={{ flex: 1, bgcolor: 'grey.50' }}
+              InputLabelProps={{ shrink: true }}
             />
-            <Box sx={{ flex: 2 }}>
+            <Box sx={{ flex: { xs: 1, md: 2 }, width: '100%' }}>
               <DateRangePicker
                 pickup={pickup}
                 dropoff={dropoff}
                 onChange={({ pickup: p, dropoff: d }) => setDates(p, d)}
                 minDate={dayjs()}
+                spacing={isMd ? 1 : 2}
+                size={isMd ? 'small' : 'medium'}
+                pickupLabel="Pick-up"
+                dropoffLabel="Return"
               />
             </Box>
-            <Button variant="contained" size="large" onClick={() => navigate(`/search?${searchParams.toString()}`)}>
+            <Button
+              variant="contained"
+              size={isMd ? 'medium' : 'large'}
+              sx={{
+                minHeight: { xs: 40, md: 48 },
+                px: { xs: 2, md: 3 },
+                alignSelf: { xs: 'stretch', md: 'auto' },
+                flexShrink: 0,
+              }}
+              onClick={() => navigate(`/search?${searchParams.toString()}`)}
+            >
               Update
             </Button>
           </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              mt: { xs: 0.75, md: 1 },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              lineHeight: 1.35,
+            }}
+          >
             {totalCount} cars in {areaLabel.split(',')[0]}
           </Typography>
         </Container>
       </Paper>
 
-      <Container maxWidth="lg" sx={{ mt: 3 }}>
+      <Container maxWidth="lg" sx={{ mt: 3, px: { xs: 2, sm: 3 }, pb: { xs: 10, md: 6 } }}>
         <Grid container spacing={3}>
           {!isMd && (
             <Grid item xs={12} md={3}>
@@ -167,6 +197,8 @@ export default function SearchPage() {
               viewMode={viewMode}
               onSort={setSortBy}
               onViewMode={setViewMode}
+              onOpenFilters={isMd ? () => setDrawerOpen(true) : undefined}
+              filtersActive={hasActiveFilters}
             />
 
             {!listingsReady ? (
@@ -198,6 +230,12 @@ export default function SearchPage() {
                     page={page}
                     onChange={(_, p) => setPage(p)}
                     color="primary"
+                    size="small"
+                    siblingCount={0}
+                    boundaryCount={1}
+                    sx={{
+                      '& .MuiPagination-ul': { flexWrap: 'wrap', justifyContent: 'center', gap: 0.5 },
+                    }}
                   />
                 </Stack>
               </>
@@ -210,7 +248,13 @@ export default function SearchPage() {
         <>
           <Fab
             color="primary"
-            sx={{ position: 'fixed', bottom: 24, right: 24 }}
+            size="medium"
+            aria-label="Open filters"
+            sx={{
+              position: 'fixed',
+              right: 16,
+              bottom: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
+            }}
             onClick={() => setDrawerOpen(true)}
           >
             <FilterAlt />

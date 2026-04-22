@@ -1,16 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import Close from '@mui/icons-material/Close'
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Link,
   Stack,
   Tab,
   Tabs,
   TextField,
+  useMediaQuery,
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -47,6 +51,8 @@ interface AuthDialogProps {
 }
 
 export default function AuthDialog({ open, onClose, defaultTab = 'login' }: AuthDialogProps) {
+  const theme = useTheme()
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const [tab, setTab] = useState<'login' | 'register'>(defaultTab)
   const login = useAuthStore((s) => s.login)
   const register = useAuthStore((s) => s.register)
@@ -99,9 +105,18 @@ export default function AuthDialog({ open, onClose, defaultTab = 'login' }: Auth
   })
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} centered>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth fullScreen={fullScreen} scroll="body">
+      <DialogTitle sx={{ pr: fullScreen ? 6 : 2 }}>
+        {fullScreen && (
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{ position: 'absolute', right: 8, top: 12 }}
+          >
+            <Close />
+          </IconButton>
+        )}
+        <Tabs value={tab} onChange={(_, v) => setTab(v)} centered variant="fullWidth">
           <Tab label="Sign In" value="login" />
           <Tab label="Register" value="register" />
         </Tabs>
@@ -132,7 +147,7 @@ export default function AuthDialog({ open, onClose, defaultTab = 'login' }: Auth
           </Stack>
         ) : (
           <Stack component="form" spacing={2} sx={{ pt: 1 }} onSubmit={onRegister}>
-            <Stack direction="row" spacing={1}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <TextField
                 label="First name"
                 fullWidth

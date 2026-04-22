@@ -1,6 +1,9 @@
+import FilterAlt from '@mui/icons-material/FilterAlt'
 import ReorderIcon from '@mui/icons-material/Reorder'
 import ViewModule from '@mui/icons-material/ViewModule'
 import {
+  Badge,
+  Button,
   FormControl,
   InputLabel,
   MenuItem,
@@ -19,9 +22,20 @@ interface SortBarProps {
   viewMode: 'grid' | 'list'
   onSort: (v: SearchStoreState['sortBy']) => void
   onViewMode: (v: 'grid' | 'list') => void
+  /** Opens filter bottom sheet on narrow screens when set */
+  onOpenFilters?: () => void
+  filtersActive?: boolean
 }
 
-export default function SortBar({ total, sortBy, viewMode, onSort, onViewMode }: SortBarProps) {
+export default function SortBar({
+  total,
+  sortBy,
+  viewMode,
+  onSort,
+  onViewMode,
+  onOpenFilters,
+  filtersActive,
+}: SortBarProps) {
   return (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -33,8 +47,29 @@ export default function SortBar({ total, sortBy, viewMode, onSort, onViewMode }:
       <Typography variant="body2" color="text.secondary">
         <strong>{total}</strong> cars found
       </Typography>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <FormControl size="small" sx={{ minWidth: 180 }}>
+
+      {onOpenFilters && (
+        <Badge color="primary" variant="dot" invisible={!filtersActive} sx={{ width: '100%' }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            fullWidth
+            startIcon={<FilterAlt />}
+            onClick={onOpenFilters}
+            sx={{ justifyContent: 'center', py: 1.25 }}
+          >
+            Filters
+          </Button>
+        </Badge>
+      )}
+
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: 0, flex: { sm: 1 }, justifyContent: { sm: 'flex-end' } }}
+      >
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 180 }, flex: { sm: 1 } }}>
           <InputLabel id="sort-label">Sort</InputLabel>
           <Select
             labelId="sort-label"
@@ -54,6 +89,7 @@ export default function SortBar({ total, sortBy, viewMode, onSort, onViewMode }:
           size="small"
           value={viewMode}
           onChange={(_, v) => v && onViewMode(v)}
+          sx={{ alignSelf: { xs: 'flex-end', sm: 'auto' } }}
         >
           <ToggleButton value="grid" aria-label="grid">
             <ViewModule fontSize="small" />

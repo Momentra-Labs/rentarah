@@ -135,19 +135,30 @@ export default function BookingPage() {
   }
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 4 }}>
-      <Container maxWidth="md">
-        <Stepper activeStep={step} alternativeLabel sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: { xs: 2, sm: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 } }}>
+      <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ overflowX: 'auto', pb: 1, mb: { xs: 3, md: 4 } }}>
+          <Stepper
+            activeStep={step}
+            alternativeLabel
+            sx={{
+              minWidth: { xs: 520, md: '100%' },
+              '& .MuiStepLabel-label': { fontSize: { xs: '0.65rem', sm: '0.75rem' }, whiteSpace: 'nowrap' },
+            }}
+          >
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Box>
 
         {step === 0 && (
           <Stack spacing={2}>
-            <Typography variant="h4">Review your trip</Typography>
+            <Typography variant="h4" sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}>
+              Review your trip
+            </Typography>
             {conflict && (
               <Alert severity="error" action={<Button onClick={() => navigate(`/cars/${car.id}`)}>Change dates</Button>}>
                 Selected dates have a conflict with existing bookings.
@@ -155,8 +166,8 @@ export default function BookingPage() {
             )}
             <Card variant="outlined">
               <CardContent>
-                <Stack direction="row" spacing={2}>
-                  <Box component="img" src={car.images[0]} sx={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 2 }} />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <Box component="img" src={car.images[0]} sx={{ width: { xs: '100%', sm: 120 }, height: { xs: 160, sm: 80 }, objectFit: 'cover', borderRadius: 2 }} />
                   <Box>
                     <Typography fontWeight={700}>
                       {car.year} {car.make} {car.model}
@@ -171,9 +182,11 @@ export default function BookingPage() {
             </Card>
             {pricing.pricing && <PriceBreakdown pricing={pricing.pricing} pricePerDay={car.pricePerDay} />}
             <Alert severity="info">Free cancellation up to 24h before pickup (mock policy).</Alert>
-            <Stack direction="row" justifyContent="space-between">
-              <Button onClick={() => navigate(`/cars/${car.id}`)}>Back</Button>
-              <Button variant="contained" disabled={conflict} onClick={next}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
+              <Button onClick={() => navigate(`/cars/${car.id}`)} sx={{ order: { xs: 2, sm: 1 } }}>
+                Back
+              </Button>
+              <Button variant="contained" disabled={conflict} onClick={next} sx={{ order: { xs: 1, sm: 2 }, minHeight: 48 }}>
                 Continue
               </Button>
             </Stack>
@@ -182,7 +195,9 @@ export default function BookingPage() {
 
         {step === 1 && (
           <Stack component="form" spacing={2} onSubmit={onDriverSubmit}>
-            <Typography variant="h4">Driver details</Typography>
+            <Typography variant="h4" sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}>
+              Driver details
+            </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField label="First name" fullWidth {...df.register('firstName')} error={!!df.formState.errors.firstName} helperText={df.formState.errors.firstName?.message} />
               <TextField label="Last name" fullWidth {...df.register('lastName')} error={!!df.formState.errors.lastName} helperText={df.formState.errors.lastName?.message} />
@@ -191,11 +206,11 @@ export default function BookingPage() {
             <TextField label="Phone" placeholder="+639xxxxxxxxx" fullWidth {...df.register('phone')} error={!!df.formState.errors.phone} helperText={df.formState.errors.phone?.message} />
             <TextField label="License number" fullWidth {...df.register('licenseNumber')} error={!!df.formState.errors.licenseNumber} helperText={df.formState.errors.licenseNumber?.message} />
             <TextField label="License expiry" type="date" InputLabelProps={{ shrink: true }} fullWidth {...df.register('licenseExpiry')} error={!!df.formState.errors.licenseExpiry} helperText={df.formState.errors.licenseExpiry?.message} />
-            <Stack direction="row" justifyContent="space-between">
-              <Button type="button" variant="outlined" onClick={back}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
+              <Button type="button" variant="outlined" onClick={back} sx={{ order: { xs: 2, sm: 1 } }}>
                 Back
               </Button>
-              <Button type="submit" variant="contained">
+              <Button type="submit" variant="contained" sx={{ order: { xs: 1, sm: 2 }, minHeight: 48 }}>
                 Continue
               </Button>
             </Stack>
@@ -204,7 +219,9 @@ export default function BookingPage() {
 
         {step === 2 && (
           <Stack spacing={2}>
-            <Typography variant="h4">Payment</Typography>
+            <Typography variant="h4" sx={{ fontSize: { xs: '1.35rem', sm: '2rem' } }}>
+              Payment
+            </Typography>
             <Typography variant="body2" color="text.secondary">
               Test mode only — no real charges.
             </Typography>
@@ -242,7 +259,9 @@ export default function BookingPage() {
           <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <Stack alignItems="center" spacing={2} textAlign="center">
               <CheckCircleOutline sx={{ fontSize: 96, color: 'success.main' }} />
-              <Typography variant="h3">Booking Confirmed!</Typography>
+              <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem' } }}>
+                Booking Confirmed!
+              </Typography>
               <Typography variant="h5" color="primary">
                 {bookingRef}
               </Typography>

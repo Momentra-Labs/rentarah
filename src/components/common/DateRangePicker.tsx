@@ -11,6 +11,8 @@ export interface DateRangePickerProps {
   dropoffLabel?: string
   minDate?: Dayjs | null
   spacing?: number
+  /** Use `small` on narrow layouts for a shorter control height */
+  size?: 'small' | 'medium'
   slotProps?: {
     pickup?: Partial<TextFieldProps>
     dropoff?: Partial<TextFieldProps>
@@ -28,6 +30,7 @@ export default function DateRangePicker({
   minDate,
   slotProps,
   spacing = 2,
+  size = 'medium',
 }: DateRangePickerProps) {
   const handlePickup = (next: Dayjs | null) => {
     if (!next || !next.isValid()) {
@@ -58,7 +61,11 @@ export default function DateRangePicker({
   const tfCommon = slotProps?.textField ?? {}
 
   return (
-    <Stack spacing={spacing}>
+    <Stack
+      spacing={spacing}
+      direction={{ xs: 'column', sm: 'row' }}
+      sx={{ '& .MuiFormControl-root': { flex: 1, minWidth: 0 } }}
+    >
       <DatePicker
         label={pickupLabel}
         value={pickup}
@@ -69,6 +76,7 @@ export default function DateRangePicker({
             {...params}
             {...tfCommon}
             {...(slotProps?.pickup ?? {})}
+            size={size}
             fullWidth
           />
         )}
@@ -83,6 +91,7 @@ export default function DateRangePicker({
             {...params}
             {...tfCommon}
             {...(slotProps?.dropoff ?? {})}
+            size={size}
             fullWidth
           />
         )}

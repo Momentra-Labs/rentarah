@@ -1,10 +1,10 @@
-import { createTheme } from '@mui/material/styles'
+import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)'
 const cardShadowHover = '0 4px 12px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.08)'
 const modalShadow = '0 20px 60px rgba(0,0,0,0.18)'
 
-export const theme = createTheme({
+const baseTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -51,7 +51,7 @@ export const theme = createTheme({
     h1: {
       fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
       fontWeight: 800,
-      fontSize: '48px',
+      fontSize: 'clamp(1.75rem, 5vw, 3rem)',
       lineHeight: 1.1,
       letterSpacing: '-0.02em',
       color: '#111827',
@@ -59,7 +59,7 @@ export const theme = createTheme({
     h2: {
       fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
       fontWeight: 700,
-      fontSize: '36px',
+      fontSize: 'clamp(1.5rem, 4vw, 2.25rem)',
       lineHeight: 1.15,
       letterSpacing: '-0.02em',
       color: '#111827',
@@ -196,3 +196,6 @@ export const theme = createTheme({
     },
   },
 })
+
+/** Smaller type on phones / narrow screens without editing every page. */
+export const theme = responsiveFontSizes(baseTheme, { factor: 2 })

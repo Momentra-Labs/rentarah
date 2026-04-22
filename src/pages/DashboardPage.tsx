@@ -52,7 +52,7 @@ export default function DashboardPage() {
   const savedCars = useMemo(() => cars.filter((c) => savedIds.includes(c.id)), [cars, savedIds])
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 3, px: { xs: 2, sm: 3 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 3 } }}>
       <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
         <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>{user?.avatar}</Avatar>
         <Box>

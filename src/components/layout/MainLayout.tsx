@@ -18,7 +18,14 @@ export default function MainLayout() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Navbar />
-      <Box component="main" sx={{ flex: 1, width: '100%' }}>
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          width: '100%',
+          pb: { xs: 'max(12px, env(safe-area-inset-bottom))', sm: 0 },
+        }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

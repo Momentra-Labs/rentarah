@@ -11,6 +11,8 @@ import {
   IconButton,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { motion } from 'framer-motion'
 
@@ -32,6 +34,8 @@ export default function CarCard({
   onReserve,
   onNavigate,
 }: CarCardProps) {
+  const theme = useTheme()
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'))
   const toggleSaved = useCarsStore((s) => s.toggleSaved)
   const savedIds = useCarsStore((s) => s.savedCarIds)
 
@@ -51,10 +55,13 @@ export default function CarCard({
         src={image}
         alt={title}
         sx={{
-          height: layout === 'grid' ? 220 : { xs: 160, sm: 180 },
+          height: layout === 'grid' ? { xs: 180, sm: 220 } : { xs: 140, sm: 180 },
           width: layout === 'list' ? { xs: '100%', sm: 200 } : '100%',
           objectFit: 'cover',
-          borderRadius: layout === 'list' ? '12px 0 0 12px' : '16px 16px 0 0',
+          borderRadius:
+            layout === 'list'
+              ? { xs: '12px 12px 0 0', sm: '12px 0 0 12px' }
+              : '16px 16px 0 0',
           opacity: unavailable ? 0.55 : 1,
         }}
       />
@@ -94,31 +101,85 @@ export default function CarCard({
   )
 
   const body = (
-    <CardContent sx={{ pt: layout === 'grid' ? 2 : 2, pb: 1 }}>
-      <Stack spacing={1}>
+    <CardContent
+      sx={{
+        pt: layout === 'grid' ? { xs: 1.25, sm: 2 } : { xs: 1.25, sm: 2 },
+        pb: { xs: 0.75, sm: 1 },
+        px: { xs: 1.5, sm: 2 },
+      }}
+    >
+      <Stack spacing={{ xs: 0.75, sm: 1 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
-          <Typography variant="subtitle1" fontWeight={700} sx={{ flex: 1 }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              lineHeight: 1.3,
+            }}
+          >
             {title}
           </Typography>
-          <Typography variant="subtitle1" color="primary.main" fontWeight={800}>
+          <Typography
+            variant="subtitle1"
+            color="primary.main"
+            fontWeight={800}
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, flexShrink: 0, textAlign: 'right' }}
+          >
             {formatPeso(car.pricePerDay)}
-            <Typography component="span" variant="caption" color="text.secondary">
+            <Typography component="span" variant="caption" color="text.secondary" sx={{ fontSize: 'inherit' }}>
               {' '}
               / day
             </Typography>
           </Typography>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.35 }}
+        >
           {car.year} · {car.type} · {car.hostName}
         </Typography>
-        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ gap: { xs: 0.5, sm: 0.75 } }}>
           {[String(car.seats), car.transmission, car.fuel].map((label) => (
-            <Chip key={label} label={label} size="small" variant="outlined" sx={{ bgcolor: '#F9FAFB' }} />
+            <Chip
+              key={label}
+              label={label}
+              size="small"
+              variant="outlined"
+              sx={{
+                bgcolor: '#F9FAFB',
+                height: { xs: 22, sm: 24 },
+                fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              }}
+            />
           ))}
         </Stack>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={1}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          spacing={0.5}
+          gap={0.5}
+          sx={{ minWidth: 0 }}
+        >
           <StarRating value={car.rating} reviews={car.reviewCount} />
-          <Typography variant="caption" color="text.secondary">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              lineHeight: 1.25,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: { xs: '52%', sm: '55%' },
+              textAlign: 'right',
+            }}
+            title={`${car.hostTrips}+ trips · ${car.location}`}
+          >
             {car.hostTrips}+ trips · {car.location.split(',')[0]}
           </Typography>
         </Stack>
@@ -127,9 +188,10 @@ export default function CarCard({
   )
 
   const actions = (
-    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
+    <CardActions sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 }, pt: 0, justifyContent: 'flex-end' }}>
       <Button
         variant="contained"
+        size={isXs ? 'small' : 'medium'}
         disabled={unavailable}
         onClick={(e) => {
           e.stopPropagation()

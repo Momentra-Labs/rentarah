@@ -1,3 +1,12 @@
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  min-height: 100dvh;
+  /* iOS safe areas; content can also use padding-bottom: env(safe-area-inset-bottom) */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }

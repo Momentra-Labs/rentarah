@@ -85,11 +85,11 @@ export default function LandingPage() {
           py: { xs: 6, md: 10 },
         }}
       >
-        <Container maxWidth="lg">
-          <Grid container spacing={6} alignItems="center">
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+          <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
             <Grid item xs={12} md={7}>
               <Chip label="🇵🇭 Available in Metro Manila" color="primary" sx={{ mb: 2, fontWeight: 600 }} />
-              <Typography variant="h1" sx={{ mb: 2, whiteSpace: 'pre-line' }}>
+              <Typography variant="h1" sx={{ mb: 2, whiteSpace: { xs: 'normal', sm: 'pre-line' } }}>
                 {'Rent any car,\nanywhere in the city.'}
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 520 }}>
@@ -154,7 +154,7 @@ export default function LandingPage() {
       </Box>
 
       <Box sx={{ bgcolor: 'grey.50', py: 10 }}>
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography variant="h4" sx={{ mb: 4, textAlign: 'center' }}>
             Browse by category
           </Typography>
@@ -190,10 +190,16 @@ export default function LandingPage() {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ py: 10 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 }, px: { xs: 2, sm: 3 } }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          spacing={{ xs: 2, sm: 0 }}
+          sx={{ mb: 3 }}
+        >
           <Typography variant="h4">Top picks this week</Typography>
-          <Button component={RouterLink} to="/search" color="primary">
+          <Button component={RouterLink} to="/search" color="primary" sx={{ alignSelf: { xs: 'flex-start', sm: 'auto' } }}>
             View all →
           </Button>
         </Stack>
@@ -213,7 +219,7 @@ export default function LandingPage() {
       </Container>
 
       <Box id="how" sx={{ bgcolor: 'grey.50', py: 10 }}>
-        <Container maxWidth="md">
+        <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography variant="h4" textAlign="center" sx={{ mb: 4 }}>
             How it works
           </Typography>
@@ -242,7 +248,7 @@ export default function LandingPage() {
       </Box>
 
       <Box sx={{ py: 10 }}>
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <Grid container spacing={4}>
             {[
               { icon: Shield, t: 'Insured trips', d: 'Protection options on every booking.' },

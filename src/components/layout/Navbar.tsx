@@ -149,35 +149,65 @@ export default function Navbar() {
           ))}
 
           {isMd && (
-            <IconButton onClick={() => setMobileOpen(true)} aria-label="menu">
+            <IconButton
+              onClick={() => setMobileOpen(true)}
+              aria-label="menu"
+              edge="end"
+              sx={{
+                ml: 1,
+                minWidth: 44,
+                minHeight: 44,
+              }}
+            >
               <MenuIcon />
             </IconButton>
           )}
         </Toolbar>
       </AppBar>
 
-      <Drawer anchor="right" open={mobileOpen} onClose={() => setMobileOpen(false)}>
-        <Box sx={{ width: 280, pt: 2 }}>
-          <List>
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        PaperProps={{ sx: { width: { xs: 'min(100vw - 48px, 320px)', sm: 280 } } }}
+      >
+        <Box sx={{ width: '100%', pt: 2, pb: `max(16px, env(safe-area-inset-bottom))` }} role="navigation">
+          <List dense={false}>
             <ListItemButton component={RouterLink} to="/search" onClick={() => setMobileOpen(false)}>
-              <ListItemText primary="Browse Cars" />
+              <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="Browse Cars" />
+            </ListItemButton>
+            <ListItemButton
+              component={RouterLink}
+              to={{ pathname: '/', hash: '#how' }}
+              onClick={() => setMobileOpen(false)}
+            >
+              <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="How it Works" />
             </ListItemButton>
             <ListItemButton component={RouterLink} to="/host" onClick={() => setMobileOpen(false)}>
-              <ListItemText primary="List Your Car" />
+              <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="List Your Car" />
             </ListItemButton>
             {!user ? (
               <>
                 <ListItemButton onClick={() => { setMobileOpen(false); setAuthOpen(true) }}>
-                  <ListItemText primary="Sign In" />
+                  <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="Sign In" />
+                </ListItemButton>
+                <ListItemButton onClick={() => { setMobileOpen(false); setAuthOpen(true) }}>
+                  <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="Get Started" />
                 </ListItemButton>
               </>
             ) : (
               <>
+                {!user.isHost && (
+                  <ListItemButton component={RouterLink} to="/host" onClick={() => setMobileOpen(false)}>
+                    <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="Become a Host" />
+                  </ListItemButton>
+                )}
                 <ListItemButton component={RouterLink} to="/dashboard" onClick={() => setMobileOpen(false)}>
-                  <ListItemText primary="My Trips" />
+                  <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="My Trips" />
                 </ListItemButton>
                 <ListItemButton component={RouterLink} to="/host" onClick={() => setMobileOpen(false)}>
-                  <ListItemText primary="Host" />
+                  <ListItemText primaryTypographyProps={{ sx: { py: 0.25 } }} primary="Host dashboard" />
                 </ListItemButton>
                 <ListItemButton
                   onClick={() => {

@@ -80,8 +80,11 @@ export default function CarDetailPage() {
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: 8 }}>
-      <Container maxWidth="lg" sx={{ pt: 3 }}>
-        <Breadcrumbs separator={<ChevronRight fontSize="small" />} sx={{ mb: 3 }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 2, md: 3 }, px: { xs: 2, sm: 3 } }}>
+        <Breadcrumbs
+          separator={<ChevronRight fontSize="small" />}
+          sx={{ mb: 3, flexWrap: 'wrap', '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}
+        >
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
             Home
           </Link>
@@ -93,8 +96,8 @@ export default function CarDetailPage() {
           </Typography>
         </Breadcrumbs>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={8}>
+        <Grid container spacing={{ xs: 3, md: 4 }}>
+          <Grid item xs={12} md={8} order={{ xs: 2, md: 1 }}>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Box
                 component="img"
@@ -102,7 +105,7 @@ export default function CarDetailPage() {
                 alt={`${car.make} ${car.model}`}
                 sx={{
                   width: '100%',
-                  height: 520,
+                  height: { xs: 240, sm: 360, md: 520 },
                   objectFit: 'cover',
                   borderRadius: '16px',
                   border: '1px solid',
@@ -136,7 +139,7 @@ export default function CarDetailPage() {
                 <Chip key={t} label={t} color="primary" variant="outlined" />
               ))}
             </Stack>
-            <Typography variant="h2" sx={{ mb: 1 }}>
+            <Typography variant="h2" component="h1" sx={{ mb: 1, fontSize: { xs: '1.5rem', sm: '1.75rem', md: undefined } }}>
               {car.year} {car.make} {car.model}
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
@@ -199,8 +202,15 @@ export default function CarDetailPage() {
             <ReviewsList car={car} />
           </Grid>
 
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 3, borderRadius: '20px', position: 'sticky', top: 96 }}>
+          <Grid item xs={12} md={4} order={{ xs: 1, md: 2 }}>
+            <Paper
+              sx={{
+                p: { xs: 2.5, md: 3 },
+                borderRadius: '20px',
+                position: { xs: 'static', md: 'sticky' },
+                top: { md: 96 },
+              }}
+            >
               <Typography variant="h3" color="primary.main">
                 {formatPeso(car.pricePerDay)}
                 <Typography component="span" variant="body1" color="text.secondary">

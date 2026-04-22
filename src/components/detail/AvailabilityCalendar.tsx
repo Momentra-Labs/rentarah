@@ -55,31 +55,34 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Typography variant="h4" sx={{ mb: 2 }}>
+      <Typography variant="h4" sx={{ mb: 2, fontSize: { xs: '1.25rem', sm: '2rem' } }}>
         Availability
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Booked nights and past dates can&apos;t be selected. Your trip range is highlighted when you pick dates in the sidebar.
       </Typography>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2,
-          borderRadius: 2,
-          display: 'inline-block',
-          maxWidth: '100%',
-          '& .MuiCalendarPicker-root': { width: '100%' },
-        }}
-      >
-        <CalendarPicker
-          date={pickup?.isValid() ? pickup : dayjs()}
-          onChange={() => {}}
-          readOnly
-          disablePast
-          shouldDisableDate={shouldDisableDate}
-          renderDay={renderDay}
-        />
-      </Paper>
+      <Box sx={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 1, sm: 2 },
+            borderRadius: 2,
+            display: 'inline-block',
+            minWidth: { xs: 288, sm: 'auto' },
+            maxWidth: '100%',
+            '& .MuiCalendarPicker-root': { width: '100%' },
+          }}
+        >
+          <CalendarPicker
+            date={pickup?.isValid() ? pickup : dayjs()}
+            onChange={() => {}}
+            readOnly
+            disablePast
+            shouldDisableDate={shouldDisableDate}
+            renderDay={renderDay}
+          />
+        </Paper>
+      </Box>
       <Stack direction="row" spacing={3} sx={{ mt: 2 }} flexWrap="wrap" useFlexGap>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Box sx={{ width: 14, height: 14, borderRadius: 0.5, bgcolor: 'rgba(220, 38, 38, 0.35)' }} />
