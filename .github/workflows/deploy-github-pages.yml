@@ -1,15 +1,18 @@
 # GitHub Pages for https://github.com/rentahub2026/rentahub2026.github.io
-# User/organization site → live at https://rentahub2026.github.io/ (root, not a /repo/ subpath)
 #
-# 1. Repo → Settings → Pages → Build: GitHub Actions
-# 2. (Optional) Add VITE_STRIPE_KEY in Settings → Secrets and variables → Actions
-# 3. Push to `main` to deploy
+# ⚠️ If you see a blank white page: Pages must deploy THIS workflow’s artifact,
+# NOT "Deploy from a branch" using the repo root. Root index.html points at /src/main.tsx
+# (dev only); production lives in dist/ after `npm run build`.
+#
+# Settings → Pages → Source: GitHub Actions (pick this workflow).
+# Optional: Secrets → Actions → VITE_STRIPE_KEY for Stripe test mode live.
 
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: ['main']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -38,6 +41,7 @@ jobs:
           npm ci
           npm run build
           cp dist/index.html dist/404.html
+          touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
