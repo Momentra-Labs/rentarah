@@ -1,4 +1,5 @@
 import DirectionsCarOutlined from '@mui/icons-material/DirectionsCarOutlined'
+import ElectricMopedOutlined from '@mui/icons-material/ElectricMopedOutlined'
 import EventNoteOutlined from '@mui/icons-material/EventNoteOutlined'
 import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined'
 import LoginOutlined from '@mui/icons-material/LoginOutlined'
@@ -6,13 +7,16 @@ import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
 import LuggageOutlined from '@mui/icons-material/LuggageOutlined'
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined'
 import SearchOutlined from '@mui/icons-material/SearchOutlined'
+import SportsMotorsportsOutlined from '@mui/icons-material/SportsMotorsportsOutlined'
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
+import TwoWheelerOutlined from '@mui/icons-material/TwoWheelerOutlined'
 import { alpha, Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material'
 import type { Theme } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 import { useAuthStore } from '../../store/useAuthStore'
+import type { VehicleType } from '../../types'
 
 type ItemKind = 'link' | 'auth' | 'logout'
 
@@ -22,17 +26,28 @@ export type NavRow = {
   kind: ItemKind
   to?: string
   icon: ReactNode
-  match: (pathname: string, hash: string) => boolean
+  match: (pathname: string, hash: string, search: string) => boolean
+}
+
+const VEHICLE_QUICK_FILTER: { key: string; label: string; vt: VehicleType; icon: ReactNode }[] = [
+  { key: 'v-car', label: 'Cars', vt: 'car', icon: <DirectionsCarOutlined fontSize="small" /> },
+  { key: 'v-moto', label: 'Motorcycles', vt: 'motorcycle', icon: <TwoWheelerOutlined fontSize="small" /> },
+  { key: 'v-sco', label: 'Scooters', vt: 'scooter', icon: <ElectricMopedOutlined fontSize="small" /> },
+  { key: 'v-bb', label: 'Big bikes', vt: 'bigbike', icon: <SportsMotorsportsOutlined fontSize="small" /> },
+]
+
+function getVtParam(search: string) {
+  return new URLSearchParams(search).get('vt')
 }
 
 const MAIN_NAV: NavRow[] = [
   {
     key: 'browse',
-    label: 'Browse Cars',
+    label: 'Browse vehicles',
     kind: 'link',
     to: '/search',
     icon: <SearchOutlined fontSize="small" />,
-    match: (p) => p === '/search' || p.startsWith('/search'),
+    match: (p, _h, s) => p.startsWith('/search') && (getVtParam(s) == null || getVtParam(s) === ''),
   },
   {
     key: 'how',
@@ -40,15 +55,15 @@ const MAIN_NAV: NavRow[] = [
     kind: 'link',
     to: '/#how',
     icon: <HelpOutlineOutlined fontSize="small" />,
-    match: (_p, h) => h === '#how',
+    match: (_p, h, _s) => h === '#how',
   },
   {
     key: 'list',
-    label: 'List Your Car',
+    label: 'List a vehicle',
     kind: 'link',
     to: '/host',
     icon: <DirectionsCarOutlined fontSize="small" />,
-    match: (p) => p === '/host' || p.startsWith('/host'),
+    match: (p, _h, _s) => p === '/host' || p.startsWith('/host'),
   },
 ]
 
@@ -116,6 +131,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
   const location = useLocation()
   const pathname = location.pathname
   const hash = location.hash
+  const search = location.search
   const user = useAuthStore((s) => s.user)
 
   const accountLinks: NavRow[] = user
@@ -128,7 +144,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
                 kind: 'link' as const,
                 to: '/host',
                 icon: <StorefrontOutlined fontSize="small" />,
-                match: (p: string) => p === '/host' || p.startsWith('/host'),
+                match: (p: string, _h: string, _s: string) => p === '/host' || p.startsWith('/host'),
               },
             ]
           : []),
@@ -138,7 +154,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/dashboard',
           icon: <LuggageOutlined fontSize="small" />,
-          match: (p) => p === '/dashboard' || p.startsWith('/dashboard'),
+          match: (p, _h, _s) => p === '/dashboard' || p.startsWith('/dashboard'),
         },
         {
           key: 'dashboard',
@@ -146,7 +162,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/dashboard',
           icon: <EventNoteOutlined fontSize="small" />,
-          match: (p) => p === '/dashboard' || p.startsWith('/dashboard'),
+          match: (p, _h, _s) => p === '/dashboard' || p.startsWith('/dashboard'),
         },
         {
           key: 'host-dash',
@@ -154,13 +170,13 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/host',
           icon: <StorefrontOutlined fontSize="small" />,
-          match: (p) => p === '/host' || p.startsWith('/host'),
+          match: (p, _h, _s) => p === '/host' || p.startsWith('/host'),
         },
       ]
     : []
 
   const renderRow = (row: NavRow) => {
-    const selected = row.match(pathname, hash)
+    const selected = row.match(pathname, hash, search)
 
     if (row.kind === 'auth') {
       return (
@@ -213,6 +229,27 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
     <List component="nav" disablePadding sx={{ py: 1 }}>
       <SectionLabel>Explore</SectionLabel>
       {MAIN_NAV.map(renderRow)}
+
+      <SectionLabel>Vehicles</SectionLabel>
+      {VEHICLE_QUICK_FILTER.map((row) => {
+        const selected = pathname.startsWith('/search') && getVtParam(search) === row.vt
+        return (
+          <ListItemButton
+            key={row.key}
+            component={RouterLink}
+            to={`/search?vt=${row.vt}`}
+            selected={selected}
+            onClick={() => onNavigate?.()}
+            sx={(theme) => navItemSx(theme, selected)}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>{row.icon}</ListItemIcon>
+            <ListItemText
+              primary={row.label}
+              primaryTypographyProps={{ fontWeight: selected ? 700 : 600, fontSize: '0.9375rem' }}
+            />
+          </ListItemButton>
+        )
+      })}
 
       {user ? (
         <>

@@ -2,7 +2,7 @@ import FilterAlt from '@mui/icons-material/FilterAlt'
 import { Box, Container, Fab, Grid, Pagination, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
 import BrowseCarSearch from '../components/browse/BrowseCarSearch'
@@ -11,17 +11,20 @@ import CarGridSkeleton from '../components/skeletons/CarGridSkeleton'
 import FilterDrawer from '../components/search/FilterDrawer'
 import FilterPanel from '../components/search/FilterPanel'
 import SortBar from '../components/search/SortBar'
+import VehicleTypeFilterChips from '../components/search/VehicleTypeFilterChips'
 import { useFilteredCars } from '../hooks/useFilteredCars'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import type { SearchFilters } from '../types'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
+import { isValidVehicleType } from '../utils/vehicleUtils'
 
 const PAGE_SIZE = 6
 
 const defaultFilters: SearchFilters = {
   priceRange: [0, 15000],
   types: [],
+  vehicleType: 'all',
   transmission: 'all',
   fuel: 'all',
   seats: 0,
@@ -32,8 +35,9 @@ export default function SearchPage() {
   const theme = useTheme()
   const isMd = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
+  const routeLocation = useLocation()
   const listingsReady = useCarsStore((s) => s.cars.length > 0)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [, setSearchParams] = useSearchParams()
 
   const location = useSearchStore((s) => s.location)
   const pickup = useSearchStore((s) => s.pickup)
@@ -52,16 +56,19 @@ export default function SearchPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
-    const loc = searchParams.get('location')
-    const pu = searchParams.get('pickup')
-    const dr = searchParams.get('dropoff')
-    const types = searchParams.get('types')
+    const q = new URLSearchParams(routeLocation.search)
+    const loc = q.get('location')
+    const pu = q.get('pickup')
+    const dr = q.get('dropoff')
+    const types = q.get('types')
+    const vt = q.get('vt')
     if (loc) setLocation(loc)
     if (pu && dr) setDates(dayjs(pu), dayjs(dr))
     else if (pu) setDates(dayjs(pu), dayjs(pu).add(3, 'day'))
     if (types) setFilter({ types: types.split(',').filter(Boolean) })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate store from URL once on entry
-  }, [])
+    if (vt && isValidVehicleType(vt)) setFilter({ vehicleType: vt })
+    else setFilter({ vehicleType: 'all' })
+  }, [routeLocation.search, setLocation, setDates, setFilter])
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -69,8 +76,9 @@ export default function SearchPage() {
     if (pickup?.isValid()) params.set('pickup', pickup.format('YYYY-MM-DD'))
     if (dropoff?.isValid()) params.set('dropoff', dropoff.format('YYYY-MM-DD'))
     if (filters.types.length) params.set('types', filters.types.join(','))
+    if (filters.vehicleType !== 'all') params.set('vt', filters.vehicleType)
     setSearchParams(params, { replace: true })
-  }, [location, pickup, dropoff, filters.types, setSearchParams])
+  }, [location, pickup, dropoff, filters.types, filters.vehicleType, setSearchParams])
 
   const { cars, totalCount } = useFilteredCars()
 
@@ -86,6 +94,7 @@ export default function SearchPage() {
   const hasActiveFilters = useMemo(() => {
     return (
       filters.types.length > 0 ||
+      filters.vehicleType !== 'all' ||
       filters.transmission !== 'all' ||
       filters.fuel !== 'all' ||
       filters.seats !== 0 ||
@@ -158,12 +167,14 @@ export default function SearchPage() {
               filtersActive={hasActiveFilters}
             />
 
+            <VehicleTypeFilterChips value={filters.vehicleType} onChange={(vehicleType) => setFilter({ vehicleType })} />
+
             {!listingsReady ? (
               <CarGridSkeleton count={PAGE_SIZE} layout={viewMode} />
             ) : pageItems.length === 0 ? (
               <EmptyState
-                title="No cars match your filters"
-                description="Try widening your price range or clearing filters."
+                title="No vehicles match your filters"
+                description="Try changing vehicle type, widening your price range, or clearing filters."
                 actionLabel="Clear filters"
                 onAction={handleClear}
               />

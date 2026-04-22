@@ -1,10 +1,16 @@
-/** rentaHub MVP — domain types */
+/** rentaHub MVP — domain types (multi-vehicle) */
+
+/** Platform vehicle category — extensible for new kinds (e.g. boats) */
+export type VehicleType = 'car' | 'motorcycle' | 'scooter' | 'bigbike'
 
 export interface Car {
   id: string
+  /** What kind of vehicle; defaults to <code>car</code> if omitted in persisted data */
+  vehicleType: VehicleType
   make: string
   model: string
   year: number
+  /** Body/segment (e.g. SUV, Naked) — used for car-style categories and listing UX */
   type: string
   pricePerDay: number
   rating: number
@@ -26,6 +32,12 @@ export interface Car {
   bookedDates: string[]
   description: string
   plateNumber: string
+  /** Two-wheeler: engine size in cc */
+  engineCapacity?: number
+  /** Two-wheeler: manual vs automatic (distinct from <code>transmission</code> display string) */
+  transmissionType?: 'manual' | 'automatic'
+  /** Two-wheeler: helmet included in rental */
+  helmetIncluded?: boolean
 }
 
 export type BookingStatus = 'confirmed' | 'pending' | 'cancelled'
@@ -66,6 +78,8 @@ export interface StoredUser extends AuthUser {
 export interface SearchFilters {
   priceRange: [number, number]
   types: string[]
+  /** Primary vehicle category: <code>all</code> = no filter */
+  vehicleType: 'all' | VehicleType
   transmission: string
   fuel: string
   seats: number

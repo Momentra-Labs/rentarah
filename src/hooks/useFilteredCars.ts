@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
+import { matchesVehicleTypeFilter } from '../utils/vehicleUtils'
 
 export function useFilteredCars() {
   const cars = useCarsStore((s) => s.cars)
@@ -23,6 +24,8 @@ export function useFilteredCars() {
 
     const [minP, maxP] = filters.priceRange
     list = list.filter((c) => c.pricePerDay >= minP && c.pricePerDay <= maxP)
+
+    list = list.filter((c) => matchesVehicleTypeFilter(c, filters.vehicleType))
 
     if (filters.types.length > 0) {
       list = list.filter((c) => filters.types.includes(c.type))
@@ -64,6 +67,7 @@ export function useFilteredCars() {
     const isFiltered =
       q.length > 0 ||
       filters.types.length > 0 ||
+      filters.vehicleType !== 'all' ||
       filters.transmission !== 'all' ||
       filters.fuel !== 'all' ||
       filters.seats > 0 ||

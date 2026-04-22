@@ -73,6 +73,7 @@ export const useCarsStore = create<CarsStoreState>()(
         const id = `car_${String(next).padStart(3, '0')}`
         const car: Car = {
           ...carData,
+          vehicleType: carData.vehicleType ?? 'car',
           id,
           rating: 0,
           reviewCount: 0,

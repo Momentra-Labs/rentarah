@@ -6,6 +6,7 @@ import type { SearchFilters } from '../types'
 const defaultFilters: SearchFilters = {
   priceRange: [0, 15000],
   types: [],
+  vehicleType: 'all',
   transmission: 'all',
   fuel: 'all',
   seats: 0,

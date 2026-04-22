@@ -76,7 +76,7 @@ export default function SortBar({
             order: { xs: 2, sm: 1 },
           }}
         >
-          <strong>{total}</strong> cars in {areaLabel}
+          <strong>{total}</strong> vehicles in {areaLabel}
         </Typography>
 
         <Stack

@@ -20,10 +20,11 @@ import {
 } from '@mui/material'
 import { useMemo, useState } from 'react'
 
-import type { Car } from '../../types'
+import type { Car, VehicleType } from '../../types'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCarsStore } from '../../store/useCarsStore'
 import { useSnackbarStore } from '../../store/useSnackbarStore'
+import { VEHICLE_TYPE_LABELS, VEHICLE_TYPE_VALUES } from '../../utils/vehicleUtils'
 
 const FEATURE_OPTIONS = [
   'Apple CarPlay',
@@ -40,12 +41,32 @@ const FEATURE_OPTIONS = [
 
 const CAR_TYPES = ['SUV', 'Sedan', 'Luxury', 'Budget', 'Electric', 'Truck'] as const
 
+const TWO_WHEELER_BODY_TYPES = [
+  'Scooter',
+  'Naked',
+  'Sport',
+  'Cruiser',
+  'Electric',
+  'Touring',
+  'Cafe Racer',
+  'Adventure',
+  'Moped',
+] as const
+
+const PLACEHOLDER_IMAGE: Record<VehicleType, string> = {
+  car: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&auto=format&fit=crop',
+  motorcycle: 'https://images.unsplash.com/photo-1558980664-1db506751c3d?w=800&auto=format&fit=crop',
+  scooter: 'https://images.unsplash.com/photo-1611250506729-1dd776f09033?w=800&auto=format&fit=crop',
+  bigbike: 'https://images.unsplash.com/photo-1568702846914-96b0d1d58ac7?w=800&auto=format&fit=crop',
+}
+
 export interface ListingFormProps {
   open: boolean
   onClose: () => void
 }
 
 type FormState = {
+  vehicleType: VehicleType
   make: string
   model: string
   year: string
@@ -58,10 +79,13 @@ type FormState = {
   odometer: string
   location: string
   plateNumber: string
+  engineCapacity: string
+  helmetIncluded: boolean
   features: Record<string, boolean>
 }
 
 const initialForm = (): FormState => ({
+  vehicleType: 'car',
   make: '',
   model: '',
   year: new Date().getFullYear().toString(),
@@ -74,6 +98,8 @@ const initialForm = (): FormState => ({
   odometer: '',
   location: '',
   plateNumber: '',
+  engineCapacity: '',
+  helmetIncluded: true,
   features: Object.fromEntries(FEATURE_OPTIONS.map((f) => [f, false])) as Record<string, boolean>,
 })
 
@@ -101,7 +127,20 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
     const price = parseInt(form.pricePerDay, 10)
     if (Number.isNaN(price) || price < 0) return
 
+    const isCar = form.vehicleType === 'car'
+    const engineParsed = form.engineCapacity.trim() ? parseInt(form.engineCapacity.trim(), 10) : NaN
+    const engineOk = Number.isFinite(engineParsed) && !Number.isNaN(engineParsed)
+
+    const twoWheelerFields = !isCar
+      ? {
+          ...(engineOk ? { engineCapacity: engineParsed } : {}),
+          transmissionType: (form.transmission === 'Automatic' ? 'automatic' : 'manual') as 'automatic' | 'manual',
+          helmetIncluded: form.helmetIncluded,
+        }
+      : {}
+
     const payload: Omit<Car, 'id' | 'rating' | 'reviewCount' | 'bookedDates'> & { bookedDates?: string[] } = {
+      vehicleType: form.vehicleType,
       make: form.make.trim(),
       model: form.model.trim(),
       year: parseInt(form.year, 10) || new Date().getFullYear(),
@@ -111,7 +150,7 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
       fuel: form.fuel,
       odometer: form.odometer.trim() || '—',
       seats: form.seats,
-      images: ['https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&auto=format&fit=crop'],
+      images: [PLACEHOLDER_IMAGE[form.vehicleType]],
       features: selectedFeatures.length ? selectedFeatures : ['Bluetooth'],
       tags: ['New'],
       available: true,
@@ -124,6 +163,7 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
       description: form.description.trim() || 'Hosted on rentaHub.',
       plateNumber: form.plateNumber.trim().toUpperCase() || 'NEW LST',
       bookedDates: [],
+      ...twoWheelerFields,
     }
 
     addListing(payload)
@@ -161,6 +201,29 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
       <DialogContent dividers>
         {step === 0 && (
           <Stack spacing={2} sx={{ mt: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel id="list-vehicle-type">Vehicle type</InputLabel>
+              <Select
+                labelId="list-vehicle-type"
+                label="Vehicle type"
+                value={form.vehicleType}
+                onChange={(e) => {
+                  const vehicleType = e.target.value as VehicleType
+                  setForm((f) => ({
+                    ...f,
+                    vehicleType,
+                    seats: vehicleType === 'car' ? 5 : 2,
+                    type: vehicleType === 'car' ? f.type : TWO_WHEELER_BODY_TYPES[0],
+                  }))
+                }}
+              >
+                {VEHICLE_TYPE_VALUES.map((v) => (
+                  <MenuItem key={v} value={v}>
+                    {VEHICLE_TYPE_LABELS[v]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField
               label="Make"
               value={form.make}
@@ -182,13 +245,13 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
               fullWidth
             />
             <FormControl fullWidth>
-              <InputLabel>Type</InputLabel>
+              <InputLabel>Body / segment</InputLabel>
               <Select
-                label="Type"
+                label="Body / segment"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
               >
-                {CAR_TYPES.map((t) => (
+                {(form.vehicleType === 'car' ? CAR_TYPES : TWO_WHEELER_BODY_TYPES).map((t) => (
                   <MenuItem key={t} value={t}>
                     {t}
                   </MenuItem>
@@ -217,6 +280,16 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
 
         {step === 1 && (
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {form.vehicleType !== 'car' && (
+              <TextField
+                label="Engine capacity (cc)"
+                value={form.engineCapacity}
+                onChange={(e) => setForm({ ...form, engineCapacity: e.target.value.replace(/\D/g, '') })}
+                fullWidth
+                inputProps={{ inputMode: 'numeric' }}
+                helperText="Optional — a default is used if left empty on submit"
+              />
+            )}
             <FormControl fullWidth>
               <InputLabel>Seats</InputLabel>
               <Select
@@ -224,13 +297,24 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
                 value={String(form.seats)}
                 onChange={(e) => setForm({ ...form, seats: Number(e.target.value) })}
               >
-                {[2, 4, 5, 7].map((n) => (
+                {(form.vehicleType === 'car' ? [2, 4, 5, 7] : [1, 2]).map((n) => (
                   <MenuItem key={n} value={n}>
                     {n}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
+            {form.vehicleType !== 'car' && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={form.helmetIncluded}
+                    onChange={(e) => setForm({ ...form, helmetIncluded: e.target.checked })}
+                  />
+                }
+                label="Helmet included with rental"
+              />
+            )}
             <FormControl>
               <Typography variant="subtitle2" gutterBottom>
                 Transmission
@@ -279,11 +363,12 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
           <Stack spacing={1} sx={{ mt: 1 }}>
             <Typography variant="h6">Review</Typography>
             <Typography>
-              {form.year} {form.make} {form.model} · {form.type}
+              {VEHICLE_TYPE_LABELS[form.vehicleType]} · {form.year} {form.make} {form.model} · {form.type}
             </Typography>
             <Typography color="text.secondary">{form.description}</Typography>
             <Typography>
-              ₱{form.pricePerDay}/day · {form.seats} seats · {form.transmission} · {form.fuel}
+              ₱{form.pricePerDay}/day · {form.seats} seat{form.seats !== 1 ? 's' : ''} · {form.transmission} · {form.fuel}
+              {form.vehicleType !== 'car' && form.engineCapacity.trim() && ` · ${form.engineCapacity} cc`}
             </Typography>
             <Typography variant="body2">{form.location}</Typography>
             <Typography variant="body2">Plate: {form.plateNumber}</Typography>
@@ -300,7 +385,7 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
           </Button>
         ) : (
           <Button variant="contained" onClick={handleSubmit}>
-            List my car
+            List my vehicle
           </Button>
         )}
       </DialogActions>

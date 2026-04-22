@@ -15,8 +15,14 @@ import {
 } from '@mui/material'
 
 import type { SearchFilters } from '../../types'
+import { VEHICLE_TYPE_LABELS, VEHICLE_TYPE_VALUES } from '../../utils/vehicleUtils'
 
 const TYPES = ['SUV', 'Sedan', 'Luxury', 'Budget', 'Electric', 'Truck'] as const
+
+const VEHICLE_FILTER_OPTIONS: { value: SearchFilters['vehicleType']; label: string }[] = [
+  { value: 'all', label: 'All' },
+  ...VEHICLE_TYPE_VALUES.map((v) => ({ value: v, label: VEHICLE_TYPE_LABELS[v] })),
+]
 
 interface FilterPanelProps {
   filters: SearchFilters
@@ -30,6 +36,18 @@ export default function FilterPanel({ filters, onChange, onClear, hasActiveFilte
 
   return (
     <Stack spacing={3}>
+      <FormControl>
+        <FormLabel>Vehicle type</FormLabel>
+        <RadioGroup
+          value={filters.vehicleType}
+          onChange={(e) => onChange({ vehicleType: e.target.value as SearchFilters['vehicleType'] })}
+        >
+          {VEHICLE_FILTER_OPTIONS.map((o) => (
+            <FormControlLabel key={o.value} value={o.value} control={<Radio />} label={o.label} />
+          ))}
+        </RadioGroup>
+      </FormControl>
+
       <Box>
         <Typography variant="subtitle2" gutterBottom>
           Price per day
@@ -67,7 +85,7 @@ export default function FilterPanel({ filters, onChange, onClear, hasActiveFilte
 
       <Box>
         <Typography variant="subtitle2" gutterBottom>
-          Car type
+          Body / segment
         </Typography>
         <ToggleButtonGroup
           size="small"

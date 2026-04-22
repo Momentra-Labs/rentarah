@@ -33,6 +33,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { formatPeso } from '../utils/formatCurrency'
+import { getVehicleType, isTwoWheeler, VEHICLE_TYPE_LABELS } from '../utils/vehicleUtils'
 import PageHeader from '../components/layout/PageHeader'
 import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 
@@ -66,7 +67,7 @@ export default function CarDetailPage() {
       <Box sx={{ bgcolor: 'background.default', minHeight: '50vh', py: 6 }}>
         <Container maxWidth="sm" sx={containerGutters}>
           <Paper elevation={0} sx={{ p: 4, ...softInteractiveSurface(theme, false) }}>
-            <PageHeader title="We couldn’t find that car" subtitle="It may have been removed. Head back to listings and keep browsing." dense />
+            <PageHeader title="We couldn’t find that vehicle" subtitle="It may have been removed. Head back to listings and keep browsing." dense />
             <Button component={RouterLink} to="/search" variant="contained" size="large" sx={{ mt: 2, borderRadius: 2, ...primaryCtaShadow(theme) }}>
               Back to browse
             </Button>
@@ -75,6 +76,9 @@ export default function CarDetailPage() {
       </Box>
     )
   }
+
+  const vehicleClass = getVehicleType(car)
+  const twoWheeler = isTwoWheeler(car)
 
   const reserve = () => {
     if (!pickup?.isValid() || !dropoff?.isValid() || conflict) return
@@ -97,7 +101,7 @@ export default function CarDetailPage() {
             Home
           </Link>
           <Link component={RouterLink} to="/search" underline="hover" color="inherit">
-            Browse Cars
+            Browse vehicles
           </Link>
           <Typography color="text.primary">
             {car.make} {car.model}
@@ -114,7 +118,8 @@ export default function CarDetailPage() {
                 sx={{
                   width: '100%',
                   height: { xs: 240, sm: 360, md: 520 },
-                  objectFit: 'cover',
+                  objectFit: twoWheeler ? 'contain' : 'cover',
+                  bgcolor: twoWheeler ? 'grey.100' : undefined,
                   borderRadius: 3,
                   border: '1px solid',
                   borderColor: 'divider',
@@ -132,7 +137,8 @@ export default function CarDetailPage() {
                   sx={{
                     width: 96,
                     height: 64,
-                    objectFit: 'cover',
+                    objectFit: twoWheeler ? 'contain' : 'cover',
+                    bgcolor: twoWheeler ? 'grey.100' : undefined,
                     borderRadius: 2,
                     cursor: 'pointer',
                     opacity: activeImg === i ? 1 : 0.6,
@@ -145,7 +151,8 @@ export default function CarDetailPage() {
               ))}
             </Stack>
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ my: 2 }}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center" sx={{ my: 2 }}>
+              <Chip size="small" label={VEHICLE_TYPE_LABELS[vehicleClass]} color="primary" />
               {car.tags.map((t) => (
                 <Chip key={t} label={t} color="primary" variant="outlined" />
               ))}
@@ -165,11 +172,40 @@ export default function CarDetailPage() {
               Details
             </Typography>
             <Typography variant="h5" component="h2" sx={{ mb: 1, fontWeight: 700, letterSpacing: '-0.02em' }}>
-              About this car
+              {twoWheeler ? 'About this vehicle' : 'About this car'}
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {car.description}
             </Typography>
+
+            {twoWheeler && (car.engineCapacity != null || car.transmissionType != null || car.helmetIncluded != null) && (
+              <Box sx={{ mt: 2 }}>
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={1.5} sx={{ pt: 0.5 }}>
+                  {car.engineCapacity != null && (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={`${car.engineCapacity} cc engine`}
+                    />
+                  )}
+                  {car.transmissionType != null && (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={car.transmissionType === 'automatic' ? 'Automatic transmission' : 'Manual transmission'}
+                    />
+                  )}
+                  {car.helmetIncluded != null && (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={car.helmetIncluded ? 'success' : 'default'}
+                      label={car.helmetIncluded ? 'Helmet included' : 'Helmet not included'}
+                    />
+                  )}
+                </Stack>
+              </Box>
+            )}
 
             <Typography variant="h5" component="h2" sx={{ mt: 4, mb: 2, fontWeight: 700, letterSpacing: '-0.02em' }}>
               What&apos;s included

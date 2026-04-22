@@ -7,6 +7,7 @@ import LocalOffer from '@mui/icons-material/LocalOffer'
 import Security from '@mui/icons-material/Security'
 import Shield from '@mui/icons-material/Shield'
 import Star from '@mui/icons-material/Star'
+import TwoWheeler from '@mui/icons-material/TwoWheeler'
 import Verified from '@mui/icons-material/Verified'
 import {
   alpha,
@@ -35,6 +36,7 @@ import DateRangePicker from '../components/common/DateRangePicker'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
+import type { Car } from '../types'
 
 const LOCATIONS = ['Makati', 'BGC', 'Ortigas', 'Quezon City', 'Pasig', 'Taguig']
 
@@ -66,7 +68,24 @@ export default function LandingPage() {
   const [pickup, setPickup] = useState<Dayjs | null>(() => dayjs().add(1, 'day'))
   const [dropoff, setDropoff] = useState<Dayjs | null>(() => dayjs().add(4, 'day'))
 
-  const featured = useMemo(() => cars.slice(0, 3), [cars])
+  const motorcycleListings = useMemo(() => cars.filter((c) => c.vehicleType === 'motorcycle'), [cars])
+
+  const motoPicks = useMemo(() => motorcycleListings.slice(0, 4), [motorcycleListings])
+
+  const featured = useMemo(() => {
+    const sortByRating = (a: Car, b: Car) => b.rating - a.rating
+    const topCars = cars.filter((c) => c.vehicleType === 'car').sort(sortByRating)
+    const topMoto = motorcycleListings.length ? [...motorcycleListings].sort(sortByRating)[0] : null
+    const out: Car[] = []
+    if (topCars[0]) out.push(topCars[0])
+    if (topMoto) out.push(topMoto)
+    if (topCars[1]) out.push(topCars[1])
+    for (const c of [...cars].sort(sortByRating)) {
+      if (out.length >= 3) break
+      if (!out.some((x) => x.id === c.id)) out.push(c)
+    }
+    return out.slice(0, 3)
+  }, [cars, motorcycleListings])
 
   const catCounts = useMemo(() => {
     const m: Record<string, number> = {}
@@ -79,7 +98,7 @@ export default function LandingPage() {
   const search = () => {
     setLocation(`${loc}, Metro Manila`)
     setDates(pickup, dropoff)
-    setFilter({ types: [] })
+    setFilter({ types: [], vehicleType: 'all' })
     const params = new URLSearchParams()
     params.set('location', `${loc}, Metro Manila`)
     if (pickup?.isValid()) params.set('pickup', pickup.format('YYYY-MM-DD'))
@@ -127,11 +146,11 @@ export default function LandingPage() {
                       whiteSpace: { xs: 'normal', sm: 'pre-line' },
                     }}
                   >
-                    {'Rent the right car,\nfor every city trip.'}
+                    {'Rent the right ride—\ncars and motorcycles\nfor every city trip.'}
                   </Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ fontSize: { md: '1.0625rem' }, lineHeight: 1.65 }}>
-                    Transparent pricing in PHP, verified hosts, and pickup across NCR — book in minutes, drive with
-                    confidence.
+                    Transparent pricing in PHP, verified hosts, and pickup across NCR — from sedans to sport bikes, book
+                    in minutes and ride with confidence.
                   </Typography>
 
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ pt: 0.5 }}>
@@ -152,7 +171,7 @@ export default function LandingPage() {
                         },
                       }}
                     >
-                      Browse cars
+                      Browse vehicles
                     </Button>
                     <Button
                       href="#trip-search"
@@ -167,7 +186,7 @@ export default function LandingPage() {
 
                   <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5} sx={{ pt: 1 }}>
                     {[
-                      { k: '2,400+', l: 'cars listed' },
+                      { k: '2,400+', l: 'vehicles listed' },
                       { k: '98%', l: 'happy renters' },
                       { k: '₱0', l: 'hidden fees' },
                     ].map((s) => (
@@ -236,7 +255,7 @@ export default function LandingPage() {
                         Where & when?
                       </Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
-                        Add dates to see cars that match your schedule.
+                        Add dates to see cars and bikes that match your schedule.
                       </Typography>
                     </Box>
 
@@ -283,12 +302,12 @@ export default function LandingPage() {
                         },
                       }}
                     >
-                      Search available cars
+                      Search available vehicles
                     </Button>
 
                     <Typography variant="body2" textAlign="center" color="text.secondary">
                       <Link component={RouterLink} to="/search" underline="hover" fontWeight={600} color="primary">
-                        Skip dates — browse all cars
+                        Skip dates — browse all vehicles
                       </Link>
                     </Typography>
                   </Stack>
@@ -317,7 +336,7 @@ export default function LandingPage() {
                 Browse by category
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Jump into the fleet that fits your plans — SUVs, sedans, EVs, and more.
+                Jump into the fleet that fits your plans — SUVs, sedans, EVs, and motorcycles.
               </Typography>
             </Stack>
             <Grid container spacing={{ xs: 2, sm: 2.5 }}>
@@ -343,8 +362,10 @@ export default function LandingPage() {
                       '&:active': { transform: 'translateY(-1px)' },
                     }}
                     onClick={() => {
-                      setFilter({ types: [type] })
-                      navigate('/search?types=' + encodeURIComponent(type))
+                      setFilter({ types: [type], vehicleType: 'all' })
+                      const q = new URLSearchParams()
+                      q.set('types', type)
+                      navigate('/search?' + q.toString())
                     }}
                   >
                     <Icon sx={{ fontSize: 44, color: 'primary.main', mb: 1 }} />
@@ -352,15 +373,103 @@ export default function LandingPage() {
                       {label}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      {catCounts[type] ?? 0} cars
+                      {catCounts[type] ?? 0} listed
                     </Typography>
                   </Paper>
+                </Grid>
+              ))}
+              <Grid item xs={6} sm={4} md={2} key="motorcycles-cat">
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2.25,
+                    height: '100%',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    borderRadius: 2.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.default',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+                    '&:hover': {
+                      borderColor: alpha(theme.palette.primary.main, 0.45),
+                      boxShadow: softShadowHover,
+                      transform: 'translateY(-3px)',
+                    },
+                    '&:active': { transform: 'translateY(-1px)' },
+                  }}
+                  onClick={() => {
+                    setFilter({ types: [], vehicleType: 'motorcycle' })
+                    navigate('/search?vt=motorcycle')
+                  }}
+                >
+                  <TwoWheeler sx={{ fontSize: 44, color: 'primary.main', mb: 1 }} />
+                  <Typography fontWeight={700} sx={{ fontSize: '0.9375rem' }}>
+                    Motorcycles
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                    {motorcycleListings.length} listed
+                  </Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+          </motion.div>
+        </Container>
+      </Box>
+
+      {/* Motorcycles spotlight */}
+      {motoPicks.length > 0 && (
+        <Container maxWidth="lg" sx={{ py: { xs: 0, md: 1 }, px: { xs: 2, sm: 3 }, pb: { xs: 5, md: 6 } }}>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={viewport}
+            variants={fadeUp}
+            transition={{ duration: 0.4 }}
+          >
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
+              spacing={2}
+              sx={{ mb: 3, gap: 2 }}
+            >
+              <Box sx={{ maxWidth: 520 }}>
+                <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                  Two wheels
+                </Typography>
+                <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700, letterSpacing: '-0.02em' }}>
+                  Motorcycles in Metro Manila
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
+                  Sport, naked, and touring bikes with helmets on many listings — filter the full range on search.
+                </Typography>
+              </Box>
+              <Button
+                component={RouterLink}
+                to="/search?vt=motorcycle"
+                variant="outlined"
+                color="primary"
+                size="medium"
+                onClick={() => setFilter({ types: [], vehicleType: 'motorcycle' })}
+                endIcon={<ArrowForward />}
+                sx={{ flexShrink: 0, borderWidth: 2, borderRadius: 2, '&:hover': { borderWidth: 2 } }}
+              >
+                See all motorcycles
+              </Button>
+            </Stack>
+            <Grid container spacing={{ xs: 2.5, md: 3 }}>
+              {motoPicks.map((car) => (
+                <Grid item xs={12} sm={6} md={3} key={car.id}>
+                  <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: 3, height: '100%' } }}>
+                    <CarCard car={car} onNavigate={(c) => navigate(`/cars/${c.id}`)} onReserve={(c) => navigate(`/cars/${c.id}`)} />
+                  </Box>
                 </Grid>
               ))}
             </Grid>
           </motion.div>
         </Container>
-      </Box>
+      )}
 
       {/* Featured */}
       <Container maxWidth="lg" sx={{ py: { xs: 7, md: 9 }, px: { xs: 2, sm: 3 } }}>
@@ -386,7 +495,7 @@ export default function LandingPage() {
                 Top picks this week
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
-                Highly rated vehicles with clear pricing — tap a card for details and booking.
+                Mix of top-rated cars and a standout motorcycle this week — tap a card for details and booking.
               </Typography>
             </Box>
             <Button
