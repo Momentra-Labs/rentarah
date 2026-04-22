@@ -65,12 +65,55 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
         <Paper
           variant="outlined"
           sx={{
-            p: { xs: 1, sm: 2 },
+            /** Vertical padding only — horizontal matches Typography above (Paper `px` was indenting the grid). */
+            py: { xs: 1.25, sm: 2 },
+            px: 0,
             borderRadius: 2,
-            display: 'inline-block',
-            minWidth: { xs: 288, sm: 'auto' },
-            maxWidth: '100%',
-            '& .MuiCalendarPicker-root': { width: '100%' },
+            width: '100%',
+            display: 'block',
+            boxSizing: 'border-box',
+            '& .MuiCalendarPicker-root': {
+              width: '100%',
+              maxWidth: '100%',
+              px: 0,
+              mx: 0,
+            },
+            /** Default MUI header uses pl: 24px / pr: 12px — align with sibling Typography. */
+            '& .MuiPickersCalendarHeader-root': {
+              paddingLeft: 0,
+              paddingRight: 0,
+              marginTop: { xs: 1, sm: 2 },
+              marginBottom: 1,
+              maxWidth: '100%',
+            },
+            '& .MuiDayPicker-header': {
+              justifyContent: 'space-between',
+              width: '100%',
+              px: 0,
+              boxSizing: 'border-box',
+            },
+            '& .MuiDayPicker-weekDayLabel': {
+              flex: '1 1 0',
+              minWidth: 0,
+              width: 'auto',
+              margin: { xs: '0 1px', sm: '0 2px' },
+            },
+            '& .PrivatePickersSlideTransition-root': {
+              width: '100%',
+            },
+            '& .MuiDayPicker-slideTransition': {
+              width: '100%',
+              minHeight: { xs: 240, sm: 'auto' },
+            },
+            '& .MuiDayPicker-weekContainer': {
+              justifyContent: 'space-between',
+            },
+            '& .MuiPickersDay-root': {
+              flexBasis: { xs: 'calc(100% / 7)', sm: 'auto' },
+              maxWidth: { xs: 'calc(100% / 7)', sm: 'none' },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              margin: { xs: '2px 0', sm: undefined },
+            },
           }}
         >
           <CalendarPicker
