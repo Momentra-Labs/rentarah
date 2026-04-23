@@ -32,12 +32,23 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      # Project pages live at https://<owner>.github.io/<repo>/ — Vite must use that base
+      # or /assets/*.js is requested from the domain root and returns the wrong body/MIME.
+      # User/org site repos named *.github.io keep base '/'.
       - name: Install and build
         env:
-          # Site root (user or org *.github.io), not a project subpath
-          VITE_BASE: '/'
           VITE_STRIPE_KEY: ${{ secrets.VITE_STRIPE_KEY }}
         run: |
+          NAME="${{ github.event.repository.name }}"
+          if [ -n "${{ vars.VITE_BASE }}" ]; then
+            export VITE_BASE="${{ vars.VITE_BASE }}"
+          else
+            case "$NAME" in
+              *.github.io) export VITE_BASE="/" ;;
+              *) export VITE_BASE="/${NAME}/" ;;
+            esac
+          fi
+          echo "Building with VITE_BASE=$VITE_BASE"
           npm ci
           npm run build
           cp dist/index.html dist/404.html
