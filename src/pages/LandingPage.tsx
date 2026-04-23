@@ -35,6 +35,9 @@ import CarCard from '../components/common/CarCard'
 import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import DateRangePicker from '../components/common/DateRangePicker'
 import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
+import LandingMapFab from '../components/landing/LandingMapFab'
+import MapCTAButton from '../components/landing/MapCTAButton'
+import MapPreview from '../components/landing/MapPreview'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
@@ -158,35 +161,70 @@ export default function LandingPage() {
                     in minutes and ride with confidence.
                   </Typography>
 
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ pt: 0.5 }}>
-                    <Button
-                      component={RouterLink}
-                      to="/search"
-                      variant="contained"
-                      size="large"
-                      endIcon={<ArrowForward />}
-                      sx={{
-                        py: 1.35,
-                        px: 2.5,
-                        borderRadius: 2,
-                        fontSize: '1rem',
-                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.35)}`,
-                        '&:hover': {
-                          boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
-                        },
-                      }}
-                    >
-                      Browse vehicles
-                    </Button>
-                    <Button
-                      href="#trip-search"
-                      variant="outlined"
-                      color="primary"
-                      size="large"
-                      sx={{ py: 1.35, px: 2.5, borderRadius: 2, fontSize: '1rem', borderWidth: 2, '&:hover': { borderWidth: 2 } }}
-                    >
-                      Plan a trip
-                    </Button>
+                  <Stack spacing={1.5} sx={{ pt: 0.5 }}>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ alignItems: { sm: 'stretch' } }}>
+                      <Button
+                        component={RouterLink}
+                        to="/search"
+                        variant="contained"
+                        size="large"
+                        endIcon={<ArrowForward />}
+                        sx={{
+                          py: 1.35,
+                          px: 2.5,
+                          borderRadius: 2,
+                          fontSize: '1rem',
+                          boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.35)}`,
+                          '&:hover': {
+                            boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+                          },
+                        }}
+                      >
+                        Browse vehicles
+                      </Button>
+                      <MapCTAButton variant="hero" to="/map" />
+                    </Stack>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                      <Button
+                        href="#trip-search"
+                        variant="outlined"
+                        color="primary"
+                        size="large"
+                        sx={{
+                          py: 1.35,
+                          px: 2.5,
+                          borderRadius: 2,
+                          fontSize: '1rem',
+                          borderWidth: 2,
+                          '&:hover': { borderWidth: 2 },
+                        }}
+                      >
+                        Plan a trip
+                      </Button>
+                      <Link
+                        component="button"
+                        type="button"
+                        variant="body2"
+                        onClick={() =>
+                          document
+                            .getElementById('explore-map-preview')
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }
+                        sx={{
+                          cursor: 'pointer',
+                          textAlign: { xs: 'left', sm: 'center' },
+                          fontWeight: 600,
+                          border: 'none',
+                          background: 'none',
+                          fontFamily: 'inherit',
+                          color: 'primary.main',
+                          textDecoration: 'underline',
+                          '&:hover': { color: 'primary.dark' },
+                        }}
+                      >
+                        See map preview on this page
+                      </Link>
+                    </Stack>
                   </Stack>
 
                   <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1.5} sx={{ pt: 1 }}>
@@ -322,6 +360,8 @@ export default function LandingPage() {
           </Grid>
         </Container>
       </Box>
+
+      <MapPreview cars={cars} />
 
       {/* Categories */}
       <Box id="categories" sx={{ bgcolor: 'grey.50', py: { xs: 7, md: 9 } }}>
@@ -669,6 +709,7 @@ export default function LandingPage() {
           </motion.div>
         </Container>
       </Box>
+      <LandingMapFab />
     </Box>
   )
 }

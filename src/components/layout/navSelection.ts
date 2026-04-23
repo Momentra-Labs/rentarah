@@ -36,6 +36,8 @@ export function resolveNavItemSelected(
       )
     case 'home':
       return pathname === '/' || pathname === ''
+    case 'map':
+      return pathname === '/map'
     case 'list':
       return isHostPath(pathname) && section === 'list'
     case 'become-host':

@@ -2,6 +2,7 @@ import DirectionsCarOutlined from '@mui/icons-material/DirectionsCarOutlined'
 import ElectricMopedOutlined from '@mui/icons-material/ElectricMopedOutlined'
 import EventNoteOutlined from '@mui/icons-material/EventNoteOutlined'
 import HomeOutlined from '@mui/icons-material/HomeOutlined'
+import MapOutlined from '@mui/icons-material/MapOutlined'
 import LoginOutlined from '@mui/icons-material/LoginOutlined'
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
 import LuggageOutlined from '@mui/icons-material/LuggageOutlined'
@@ -49,6 +50,13 @@ const EXPLORE_NAV_BASE: NavRow[] = [
     kind: 'link',
     to: '/search',
     icon: <SearchOutlined fontSize="small" />,
+  },
+  {
+    key: 'map',
+    label: 'Map',
+    kind: 'link',
+    to: '/map',
+    icon: <MapOutlined fontSize="small" />,
   },
   {
     key: 'home',

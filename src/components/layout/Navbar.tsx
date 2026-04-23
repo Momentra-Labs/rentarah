@@ -1,3 +1,4 @@
+import MapOutlined from '@mui/icons-material/MapOutlined'
 import MenuIcon from '@mui/icons-material/Menu'
 import MyLocation from '@mui/icons-material/MyLocation'
 import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
@@ -131,7 +132,25 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
             <RentaraLogoMark size="sm" variant="navLockup" showTextFallback />
           </Stack>
 
-          <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            spacing={1}
+            sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, pr: 1 }}
+          >
+            <Button
+              component={RouterLink}
+              to="/map"
+              color="primary"
+              variant="text"
+              size="medium"
+              startIcon={<MapOutlined />}
+              sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
+            >
+              Map
+            </Button>
+          </Stack>
 
           {!isMd &&
             (!user ? (

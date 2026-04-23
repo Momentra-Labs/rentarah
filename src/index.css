@@ -27,6 +27,19 @@ body {
   border: none !important;
 }
 
+.rentara-explore-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-container .rentara-explore-popup .leaflet-popup-content {
+  margin: 10px 12px 10px 10px;
+}
+
+.leaflet-container .rentara-explore-popup .leaflet-popup-content p {
+  margin: 0;
+}
+
 .nav-logo-text {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;

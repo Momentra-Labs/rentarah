@@ -28,9 +28,11 @@ function FitBounds({ positions }: { positions: L.LatLngTuple[] }) {
 
 function FitPickupOnly({ host }: { host: L.LatLngTuple }) {
   const map = useMap()
+  const lat = host[0]
+  const lng = host[1]
   useEffect(() => {
-    map.setView(host, 14, { animate: false })
-  }, [map, host[0], host[1]])
+    map.setView([lat, lng], 14, { animate: false })
+  }, [map, lat, lng])
   return null
 }
 
@@ -94,7 +96,7 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
       }
     })()
     return () => ac.abort()
-  }, [userPos, hostLocation.lat, hostLocation.lng])
+  }, [userPos, hostLocation])
 
   const userIcon = useMemo(
     () =>
