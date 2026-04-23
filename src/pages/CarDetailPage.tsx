@@ -32,10 +32,24 @@ import { usePricing } from '../hooks/usePricing'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
+import { useSearchStore } from '../store/useSearchStore'
 import { formatPeso } from '../utils/formatCurrency'
 import { getVehicleType, isTwoWheeler, VEHICLE_TYPE_LABELS } from '../utils/vehicleUtils'
 import PageHeader from '../components/layout/PageHeader'
 import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
+
+/** Match Browse search dates when opening from listings; else fallback window. */
+function initialTripFromSearchStore(): { pickup: Dayjs; dropoff: Dayjs } {
+  const { pickup: p, dropoff: d } = useSearchStore.getState()
+  if (p?.isValid()) {
+    if (d?.isValid() && d.isAfter(p, 'day')) {
+      return { pickup: p, dropoff: d }
+    }
+    return { pickup: p, dropoff: p.add(3, 'day') }
+  }
+  const t = dayjs()
+  return { pickup: t.add(1, 'day'), dropoff: t.add(4, 'day') }
+}
 
 export default function CarDetailPage() {
   const theme = useTheme()
@@ -46,8 +60,11 @@ export default function CarDetailPage() {
   const user = useAuthStore((s) => s.user)
   const initBooking = useBookingStore((s) => s.initBooking)
 
-  const [pickup, setPickup] = useState<Dayjs | null>(() => dayjs().add(1, 'day'))
-  const [dropoff, setDropoff] = useState<Dayjs | null>(() => dayjs().add(4, 'day'))
+  const [trip, setTrip] = useState<{ pickup: Dayjs | null; dropoff: Dayjs | null }>(() => {
+    const i = initialTripFromSearchStore()
+    return { pickup: i.pickup, dropoff: i.dropoff }
+  })
+  const { pickup, dropoff } = trip
   const [activeImg, setActiveImg] = useState(0)
 
   const { isRangeAvailable } = useDateValidation(car ?? null)
@@ -277,10 +294,7 @@ export default function CarDetailPage() {
                 <DateRangePicker
                   pickup={pickup}
                   dropoff={dropoff}
-                  onChange={({ pickup: p, dropoff: d }) => {
-                    setPickup(p)
-                    setDropoff(d)
-                  }}
+                  onChange={({ pickup: p, dropoff: d }) => setTrip({ pickup: p, dropoff: d })}
                   minDate={dayjs()}
                 />
               </Box>

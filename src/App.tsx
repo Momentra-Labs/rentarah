@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import GlobalSnackbar from './components/layout/GlobalSnackbar'
 import MainLayout from './components/layout/MainLayout'
@@ -15,6 +15,12 @@ function NotFoundPage() {
   return <Navigate to="/" replace />
 }
 
+/** Remount per vehicle so trip dates re-sync from `useSearchStore` (list filters) on each open. */
+function CarDetailRoute() {
+  const { id } = useParams()
+  return <CarDetailPage key={id} />
+}
+
 export default function App() {
   return (
     <>
@@ -23,7 +29,7 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/search" element={<SearchPage />} />
-          <Route path="/cars/:id" element={<CarDetailPage />} />
+          <Route path="/cars/:id" element={<CarDetailRoute />} />
           <Route
             path="/booking/:carId"
             element={

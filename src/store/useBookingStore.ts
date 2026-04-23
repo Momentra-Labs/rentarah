@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 
-import { generateDateRangeInclusive } from '../utils/dateUtils'
+import { generateRentalOccupancyDates } from '../utils/dateUtils'
 import { calcPricing } from '../utils/priceCalc'
 import type { BookingRecord, BookingStatus, Car } from '../types'
 import { useAuthStore } from './useAuthStore'
@@ -82,7 +82,7 @@ export const useBookingStore = create<BookingStoreState>()(
         const pricing = calcPricing(car.pricePerDay, pickup, dropoff)
         if (!pricing) throw new Error('Invalid dates')
 
-        const dates = generateDateRangeInclusive(pickup, dropoff)
+        const dates = generateRentalOccupancyDates(pickup, dropoff)
         useCarsStore.getState().addBookedDates(car.id, dates)
 
         const ref = `RH-${uuidv4().slice(0, 8).toUpperCase()}`
@@ -115,7 +115,7 @@ export const useBookingStore = create<BookingStoreState>()(
       cancelBooking: (bookingId) => {
         const b = get().bookings.find((x) => x.id === bookingId)
         if (!b || b.status === 'cancelled') return
-        const dates = generateDateRangeInclusive(dayjs(b.pickup), dayjs(b.dropoff))
+        const dates = generateRentalOccupancyDates(dayjs(b.pickup), dayjs(b.dropoff))
         useCarsStore.getState().removeBookedDates(b.carId, dates)
 
         set((s) => ({

@@ -7,7 +7,7 @@ import dayjs from 'dayjs'
 
 import type { Car } from '../../types'
 import { useDateValidation } from '../../hooks/useDateValidation'
-import { generateDateRangeInclusive } from '../../utils/dateUtils'
+import { generateRentalOccupancyDates } from '../../utils/dateUtils'
 
 /** ~MUI DayPicker weeks area: (DAY_SIZE + 2*DAY_MARGIN) * 6 rows */
 const CALENDAR_GRID_MIN_HEIGHT = (36 + 4) * 6
@@ -36,7 +36,7 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
 
   const rangeSet = new Set<string>()
   if (pickup?.isValid() && dropoff?.isValid()) {
-    generateDateRangeInclusive(pickup, dropoff).forEach((d) => rangeSet.add(d))
+    generateRentalOccupancyDates(pickup, dropoff).forEach((d) => rangeSet.add(d))
   }
 
   const renderDay = (
@@ -170,7 +170,7 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
         Availability
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Booked nights and past dates can&apos;t be selected. Your trip range is highlighted when you pick dates in the sidebar.
+        Booked days and past dates can&apos;t be selected. The blue range matches the days you have the vehicle — the return day is your hand-back and isn&apos;t included in that range (same as your trip price).
       </Typography>
       <Box
         sx={{
@@ -217,7 +217,7 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
               Legend
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', md: 'block' }, mb: 0.5 }}>
-              Dates update when you change your trip in the booking panel.
+              Matches the days shown in the pick-up/return fields and your daily rate line item count.
             </Typography>
             <Stack spacing={1.5}>
               <Stack direction="row" alignItems="center" spacing={1}>
