@@ -1,5 +1,5 @@
-import { Box } from '@mui/material'
-import { AnimatePresence, motion } from 'framer-motion'
+import { Box, useTheme } from '@mui/material'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
@@ -15,7 +15,12 @@ import { useAuthStore } from '../../store/useAuthStore'
 /** Minimum time the branded loader stays up so the animation is noticeable (ms). */
 const MIN_LOADING_SCREEN_MS = 2500
 
+/** Easing: fast start, gentle settle as the sheet clears the viewport */
+const loadingExitEase = [0.33, 1, 0.68, 1] as const
+
 export default function MainLayout() {
+  const theme = useTheme()
+  const reduceMotion = useReducedMotion()
   const location = useLocation()
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
@@ -43,7 +48,36 @@ export default function MainLayout() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
-      {showLoadingScreen ? <LoadingScreen /> : null}
+      <AnimatePresence>
+        {showLoadingScreen ? (
+          <motion.div
+            key="app-loading-screen"
+            initial={false}
+            animate={{ y: 0, x: 0, opacity: 1 }}
+            exit={
+              reduceMotion
+                ? {
+                    opacity: 0,
+                    transition: { duration: 0.22, ease: 'easeOut' },
+                  }
+                : {
+                    y: '-100%',
+                    x: '-5%',
+                    opacity: 1,
+                    transition: { duration: 0.52, ease: loadingExitEase },
+                  }
+            }
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: theme.zIndex.modal + 2,
+              willChange: 'transform',
+            }}
+          >
+            <LoadingScreen />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', alignItems: 'stretch' }}>
         <AppNavSidebar onAuthOpen={handleAuthOpen} onLogout={handleLogout} />
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
