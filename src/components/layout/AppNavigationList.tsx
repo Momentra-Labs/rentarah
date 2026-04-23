@@ -5,6 +5,7 @@ import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined'
 import LoginOutlined from '@mui/icons-material/LoginOutlined'
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
 import LuggageOutlined from '@mui/icons-material/LuggageOutlined'
+import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined'
 import SearchOutlined from '@mui/icons-material/SearchOutlined'
 import SportsMotorsportsOutlined from '@mui/icons-material/SportsMotorsportsOutlined'
@@ -155,6 +156,14 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           to: '/dashboard',
           icon: <LuggageOutlined fontSize="small" />,
           match: (p, _h, _s) => p === '/dashboard' || p.startsWith('/dashboard'),
+        },
+        {
+          key: 'notifications',
+          label: 'Notifications',
+          kind: 'link',
+          to: '/notifications',
+          icon: <NotificationsOutlined fontSize="small" />,
+          match: (p, _h, _s) => p === '/notifications' || p.startsWith('/notifications/'),
         },
         {
           key: 'dashboard',

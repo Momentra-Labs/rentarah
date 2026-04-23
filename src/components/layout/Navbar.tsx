@@ -1,8 +1,10 @@
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import MenuIcon from '@mui/icons-material/Menu'
+import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
 import {
   AppBar,
   Avatar,
+  Badge,
   Box,
   Button,
   Divider,
@@ -10,6 +12,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Popover,
   Stack,
   Toolbar,
   Typography,
@@ -17,11 +20,13 @@ import {
   useTheme,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type MouseEventHandler } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 
+import NotificationPanelContent from '../notifications/NotificationPanelContent'
 import AppNavigationList from './AppNavigationList'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useNotificationStore, useUnreadNotificationCount } from '../../store/useNotificationStore'
 
 export type NavbarProps = {
   onAuthOpen: () => void
@@ -38,6 +43,26 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
   const [elevated, setElevated] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchor, setAnchor] = useState<null | HTMLElement>(null)
+  const [notifEl, setNotifEl] = useState<null | HTMLElement>(null)
+  const unread = useUnreadNotificationCount()
+  const markAsRead = useNotificationStore((s) => s.markAsRead)
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
+
+  const onNotificationBellClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    if (isMd) {
+      setNotifEl(null)
+      navigate('/notifications')
+    } else {
+      setNotifEl(e.currentTarget)
+    }
+  }
+
+  const onNotifViewOne = useCallback(
+    (id: string) => {
+      markAsRead(id)
+    },
+    [markAsRead],
+  )
 
   useEffect(() => {
     const onScroll = () => setElevated(window.scrollY > 50)
@@ -52,6 +77,16 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
       navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
     }
   }, [location, navigate, onAuthOpen])
+
+  useEffect(() => {
+    if (isMd) setNotifEl(null)
+  }, [isMd])
+
+  useEffect(() => {
+    setNotifEl(null)
+  }, [location.pathname])
+
+  const notifAria = `Notifications${unread > 0 ? `, ${unread} unread` : ''}`
 
   return (
     <>
@@ -103,11 +138,31 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                 </Button>
               </Stack>
             ) : (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Open account menu" sx={{ ml: 'auto' }}>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
+                  <Badge
+                    color="error"
+                    badgeContent={unread > 9 ? '9+' : unread}
+                    invisible={unread === 0}
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 18, height: 18, fontWeight: 700 } }}
+                  >
+                    <NotificationsOutlined />
+                  </Badge>
+                </IconButton>
+                <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Open account menu" sx={{ ml: 0 }}>
                   <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: 14 }}>{user.avatar}</Avatar>
                 </IconButton>
                 <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
+                  <MenuItem
+                    onClick={() => {
+                      setAnchor(null)
+                      navigate('/notifications')
+                    }}
+                  >
+                    Notifications
+                  </MenuItem>
                   <MenuItem
                     onClick={() => {
                       setAnchor(null)
@@ -157,21 +212,63 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
             ))}
 
           {isMd && (
-            <IconButton
-              onClick={() => setMobileOpen(true)}
-              aria-label="Open navigation menu"
-              edge="end"
-              sx={{
-                ml: 'auto',
-                minWidth: 44,
-                minHeight: 44,
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
+              {user && (
+                <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
+                  <Badge
+                    color="error"
+                    badgeContent={unread > 9 ? '9+' : unread}
+                    invisible={unread === 0}
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 18, height: 18, fontWeight: 700 } }}
+                  >
+                    <NotificationsOutlined />
+                  </Badge>
+                </IconButton>
+              )}
+              <IconButton
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open navigation menu"
+                edge="end"
+                sx={{ minWidth: 44, minHeight: 44 }}
+              >
+                <MenuIcon />
+              </IconButton>
+            </Stack>
           )}
         </Toolbar>
       </AppBar>
+
+      <Popover
+        open={Boolean(notifEl) && !isMd}
+        anchorEl={notifEl}
+        onClose={() => setNotifEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          elevation: 3,
+          sx: {
+            width: 400,
+            maxWidth: 'calc(100vw - 32px)',
+            borderRadius: 2,
+            overflow: 'hidden',
+            mt: 1,
+          },
+        }}
+        disableScrollLock
+      >
+        {user && (
+          <NotificationPanelContent
+            onViewOne={onNotifViewOne}
+            onMarkAll={() => {
+              markAllAsRead()
+              setNotifEl(null)
+            }}
+            onClose={() => setNotifEl(null)}
+          />
+        )}
+      </Popover>
 
       <Drawer
         anchor="right"

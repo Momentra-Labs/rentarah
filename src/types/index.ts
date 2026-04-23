@@ -281,3 +281,27 @@ export interface AuthUser {
 export interface StoredUser extends AuthUser {
   passwordHash: string
 }
+
+// --- in-app notifications (client + future `GET /notifications`) ---
+
+/** Drives icon, color, and filter tab grouping in the UI */
+export type AppNotificationType =
+  | 'booking_confirmed'
+  | 'booking_cancelled'
+  | 'payment_success'
+  | 'payment_failed'
+  | 'upcoming_rental_reminder'
+  | 'system_promo'
+
+export type AppNotification = {
+  id: string
+  type: AppNotificationType
+  title: string
+  message: string
+  /** ISO 8601 — used for “2m ago” style labels */
+  createdAt: string
+  read: boolean
+}
+
+/** Top filter tabs on the full notifications view */
+export type NotificationFilter = 'all' | 'unread' | 'bookings' | 'payments'

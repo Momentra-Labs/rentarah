@@ -8,6 +8,7 @@ import CarDetailPage from './pages/CarDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import HostDashboardPage from './pages/HostDashboardPage'
 import LandingPage from './pages/LandingPage'
+import NotificationsPage from './pages/NotificationsPage'
 import SearchPage from './pages/SearchPage'
 
 function NotFoundPage() {
@@ -44,6 +45,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <HostDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />
