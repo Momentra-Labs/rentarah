@@ -1,6 +1,6 @@
 import { Box } from '@mui/material'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useLayoutEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import AuthDialog from '../auth/AuthDialog'
@@ -8,8 +8,8 @@ import { AppNavSidebar } from './AppNavigationList'
 import Footer from './Footer'
 import Navbar from './Navbar'
 import { pageMotionTransition, pageMotionVariants } from './pageMotion'
+import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
-import { useCarsStore } from '../../store/useCarsStore'
 
 export default function MainLayout() {
   const location = useLocation()
@@ -17,9 +17,8 @@ export default function MainLayout() {
   const logout = useAuthStore((s) => s.logout)
   const [authOpen, setAuthOpen] = useState(false)
 
-  useLayoutEffect(() => {
-    useCarsStore.getState().initCars()
-  }, [])
+  /** Boots the shared vehicle catalog (mock or API) for all routes. */
+  useVehicles()
 
   const handleLogout = useCallback(() => {
     logout()

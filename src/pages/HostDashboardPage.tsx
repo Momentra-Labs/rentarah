@@ -77,9 +77,9 @@ export default function HostDashboardPage() {
             dense
             align="center"
           />
-          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={4}>
-              <Paper elevation={0} sx={{ p: 3, height: '100%', ...listRowSurface(theme) }}>
+          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 1 }} alignItems="stretch">
+            <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', ...listRowSurface(theme) }}>
                 <MonetizationOn sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Earn money
@@ -89,8 +89,8 @@ export default function HostDashboardPage() {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper elevation={0} sx={{ p: 3, height: '100%', ...listRowSurface(theme) }}>
+            <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', ...listRowSurface(theme) }}>
                 <Speed sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Easy management
@@ -100,8 +100,8 @@ export default function HostDashboardPage() {
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper elevation={0} sx={{ p: 3, height: '100%', ...listRowSurface(theme) }}>
+            <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', ...listRowSurface(theme) }}>
                 <Shield sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Protection
@@ -133,20 +133,37 @@ export default function HostDashboardPage() {
         />
 
         <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tab icon={<DirectionsCar />} iconPosition="start" label="My listings" />
-        <Tab icon={<MonetizationOn />} iconPosition="start" label="Earnings" />
-        <Tab icon={<EventAvailable />} iconPosition="start" label="Booking requests" />
-        <Tab icon={<Settings />} iconPosition="start" label="Listing settings" />
-      </Tabs>
+          <Tab icon={<DirectionsCar />} iconPosition="start" label="My listings" />
+          <Tab icon={<MonetizationOn />} iconPosition="start" label="Earnings" />
+          <Tab icon={<EventAvailable />} iconPosition="start" label="Booking requests" />
+          <Tab icon={<Settings />} iconPosition="start" label="Listing settings" />
+        </Tabs>
 
       {tab === 0 && (
-        <Grid container spacing={{ xs: 2.5, md: 3 }}>
+        <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
           {hostCars.map((car) => (
-            <Grid item xs={12} md={6} key={car.id}>
-              <Card elevation={0} sx={listRowSurface(theme)}>
-                <CardContent>
-                  <Stack direction="row" spacing={2}>
-                    <Box component="img" src={car.images[0]} sx={{ width: 140, height: 88, objectFit: 'cover', borderRadius: 2 }} />
+            <Grid item xs={12} md={6} key={car.id} sx={{ display: 'flex' }}>
+              <Card elevation={0} sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', ...listRowSurface(theme) }}>
+                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ flex: 1 }}>
+                    <Box
+                      component="img"
+                      src={car.images[0] ?? undefined}
+                      alt=""
+                      onError={(e) => {
+                        e.currentTarget.onerror = null
+                        e.currentTarget.src =
+                          'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=250&fit=crop'
+                      }}
+                      sx={{
+                        width: 140,
+                        height: 88,
+                        objectFit: 'cover',
+                        borderRadius: 2,
+                        bgcolor: 'grey.200',
+                        flexShrink: 0,
+                      }}
+                    />
                     <Stack flex={1} spacing={1}>
                       <Typography fontWeight={700}>
                         {car.year} {car.make} {car.model}
@@ -171,59 +188,80 @@ export default function HostDashboardPage() {
             </Grid>
           ))}
           {hostCars.length === 0 && (
-            <Typography color="text.secondary">No listings yet — add your first car.</Typography>
+            <Stack spacing={1.5} alignItems="flex-start" sx={{ py: 1 }}>
+              <Typography color="text.secondary">No listings yet — add a vehicle to appear in search for renters.</Typography>
+              <Button variant="contained" startIcon={<Add />} onClick={() => setListingOpen(true)} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>
+                Add listing
+              </Button>
+            </Stack>
           )}
         </Grid>
       )}
 
       {tab === 1 && (
-        <Stack spacing={3}>
-          <Grid container spacing={{ xs: 2, md: 2.5 }}>
-            <Grid item xs={12} sm={6} md={3}>
-              <EarningsCard title="Total earned" value={earningsMock.total} icon="money" />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <EarningsCard title="This month (mock)" value={earningsMock.month} icon="calendar" />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <EarningsCard title="Active bookings" value={String(earningsMock.active)} icon="car" />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <EarningsCard title="Avg. rating" value="4.9 ★" icon="star" />
-            </Grid>
+        <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
+          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
+            <EarningsCard title="Total earned" value={earningsMock.total} icon="money" />
           </Grid>
-          <Paper elevation={0} sx={{ p: 2.5, ...softInteractiveSurface(theme, false) }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              Weekly performance (mock)
+          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
+            <EarningsCard title="This month (mock)" value={earningsMock.month} icon="calendar" />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
+            <EarningsCard title="Active bookings" value={String(earningsMock.active)} icon="car" />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
+            <EarningsCard title="Avg. rating" value="4.9 ★" icon="star" />
+          </Grid>
+          <Grid item xs={12}>
+            <Paper elevation={0} sx={{ p: 2.5, ...softInteractiveSurface(theme, false) }}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Weekly performance (mock)
+              </Typography>
+              <EarningsPlaceholderChart />
+            </Paper>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="body2" color="text.secondary" component="p" sx={{ m: 0 }}>
+              Recent payouts are simulated — connect a real payout method in production.
             </Typography>
-            <EarningsPlaceholderChart />
-          </Paper>
-          <Typography variant="body2" color="text.secondary">
-            Recent payouts are simulated — connect a real payout method in production.
-          </Typography>
-        </Stack>
+          </Grid>
+        </Grid>
       )}
 
       {tab === 2 && (
         <Stack spacing={2}>
           {hostBookings.length === 0 && <Typography color="text.secondary">No bookings for your vehicles yet.</Typography>}
           {hostBookings.map((b) => (
-            <Card key={b.id} elevation={0} sx={listRowSurface(theme)}>
-              <CardContent>
-                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}>
-                  <Box>
-                    <Typography fontWeight={700}>{b.carName}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {b.renterName}
-                    </Typography>
-                    <Typography variant="body2">
-                      {b.pickup} → {b.dropoff}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {formatPeso(b.total)}
-                    </Typography>
-                  </Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
+            <Card key={b.id} elevation={0} sx={{ width: '100%', ...listRowSurface(theme) }}>
+              <CardContent
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 2,
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography fontWeight={700}>{b.carName}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {b.renterName}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {b.pickup} → {b.dropoff}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
+                    {formatPeso(b.total)}
+                  </Typography>
+                </Box>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  flexWrap="wrap"
+                  useFlexGap
+                  sx={{ flexShrink: 0, justifyContent: { xs: 'flex-end', sm: 'flex-end' } }}
+                >
                     <Chip
                       label={b.status}
                       color={b.status === 'cancelled' ? 'default' : b.status === 'confirmed' ? 'success' : 'warning'}
@@ -232,10 +270,10 @@ export default function HostDashboardPage() {
                     <Button
                       size="small"
                       variant="outlined"
-                      disabled={b.status === 'cancelled'}
-                      onClick={() => showSuccess('Message sent (mock)')}
+                      disabled={b.status === 'cancelled' || b.status === 'confirmed'}
+                      onClick={() => showSuccess('Booking accepted (mock)')}
                     >
-                      Accept
+                      {b.status === 'confirmed' ? 'Confirmed' : 'Accept'}
                     </Button>
                     <Button
                       size="small"
@@ -247,7 +285,6 @@ export default function HostDashboardPage() {
                     >
                       Decline
                     </Button>
-                  </Stack>
                 </Stack>
               </CardContent>
             </Card>

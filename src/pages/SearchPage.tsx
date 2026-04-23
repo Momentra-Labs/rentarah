@@ -13,7 +13,7 @@ import FilterPanel from '../components/search/FilterPanel'
 import SortBar from '../components/search/SortBar'
 import VehicleTypeFilterChips from '../components/search/VehicleTypeFilterChips'
 import { useFilteredCars } from '../hooks/useFilteredCars'
-import { useCarsStore } from '../store/useCarsStore'
+import { useVehicles } from '../hooks/useVehicles'
 import { useSearchStore } from '../store/useSearchStore'
 import type { SearchFilters } from '../types'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
@@ -36,7 +36,8 @@ export default function SearchPage() {
   const isMd = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const routeLocation = useLocation()
-  const listingsReady = useCarsStore((s) => s.cars.length > 0)
+  const { isLoading: vehiclesLoading, isError: vehiclesFatalError, error: vehiclesError, refetch: refetchVehicles } =
+    useVehicles()
   const [, setSearchParams] = useSearchParams()
 
   const location = useSearchStore((s) => s.location)
@@ -169,8 +170,15 @@ export default function SearchPage() {
 
             <VehicleTypeFilterChips value={filters.vehicleType} onChange={(vehicleType) => setFilter({ vehicleType })} />
 
-            {!listingsReady ? (
+            {vehiclesLoading ? (
               <CarGridSkeleton count={PAGE_SIZE} layout={viewMode} />
+            ) : vehiclesFatalError && vehiclesError ? (
+              <EmptyState
+                title="Couldn’t load vehicles"
+                description={vehiclesError}
+                actionLabel="Try again"
+                onAction={() => refetchVehicles()}
+              />
             ) : pageItems.length === 0 ? (
               <EmptyState
                 title="No vehicles match your filters"

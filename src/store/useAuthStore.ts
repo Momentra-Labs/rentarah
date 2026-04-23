@@ -1,21 +1,36 @@
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { create } from 'zustand'
 
+import { DEMO_USER_ID } from '../data/mockUsers'
 import type { AuthUser, StoredUser } from '../types'
 
+/**
+ * Seeded user — id matches mock catalog `hostId` for Carlo (`user_001`), so the host dashboard
+ * lists the same mock inventory after login. Password unchanged for docs/demos.
+ */
 function demoSeedUser(): StoredUser {
   return {
-    id: 'user_demo',
+    id: DEMO_USER_ID,
     email: 'demo@rentahub.com',
     passwordHash: btoa('demo1234'),
-    firstName: 'Juan',
-    lastName: 'Dela Cruz',
+    firstName: 'Carlo',
+    lastName: 'Reyes',
     phone: '+639171234567',
     licenseNumber: 'N12345678',
     isHost: true,
-    avatar: 'JD',
+    avatar: 'CR',
     createdAt: new Date().toISOString(),
   }
+}
+
+function migrateUsers(users: StoredUser[]): StoredUser[] {
+  const mapped = users.map((u) => {
+    if (u.id === 'user_demo' && u.email === 'demo@rentahub.com') {
+      return { ...u, id: DEMO_USER_ID, firstName: 'Carlo', lastName: 'Reyes', isHost: true, avatar: 'CR' } as StoredUser
+    }
+    return u
+  })
+  return Array.from(new Map(mapped.map((u) => [u.id, u])).values())
 }
 
 export interface RegisterInput {
@@ -118,13 +133,23 @@ export const useAuthStore = create<AuthStoreState>()(
       storage: createJSONStorage(() => localStorage),
       merge: (persisted, current) => {
         const p = persisted as Partial<AuthStoreState> | undefined
-        const users =
-          p?.users && Array.isArray(p.users) && p.users.length > 0 ? p.users : current.users
+        const raw = p?.users && Array.isArray(p.users) && p.users.length > 0 ? p.users : current.users
+        const users = migrateUsers(raw)
+        let user: AuthUser | null = (p?.user as AuthUser | null | undefined) ?? current.user
+        if (user?.id === 'user_demo') {
+          const full = users.find((u) => u.id === DEMO_USER_ID) ?? users[0]
+          user = full ? stripPassword(full) : null
+        } else if (user !== null) {
+          const id = user.id
+          if (!users.some((u) => u.id === id)) {
+            user = null
+          }
+        }
         return {
           ...current,
           ...p,
           users,
-          user: p?.user ?? current.user,
+          user,
         }
       },
     },

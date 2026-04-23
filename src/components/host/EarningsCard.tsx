@@ -25,52 +25,112 @@ export default function EarningsCard({ title, value, subtitle, icon }: EarningsC
   const display = typeof value === 'number' ? formatPeso(value) : value
 
   return (
-    <Card variant="outlined" sx={{ height: '100%' }}>
-      <CardContent>
-        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-          <BoxCopy title={title} subtitle={subtitle} value={display} />
-          <Stack
-            alignItems="center"
-            justifyContent="center"
+    <Card
+      variant="outlined"
+      sx={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: 2,
+        overflow: 'hidden',
+      }}
+    >
+      <CardContent
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: 'space-between',
+          py: 2,
+          px: 2.25,
+          minHeight: 148,
+          '&:last-child': { pb: 2 },
+        }}
+      >
+        {/* Fixed visual rhythm: label + icon share one row; main value sits on the bottom so a row of cards lines up. */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0,1fr) 48px',
+            gridTemplateRows: 'minmax(48px, auto)',
+            columnGap: 1.5,
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            fontWeight={600}
             sx={{
-              width: 44,
-              height: 44,
+              lineHeight: 1.4,
+              minWidth: 0,
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              overflow: 'hidden',
+            }}
+          >
+            {title}
+          </Typography>
+          <Box
+            component="span"
+            aria-hidden
+            sx={{
+              width: 48,
+              height: 48,
               borderRadius: 2,
               bgcolor: 'primary.light',
               color: 'primary.main',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+              '& .MuiSvgIcon-root': {
+                width: 22,
+                height: 22,
+                fontSize: 22,
+                display: 'block',
+              },
             }}
           >
-            <Icon />
-          </Stack>
-        </Stack>
+            <Icon fontSize="inherit" />
+          </Box>
+        </Box>
+
+        <Box sx={{ width: '100%', mt: 'auto', pt: 1.5 }}>
+          <ValueBlock value={display} subtitle={subtitle} />
+        </Box>
       </CardContent>
     </Card>
   )
 }
 
-function BoxCopy({
-  title,
-  subtitle,
-  value,
-}: {
-  title: string
-  subtitle?: string
-  value: string
-}) {
+function ValueBlock({ value, subtitle }: { value: string; subtitle?: string }) {
   return (
-    <Stack spacing={0.5}>
-      <Typography variant="body2" color="text.secondary">
-        {title}
-      </Typography>
-      <Typography variant="h5" fontWeight={800}>
+    <Box sx={{ minWidth: 0, textAlign: 'left' }}>
+      <Typography
+        variant="h5"
+        fontWeight={800}
+        component="p"
+        sx={{
+          m: 0,
+          lineHeight: 1.2,
+          minHeight: 40,
+          display: 'block',
+          wordBreak: 'break-word',
+        }}
+      >
         {value}
       </Typography>
       {subtitle && (
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
           {subtitle}
         </Typography>
       )}
-    </Stack>
+    </Box>
   )
 }
 

@@ -176,7 +176,11 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
     : []
 
   const renderRow = (row: NavRow) => {
-    const selected = row.match(pathname, hash, search)
+    let selected = row.match(pathname, hash, search)
+    // "List a vehicle" and "Host dashboard" both point to /host; only one should look active for hosts
+    if (user?.isHost && row.key === 'list' && (pathname === '/host' || pathname.startsWith('/host/'))) {
+      selected = false
+    }
 
     if (row.kind === 'auth') {
       return (
