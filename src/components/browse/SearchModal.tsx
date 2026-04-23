@@ -46,20 +46,20 @@ export default function SearchModal({
   minPickupDate,
 }: SearchModalProps) {
   const [activeSection, setActiveSection] = useState<Section>('location')
+  /** Only show the location suggest list after the user has typed in this visit (not on open + focus). */
+  const [locationQueryActive, setLocationQueryActive] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
-  const locationInputRef = useRef<HTMLInputElement>(null)
 
   const suggestions = useMemo(() => {
     const q = location.trim().toLowerCase()
-    if (!q) return MOCK_LOCATIONS.slice(0, 5)
-    return MOCK_LOCATIONS.filter((item) => item.toLowerCase().includes(q)).slice(0, 6)
+    if (!q) return []
+    return MOCK_LOCATIONS.filter((item) => item.toLowerCase().includes(q)).slice(0, 8)
   }, [location])
 
   useEffect(() => {
     if (open) {
       setActiveSection('location')
-      const t = window.setTimeout(() => locationInputRef.current?.focus(), 180)
-      return () => window.clearTimeout(t)
+      setLocationQueryActive(false)
     }
   }, [open])
 
@@ -150,20 +150,23 @@ export default function SearchModal({
                   Location
                 </label>
                 <input
-                  ref={locationInputRef}
                   id="browse-location"
                   type="text"
                   autoComplete="off"
-                  placeholder="Search location"
+                  placeholder="Type to search city or area"
                   value={location}
-                  onChange={(e) => onLocationChange(e.target.value)}
+                  onChange={(e) => {
+                    onLocationChange(e.target.value)
+                    setLocationQueryActive(true)
+                  }}
                   onFocus={() => setActiveSection('location')}
                   className="mt-1 w-full border-0 bg-transparent p-0 text-sm font-medium text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-0"
                 />
-                {activeSection === 'location' && suggestions.length > 0 && (
+                {activeSection === 'location' && locationQueryActive && suggestions.length > 0 && (
                   <ul
                     className="absolute left-0 right-0 top-full z-10 mt-2 max-h-48 overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-lg"
                     role="listbox"
+                    aria-label="Location suggestions"
                   >
                     {suggestions.map((item) => (
                       <li key={item}>
@@ -173,6 +176,7 @@ export default function SearchModal({
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => {
                             onLocationChange(item)
+                            setLocationQueryActive(false)
                             setActiveSection('pickup')
                           }}
                         >
