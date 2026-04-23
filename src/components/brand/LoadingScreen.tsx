@@ -1,7 +1,7 @@
 import { Box } from '@mui/material'
 
 import LoadingRoadScene from './LoadingRoadScene'
-import RentaraLogoMark from './RentaraLogoMark'
+import RentaraLoadingLogo from './RentaraLoadingLogo'
 
 /**
  * Full-viewport loader: brand mark + animated road scene (cars & motorcycles).
@@ -23,8 +23,8 @@ export default function LoadingScreen() {
         bgcolor: '#FFFFFF',
       }}
     >
-      <Box sx={{ mb: { xs: 0.5, sm: 0.75, md: 1 }, transition: 'opacity 0.25s ease' }}>
-        <RentaraLogoMark size="lg" />
+      <Box sx={{ mb: { xs: 0.25, sm: 0.5, md: 0.75 }, transition: 'opacity 0.25s ease' }}>
+        <RentaraLoadingLogo />
       </Box>
 
       <LoadingRoadScene />
