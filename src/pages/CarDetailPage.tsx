@@ -36,7 +36,9 @@ import { useSearchStore } from '../store/useSearchStore'
 import { formatPeso } from '../utils/formatCurrency'
 import { getVehicleType, isTwoWheeler, VEHICLE_TYPE_LABELS } from '../utils/vehicleUtils'
 import PageHeader from '../components/layout/PageHeader'
+import RentaraMap from '../components/map/RentaraMap'
 import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
+import { getCarPickupLatLng } from '../utils/mapPickupLocation'
 
 /** Match Browse search dates when opening from listings; else fallback window. */
 function initialTripFromSearchStore(): { pickup: Dayjs; dropoff: Dayjs } {
@@ -245,24 +247,10 @@ export default function CarDetailPage() {
                   <Typography variant="body2" color="text.secondary">
                     {car.location}
                   </Typography>
-                  <Button size="small" sx={{ mt: 1 }} disabled>
-                    Get directions (mock)
-                  </Button>
                 </Box>
               </Stack>
-              <Box
-                sx={{
-                  mt: 2,
-                  height: 140,
-                  borderRadius: 2,
-                  bgcolor: 'grey.200',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'text.secondary',
-                }}
-              >
-                Map preview
+              <Box sx={{ mt: 2 }}>
+                <RentaraMap hostLocation={getCarPickupLatLng(car)} />
               </Box>
             </Paper>
 

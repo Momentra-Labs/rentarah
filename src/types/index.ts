@@ -118,6 +118,11 @@ export interface Car {
    */
   location: string
   /**
+   * Optional GPS for pickup map / directions; when omitted, UI derives a stable point from {@link id}.
+   */
+  pickupLat?: number
+  pickupLng?: number
+  /**
    * Host user id — matches {@link User.id} / `users.id` in database
    */
   hostId: string

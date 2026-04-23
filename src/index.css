@@ -21,6 +21,12 @@ body {
  * Navbar brand wordmark only — geometric type (Outfit) to match logo artwork.
  * Color inherits from the themed nav link (MUI palette); do not set color here.
  */
+/* Leaflet divIcon: remove default white tile behind custom HTML marker */
+.rentara-map-user-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 .nav-logo-text {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
