@@ -16,6 +16,7 @@ import type { Theme } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 
+import RentaraLogoMark from '../brand/RentaraLogoMark'
 import { useAuthStore } from '../../store/useAuthStore'
 import type { VehicleType } from '../../types'
 import { resolveNavItemSelected } from './navSelection'
@@ -325,6 +326,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
       <Box
         component={RouterLink}
         to="/"
+        className="rentara-brand-lockup"
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -335,13 +337,16 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           color: 'inherit',
           borderBottom: 1,
           borderColor: 'divider',
-          transition: 'background-color 0.2s ease',
+          transition: 'background-color 0.2s ease, transform 0.22s ease-in-out',
           '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+          '@media (hover: hover)': {
+            '&:hover': { transform: 'scale(1.02)' },
+          },
         }}
       >
-        <DirectionsCarOutlined sx={{ color: 'primary.main', fontSize: 30 }} />
+        <RentaraLogoMark size="md" showTextFallback={false} />
         <Typography variant="h6" sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>
-          rentaHub
+          Rentara
         </Typography>
       </Box>
 

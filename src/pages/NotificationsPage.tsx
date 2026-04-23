@@ -102,7 +102,7 @@ export default function NotificationsPage() {
           <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2} sx={{ mb: 0 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <PageHeader
-                overline="RentalHub"
+                overline="Rentara"
                 title="Notifications"
                 subtitle="Bookings, payments, and important updates in one place."
                 dense

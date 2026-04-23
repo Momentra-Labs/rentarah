@@ -33,7 +33,7 @@ export function createInitialNotifications(): AppNotification[] {
       id: 'n_04',
       type: 'system_promo',
       title: 'Scooter weekend',
-      message: '20% off scooter rentals this weekend in Metro Manila — browse scooters on rentaHub.',
+      message: '20% off scooter rentals this weekend in Metro Manila — browse scooters on Rentara.',
       createdAt: dayjs().subtract(1, 'day').toISOString(),
       read: true,
     },

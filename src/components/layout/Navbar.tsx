@@ -1,4 +1,3 @@
-import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import MenuIcon from '@mui/icons-material/Menu'
 import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
 import {
@@ -23,6 +22,7 @@ import { alpha } from '@mui/material/styles'
 import { useCallback, useEffect, useState, type MouseEventHandler } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 
+import RentaraLogoMark from '../brand/RentaraLogoMark'
 import NotificationPanelContent from '../notifications/NotificationPanelContent'
 import AppNavigationList from './AppNavigationList'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -105,23 +105,28 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           <Stack
             direction="row"
             alignItems="center"
-            spacing={1}
+            spacing={1.25}
             component={RouterLink}
             to="/"
+            className="rentara-brand-lockup"
             sx={{
               textDecoration: 'none',
               color: 'inherit',
               mr: 'auto',
               display: { xs: 'flex', md: 'none' },
               py: 0.5,
+              px: 0.5,
               borderRadius: 2,
-              transition: 'background-color 0.2s ease',
+              transition: 'background-color 0.2s ease, transform 0.22s ease-in-out',
               '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+              '@media (hover: hover)': {
+                '&:hover': { transform: 'scale(1.02)' },
+              },
             }}
           >
-            <DirectionsCar sx={{ color: 'primary.main', fontSize: 28 }} />
+            <RentaraLogoMark size="sm" showTextFallback={false} />
             <Typography variant="h6" sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              rentaHub
+              Rentara
             </Typography>
           </Stack>
 

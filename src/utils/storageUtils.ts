@@ -1,6 +1,6 @@
 /** Namespaced localStorage helpers for optional non-Zustand keys */
 
-const PREFIX = 'rentahub:'
+const PREFIX = 'rentara:'
 
 export function lsGet<T>(key: string, fallback: T): T {
   try {

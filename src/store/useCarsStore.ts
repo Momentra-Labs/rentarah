@@ -136,7 +136,7 @@ export const useCarsStore = create<CarsStoreState>()(
       getCarById: (id) => get().cars.find((c) => c.id === id),
     }),
     {
-      name: 'rentahub-cars',
+      name: 'rentara-cars',
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ cars: s.cars, savedCarIds: s.savedCarIds }),
     },

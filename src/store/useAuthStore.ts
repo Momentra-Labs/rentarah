@@ -11,7 +11,7 @@ import type { AuthUser, StoredUser } from '../types'
 function demoSeedUser(): StoredUser {
   return {
     id: DEMO_USER_ID,
-    email: 'demo@rentahub.com',
+    email: 'demo@rentara.com',
     passwordHash: btoa('demo1234'),
     firstName: 'Carlo',
     lastName: 'Reyes',
@@ -25,10 +25,19 @@ function demoSeedUser(): StoredUser {
 
 function migrateUsers(users: StoredUser[]): StoredUser[] {
   const mapped = users.map((u) => {
-    if (u.id === 'user_demo' && u.email === 'demo@rentahub.com') {
-      return { ...u, id: DEMO_USER_ID, firstName: 'Carlo', lastName: 'Reyes', isHost: true, avatar: 'CR' } as StoredUser
+    const email = u.email === 'demo@rentahub.com' ? 'demo@rentara.com' : u.email
+    if (u.id === 'user_demo' && (u.email === 'demo@rentahub.com' || u.email === 'demo@rentara.com')) {
+      return {
+        ...u,
+        email: 'demo@rentara.com',
+        id: DEMO_USER_ID,
+        firstName: 'Carlo',
+        lastName: 'Reyes',
+        isHost: true,
+        avatar: 'CR',
+      } as StoredUser
     }
-    return u
+    return { ...u, email }
   })
   return Array.from(new Map(mapped.map((u) => [u.id, u])).values())
 }
@@ -73,7 +82,9 @@ export const useAuthStore = create<AuthStoreState>()(
 
       login: (email, password) => {
         const hash = btoa(password)
-        const found = get().users.find((u) => u.email.toLowerCase() === email.toLowerCase())
+        const normalized =
+          email.toLowerCase() === 'demo@rentahub.com' ? 'demo@rentara.com' : email.toLowerCase()
+        const found = get().users.find((u) => u.email.toLowerCase() === normalized)
         if (!found || found.passwordHash !== hash) {
           throw new Error('Invalid credentials')
         }
@@ -129,7 +140,7 @@ export const useAuthStore = create<AuthStoreState>()(
       },
     }),
     {
-      name: 'rentahub-auth',
+      name: 'rentara-auth',
       storage: createJSONStorage(() => localStorage),
       merge: (persisted, current) => {
         const p = persisted as Partial<AuthStoreState> | undefined

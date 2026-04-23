@@ -7,7 +7,7 @@ export default function Footer() {
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={4} justifyContent="space-between">
           <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} rentaHub. Demo marketplace — payments & listings are simulated.
+            © {new Date().getFullYear()} Rentara. Demo marketplace — payments & listings are simulated.
           </Typography>
           <Stack direction="row" spacing={2}>
             <Typography component={RouterLink} to="/search" variant="body2" color="primary" sx={{ textDecoration: 'none' }}>

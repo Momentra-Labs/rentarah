@@ -137,7 +137,7 @@ export const useBookingStore = create<BookingStoreState>()(
         }),
     }),
     {
-      name: 'rentahub-booking',
+      name: 'rentara-booking',
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
         bookings: s.bookings,

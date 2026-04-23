@@ -5,7 +5,7 @@ export const MOCK_HOST_IDS = {
 } as const
 
 /**
- * The built-in `demo@rentahub.com` account uses this id so the host dashboard shows mock listings
+ * The built-in `demo@rentara.com` account uses this id so the host dashboard shows mock listings
  * whose `hostId` is {@link MOCK_HOST_IDS.carlo}.
  */
 export const DEMO_USER_ID = MOCK_HOST_IDS.carlo

@@ -50,7 +50,7 @@ export const useNotificationStore = create<NotificationState>()(
       markAllAsRead: () => set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
     }),
     {
-      name: 'rentahub-notifications',
+      name: 'rentara-notifications',
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ notifications: s.notifications }),
     },

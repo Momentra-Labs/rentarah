@@ -1,5 +1,5 @@
 /**
- * rentaHub — TypeScript types & API contract reference
+ * Rentara — TypeScript types & API contract reference
  * ============================================================================
  * These types describe what the **future** Node/PostgreSQL API should return.
  * DTOs may use snake_case in JSON; map to the camelCase used here in `apiClient` / service layers.

@@ -1,4 +1,4 @@
-# GitHub Pages for https://github.com/rentahub2026/rentahub2026.github.io
+# GitHub Pages deploy (user/org site root)
 #
 # ⚠️ If you see a blank white page: Pages must deploy THIS workflow’s artifact,
 # NOT "Deploy from a branch" using the repo root. Root index.html points at /src/main.tsx
@@ -34,7 +34,7 @@ jobs:
           cache: 'npm'
       - name: Install and build
         env:
-          # Root of rentahub2026.github.io — not /repo-name/
+          # Site root (user or org *.github.io), not a project subpath
           VITE_BASE: '/'
           VITE_STRIPE_KEY: ${{ secrets.VITE_STRIPE_KEY }}
         run: |

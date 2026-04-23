@@ -160,7 +160,7 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
       hostAvatar: user.avatar,
       hostTrips: 0,
       hostResponseTime: '< 1 hour',
-      description: form.description.trim() || 'Hosted on rentaHub.',
+      description: form.description.trim() || 'Hosted on Rentara.',
       plateNumber: form.plateNumber.trim().toUpperCase() || 'NEW LST',
       bookedDates: [],
       ...twoWheelerFields,
