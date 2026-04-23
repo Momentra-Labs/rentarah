@@ -105,7 +105,6 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           <Stack
             direction="row"
             alignItems="center"
-            spacing={1.25}
             component={RouterLink}
             to="/"
             className="rentara-brand-lockup"
@@ -124,19 +123,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
               },
             }}
           >
-            <RentaraLogoMark size="sm" showTextFallback={false} />
-            <Typography
-              variant="h6"
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", sans-serif',
-                fontWeight: 800,
-                letterSpacing: '-0.02em',
-                lineHeight: 1,
-                display: 'block',
-              }}
-            >
-              Rentara
-            </Typography>
+            <RentaraLogoMark size="sm" variant="navLockup" showTextFallback />
           </Stack>
 
           <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />

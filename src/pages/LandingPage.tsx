@@ -33,6 +33,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
 import DateRangePicker from '../components/common/DateRangePicker'
+import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
@@ -118,7 +119,8 @@ export default function LandingPage() {
           pb: { xs: 6, md: 9 },
         }}
       >
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+        <HeroAmbientBackground />
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
           <Grid container spacing={{ xs: 4, md: 5 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7}>
               <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.45 }}>

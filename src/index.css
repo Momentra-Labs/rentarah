@@ -16,3 +16,17 @@ body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
+
+/**
+ * Navbar brand wordmark only — geometric type (Outfit) to match logo artwork.
+ * Color inherits from the themed nav link (MUI palette); do not set color here.
+ */
+.nav-logo-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.04em;
+  text-transform: capitalize;
+  font-feature-settings: 'ss01' on;
+  color: inherit;
+}

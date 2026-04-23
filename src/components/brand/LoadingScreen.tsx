@@ -56,10 +56,10 @@ export default function LoadingScreen() {
       <Typography
         component="div"
         sx={{
-          fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
-          fontWeight: 800,
+          fontFamily: '"Urbanist", "Inter", sans-serif',
+          fontWeight: 700,
           fontSize: { xs: 'clamp(1.85rem, 8.5vw, 2.65rem)', md: 'clamp(2rem, 3vw, 2.75rem)' },
-          letterSpacing: '-0.03em',
+          letterSpacing: '-0.04em',
           color: 'text.primary',
           lineHeight: 1.05,
           mt: { xs: -0.25, sm: -0.5 },

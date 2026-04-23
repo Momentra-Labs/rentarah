@@ -1,21 +1,25 @@
 import { Box, Typography } from '@mui/material'
 import { useCallback, useState } from 'react'
 
-import { RENTARA_LOGO_SRC } from './rentaraLogoAsset'
+import { RENTARA_LOGO_NAV_SRC, RENTARA_LOGO_SRC } from './rentaraLogoAsset'
 
 export type RentaraLogoMarkSize = 'sm' | 'md' | 'lg'
 
 const HEIGHT_PX: Record<RentaraLogoMarkSize, number> = {
-  /** Mobile `Toolbar` (56px) — icon slightly taller than word cap height */
-  sm: 48,
-  /** Desktop sidebar row (64px, matches main `Toolbar`) — prominent mark like reference */
-  md: 52,
+  /** Mobile toolbar lockup — pairs with ~1.3125rem wordmark (~reference proportions) */
+  sm: 46,
+  /** Desktop sidebar — icon slightly taller than cap-R vs wordmark (reference lockup) */
+  md: 50,
   /** Loading screen — `md`+ breakpoint (see responsive `heightSx` for xs/sm) */
   lg: 172,
 }
 
 export type RentaraLogoMarkProps = {
   size?: RentaraLogoMarkSize
+  /**
+   * `mark` — square icon asset. `navLockup` — wide HD SVG (icon + wordmark) for app bars.
+   */
+  variant?: 'mark' | 'navLockup'
   /** When true, shows the wordmark text if the image errors (default: true). */
   showTextFallback?: boolean
   className?: string
@@ -24,7 +28,12 @@ export type RentaraLogoMarkProps = {
 /**
  * Brand mark: SVG (embedded raster) with graceful degradation to the “Rentara” wordmark.
  */
-export default function RentaraLogoMark({ size = 'md', showTextFallback = true, className }: RentaraLogoMarkProps) {
+export default function RentaraLogoMark({
+  size = 'md',
+  variant = 'mark',
+  showTextFallback = true,
+  className,
+}: RentaraLogoMarkProps) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const onError = useCallback(() => {
@@ -32,6 +41,8 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
   }, [])
 
   const h = HEIGHT_PX[size]
+  const isNavLockup = variant === 'navLockup'
+  const src = isNavLockup ? RENTARA_LOGO_NAV_SRC : RENTARA_LOGO_SRC
 
   if (imgFailed && !showTextFallback) {
     return null
@@ -45,10 +56,10 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
         className={className}
         sx={{
           display: 'inline-block',
-          fontFamily: '"Plus Jakarta Sans", sans-serif',
-          fontWeight: 800,
-          letterSpacing: '-0.02em',
-          fontSize: size === 'sm' ? '1.2rem' : size === 'md' ? '1.35rem' : '3rem',
+          fontFamily: '"Urbanist", "Inter", sans-serif',
+          fontWeight: 700,
+          letterSpacing: '-0.04em',
+          fontSize: size === 'sm' ? '1.3125rem' : size === 'md' ? '1.5rem' : '3rem',
           lineHeight: 1,
           color: 'text.primary',
         }}
@@ -58,8 +69,11 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
     )
   }
 
-  const heightSx =
-    size === 'lg'
+  const heightSx = isNavLockup
+    ? size === 'sm'
+      ? { xs: 38, sm: 40 }
+      : { xs: 40, sm: 44, md: 48 }
+    : size === 'lg'
       ? {
           xs: 118,
           sm: 146,
@@ -67,16 +81,19 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
         }
       : h
 
-  const maxWidthSx =
-    size === 'lg'
+  const maxWidthSx = isNavLockup
+    ? size === 'sm'
+      ? { xs: 'min(88vw, 280px)', sm: 300 }
+      : { xs: 'min(90vw, 320px)', sm: 340, md: 360 }
+    : size === 'lg'
       ? {
           xs: 'min(92vw, 400px)',
           sm: 448,
           md: 520,
         }
       : {
-          xs: size === 'md' ? 200 : 150,
-          sm: size === 'md' ? 220 : 170,
+          xs: size === 'md' ? 190 : 145,
+          sm: size === 'md' ? 210 : 165,
         }
 
   const imgSx = {
@@ -85,15 +102,14 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
     width: 'auto',
     maxWidth: maxWidthSx,
     objectFit: 'contain' as const,
-    // Center glyph in the asset canvas so it lines up with the wordmark when paired in a flex row
     objectPosition: 'center center' as const,
   }
 
   const img = (
-    <Box component="img" src={RENTARA_LOGO_SRC} alt="Rentara" data-rentara-logo onError={onError} className={className} sx={imgSx} />
+    <Box component="img" src={src} alt="Rentara" data-rentara-logo onError={onError} className={className} sx={imgSx} />
   )
 
-  if (size !== 'lg') {
+  if (!isNavLockup && size !== 'lg') {
     return (
       <Box
         sx={{
