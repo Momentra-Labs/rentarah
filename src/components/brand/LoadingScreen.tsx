@@ -28,15 +28,10 @@ const letterJump = keyframes`
 
 const WORD = 'Rentara'
 
-export type LoadingScreenProps = {
-  /** Optional message under the animated word (e.g. “Loading vehicles…”). */
-  message?: string
-}
-
 /**
  * Full-viewport branded loader: logo (with text fallback) plus sequential “jumping” letters.
  */
-export default function LoadingScreen({ message }: LoadingScreenProps) {
+export default function LoadingScreen() {
   return (
     <Box
       role="status"
@@ -54,7 +49,7 @@ export default function LoadingScreen({ message }: LoadingScreenProps) {
         bgcolor: 'background.default',
       }}
     >
-      <Box sx={{ mb: 3, transition: 'opacity 0.25s ease' }}>
+      <Box sx={{ mb: { xs: 0.5, sm: 0.75, md: 1 }, transition: 'opacity 0.25s ease' }}>
         <RentaraLogoMark size="lg" />
       </Box>
 
@@ -63,10 +58,11 @@ export default function LoadingScreen({ message }: LoadingScreenProps) {
         sx={{
           fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
           fontWeight: 800,
-          fontSize: { xs: 'clamp(1.75rem, 8vw, 2.5rem)' },
+          fontSize: { xs: 'clamp(1.85rem, 8.5vw, 2.65rem)', md: 'clamp(2rem, 3vw, 2.75rem)' },
           letterSpacing: '-0.03em',
           color: 'text.primary',
-          lineHeight: 1.1,
+          lineHeight: 1.05,
+          mt: { xs: -0.25, sm: -0.5 },
         }}
         aria-hidden
       >
@@ -88,12 +84,6 @@ export default function LoadingScreen({ message }: LoadingScreenProps) {
           </Box>
         ))}
       </Typography>
-
-      {message ? (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5, fontWeight: 500 }}>
-          {message}
-        </Typography>
-      ) : null}
     </Box>
   )
 }

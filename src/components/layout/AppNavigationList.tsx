@@ -331,8 +331,11 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           display: 'flex',
           alignItems: 'center',
           gap: 1.25,
-          px: 2.25,
-          py: 2.25,
+          // Match main `Toolbar` so the brand row lines up with the app bar across the divider
+          px: { xs: 2, md: 2.5 },
+          py: 0,
+          minHeight: { md: 64 },
+          boxSizing: 'border-box',
           textDecoration: 'none',
           color: 'inherit',
           borderBottom: 1,
@@ -345,7 +348,17 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
         }}
       >
         <RentaraLogoMark size="md" showTextFallback={false} />
-        <Typography variant="h6" sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontFamily: '"Plus Jakarta Sans", sans-serif',
+            fontWeight: 800,
+            letterSpacing: '-0.02em',
+            lineHeight: 1,
+            display: 'block',
+            fontSize: { md: '1.1875rem' },
+          }}
+        >
           Rentara
         </Typography>
       </Box>

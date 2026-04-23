@@ -43,7 +43,7 @@ export default function MainLayout() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
-      {showLoadingScreen ? <LoadingScreen message="Loading vehicles…" /> : null}
+      {showLoadingScreen ? <LoadingScreen /> : null}
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', alignItems: 'stretch' }}>
         <AppNavSidebar onAuthOpen={handleAuthOpen} onLogout={handleLogout} />
         <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>

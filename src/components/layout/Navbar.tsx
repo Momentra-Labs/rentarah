@@ -125,7 +125,16 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
             }}
           >
             <RentaraLogoMark size="sm" showTextFallback={false} />
-            <Typography variant="h6" sx={{ fontFamily: '"Plus Jakarta Sans", sans-serif', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: '"Plus Jakarta Sans", sans-serif',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+                display: 'block',
+              }}
+            >
               Rentara
             </Typography>
           </Stack>

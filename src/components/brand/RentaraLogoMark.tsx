@@ -6,11 +6,12 @@ import { RENTARA_LOGO_SRC } from './rentaraLogoAsset'
 export type RentaraLogoMarkSize = 'sm' | 'md' | 'lg'
 
 const HEIGHT_PX: Record<RentaraLogoMarkSize, number> = {
-  /** Mobile bar: tall enough to balance the h6 wordmark (~20px) without feeling tiny */
-  sm: 42,
-  /** Desktop sidebar header */
-  md: 48,
-  lg: 64,
+  /** Mobile `Toolbar` (56px) — icon slightly taller than word cap height */
+  sm: 48,
+  /** Desktop sidebar row (64px, matches main `Toolbar`) — prominent mark like reference */
+  md: 52,
+  /** Loading screen — `md`+ breakpoint (see responsive `heightSx` for xs/sm) */
+  lg: 172,
 }
 
 export type RentaraLogoMarkProps = {
@@ -47,7 +48,7 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
           fontFamily: '"Plus Jakarta Sans", sans-serif',
           fontWeight: 800,
           letterSpacing: '-0.02em',
-          fontSize: size === 'sm' ? '1.1rem' : size === 'md' ? '1.25rem' : '1.75rem',
+          fontSize: size === 'sm' ? '1.2rem' : size === 'md' ? '1.35rem' : '3rem',
           lineHeight: 1,
           color: 'text.primary',
         }}
@@ -57,22 +58,55 @@ export default function RentaraLogoMark({ size = 'md', showTextFallback = true, 
     )
   }
 
-  return (
-    <Box
-      component="img"
-      src={RENTARA_LOGO_SRC}
-      alt="Rentara"
-      data-rentara-logo
-      onError={onError}
-      className={className}
-      sx={{
-        display: 'block',
-        height: h,
-        width: 'auto',
-        maxWidth: { xs: size === 'lg' ? 220 : 120, sm: size === 'lg' ? 260 : 140 },
-        objectFit: 'contain',
-        objectPosition: 'left center',
-      }}
-    />
+  const heightSx =
+    size === 'lg'
+      ? {
+          xs: 118,
+          sm: 146,
+          md: HEIGHT_PX.lg,
+        }
+      : h
+
+  const maxWidthSx =
+    size === 'lg'
+      ? {
+          xs: 'min(92vw, 400px)',
+          sm: 448,
+          md: 520,
+        }
+      : {
+          xs: size === 'md' ? 200 : 150,
+          sm: size === 'md' ? 220 : 170,
+        }
+
+  const imgSx = {
+    display: 'block',
+    height: heightSx,
+    width: 'auto',
+    maxWidth: maxWidthSx,
+    objectFit: 'contain' as const,
+    // Center glyph in the asset canvas so it lines up with the wordmark when paired in a flex row
+    objectPosition: 'center center' as const,
+  }
+
+  const img = (
+    <Box component="img" src={RENTARA_LOGO_SRC} alt="Rentara" data-rentara-logo onError={onError} className={className} sx={imgSx} />
   )
+
+  if (size !== 'lg') {
+    return (
+      <Box
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          flexShrink: 0,
+          lineHeight: 0,
+        }}
+      >
+        {img}
+      </Box>
+    )
+  }
+
+  return img
 }
