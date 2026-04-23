@@ -59,7 +59,8 @@ const fadeUp = {
   visible: { opacity: 1, y: 0 },
 }
 
-const viewport = { once: true, amount: 0.15 }
+/** Slightly conservative: fewer scroll callbacks + less motion work while fast-scrolling. */
+const viewport = { once: true, amount: 0.12, margin: '0px 0px -80px 0px' }
 
 export default function LandingPage() {
   const theme = useTheme()
@@ -129,7 +130,7 @@ export default function LandingPage() {
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
           <Grid container spacing={{ xs: 4, md: 5 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7}>
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.45 }}>
+              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.32 }}>
                 <Stack spacing={{ xs: 2.5, md: 3 }} sx={{ maxWidth: 560 }}>
                   <Chip
                     label="Available in Metro Manila"
@@ -269,7 +270,7 @@ export default function LandingPage() {
                 initial="hidden"
                 animate="visible"
                 variants={fadeUp}
-                transition={{ duration: 0.45, delay: 0.08 }}
+                transition={{ duration: 0.32, delay: 0.06 }}
                 style={{ height: '100%' }}
               >
                 <Paper

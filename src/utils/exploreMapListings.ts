@@ -91,6 +91,17 @@ export type ExploreMapAdvancedFilters = {
 /**
  * Applies vehicle-type / nearby filters, then optional price and location search (for /map toolbar).
  */
+/** Evenly sample listings so map previews stay light with large catalogs. */
+export function sampleListingsForPreview<T>(items: T[], max: number): T[] {
+  if (items.length <= max) return items
+  const out: T[] = []
+  const n = items.length
+  for (let i = 0; i < max; i++) {
+    out.push(items[Math.floor((i * n) / max)]!)
+  }
+  return out
+}
+
 export function applyExploreMapFilters(
   listings: ExploreMapListing[],
   mode: ExploreMapFilterMode,
