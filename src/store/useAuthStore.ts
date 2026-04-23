@@ -42,12 +42,16 @@ function migrateUsers(users: StoredUser[]): StoredUser[] {
   return Array.from(new Map(mapped.map((u) => [u.id, u])).values())
 }
 
+export type RegisterAccountRole = 'renter' | 'host' | 'both'
+
 export interface RegisterInput {
   firstName: string
   lastName: string
   email: string
   password: string
   phone: string
+  /** Host + list vehicles; both = renter who may also host. */
+  accountRole?: RegisterAccountRole
 }
 
 function stripPassword(u: StoredUser): AuthUser {
@@ -93,7 +97,9 @@ export const useAuthStore = create<AuthStoreState>()(
 
       register: (data) => {
         const exists = get().users.some((u) => u.email.toLowerCase() === data.email.toLowerCase())
-        if (exists) throw new Error('Email already registered')
+        if (exists) throw new Error('This email is already registered. Try signing in instead.')
+        const role = data.accountRole ?? 'renter'
+        const isHost = role === 'host' || role === 'both'
         const newUser: StoredUser = {
           id: `user_${crypto.randomUUID().slice(0, 8)}`,
           firstName: data.firstName,
@@ -102,7 +108,7 @@ export const useAuthStore = create<AuthStoreState>()(
           passwordHash: btoa(data.password),
           phone: data.phone,
           licenseNumber: '',
-          isHost: false,
+          isHost,
           avatar: `${data.firstName[0] ?? '?'}${data.lastName[0] ?? '?'}`.toUpperCase(),
           createdAt: new Date().toISOString(),
         }
