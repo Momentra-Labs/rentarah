@@ -1,8 +1,11 @@
-/** Shared Framer Motion config for route-level transitions. */
+/**
+ * Route transitions use opacity only — vertical motion (translateY) made the main column
+ * look like a small auto-scroll on load/reload because the whole outlet shifts on screen.
+ */
 export const pageMotionVariants = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
 }
 
 export const pageMotionTransition = { duration: 0.25, ease: 'easeOut' as const }

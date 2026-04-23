@@ -5,6 +5,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Prevent rare horizontal nudge on mobile when the layout settles */
+  overflow-x: hidden;
 }
 
 body {
