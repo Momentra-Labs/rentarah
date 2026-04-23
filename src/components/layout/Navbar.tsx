@@ -21,7 +21,7 @@ import {
   useTheme,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useCallback, useEffect, useState, type MouseEventHandler } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEventHandler } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
@@ -46,6 +46,47 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
 
   const [elevated, setElevated] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  /** Preserve page scroll when the mobile drawer closes (Modal scroll lock / focus restore can jump to top). */
+  const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null)
+  const scrollSnapshotRef = useRef<{ y: number; loc: string } | null>(null)
+
+  const openMobileDrawer = useCallback(() => {
+    scrollSnapshotRef.current = {
+      y: window.scrollY,
+      loc: `${location.pathname}${location.search}${location.hash}`,
+    }
+    setMobileOpen(true)
+  }, [location.hash, location.pathname, location.search])
+
+  const closeMobileDrawer = useCallback(() => {
+    setMobileOpen(false)
+  }, [])
+
+  const restoreScrollAfterDrawer = useCallback(() => {
+    const snap = scrollSnapshotRef.current
+    scrollSnapshotRef.current = null
+    const nowLoc = `${location.pathname}${location.search}${location.hash}`
+
+    const focusMenu = () => mobileMenuButtonRef.current?.focus({ preventScroll: true })
+
+    if (!snap) {
+      focusMenu()
+      return
+    }
+
+    if (snap.loc !== nowLoc) {
+      focusMenu()
+      return
+    }
+
+    const scroll = () => window.scrollTo(0, snap.y)
+    scroll()
+    requestAnimationFrame(() => {
+      scroll()
+      requestAnimationFrame(scroll)
+    })
+    focusMenu()
+  }, [location.hash, location.pathname, location.search])
   const [anchor, setAnchor] = useState<null | HTMLElement>(null)
   const [notifEl, setNotifEl] = useState<null | HTMLElement>(null)
   const openGeoDialog = useGeolocationStore((s) => s.openGeoDialog)
@@ -274,7 +315,8 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                 </IconButton>
               )}
               <IconButton
-                onClick={() => setMobileOpen(true)}
+                ref={mobileMenuButtonRef}
+                onClick={openMobileDrawer}
                 aria-label="Open navigation menu"
                 edge="end"
                 sx={{ minWidth: 44, minHeight: 44 }}
@@ -321,8 +363,15 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
       <Drawer
         anchor="right"
         open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        ModalProps={{ keepMounted: true }}
+        onClose={closeMobileDrawer}
+        ModalProps={{
+          keepMounted: true,
+          /** Default restore focuses the menu button and can scroll the page to the top on mobile. */
+          disableRestoreFocus: true,
+        }}
+        SlideProps={{
+          onExited: restoreScrollAfterDrawer,
+        }}
         PaperProps={{
           sx: {
             width: { xs: 'min(100vw - 40px, 320px)', sm: 300 },
@@ -348,7 +397,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
             Menu
           </Typography>
           <AppNavigationList
-            onNavigate={() => setMobileOpen(false)}
+            onNavigate={closeMobileDrawer}
             onAuthOpen={onAuthOpen}
             onLogout={() => {
               logout()

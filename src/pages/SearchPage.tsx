@@ -1,7 +1,7 @@
 import FilterAlt from '@mui/icons-material/FilterAlt'
-import { Box, Container, Fab, Grid, Pagination, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Badge, Box, Container, Fab, Grid, Pagination, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import dayjs from 'dayjs'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
@@ -55,6 +55,23 @@ export default function SearchPage() {
 
   const [page, setPage] = useState(1)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const searchToolbarRef = useRef<HTMLDivElement | null>(null)
+  /** Measured height of the sticky search strip — drives filter sidebar & mobile secondary sticky offset. */
+  const [searchToolbarH, setSearchToolbarH] = useState(108)
+
+  const appBarOffsetPx = isMd ? 56 : 64
+
+  useLayoutEffect(() => {
+    const el = searchToolbarRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      setSearchToolbarH(Math.round(el.getBoundingClientRect().height))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const belowSearchStickyTop = appBarOffsetPx + searchToolbarH
 
   useEffect(() => {
     const q = new URLSearchParams(routeLocation.search)
@@ -112,7 +129,7 @@ export default function SearchPage() {
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: { xs: 8, md: 6 } }}>
-      <Paper elevation={0} sx={stickyToolbarPaper(theme)}>
+      <Paper ref={searchToolbarRef} elevation={0} sx={stickyToolbarPaper(theme)}>
         <Container
           maxWidth="lg"
           sx={{
@@ -133,8 +150,8 @@ export default function SearchPage() {
                 sx={{
                   p: 2.5,
                   position: 'sticky',
-                  top: 112,
-                  maxHeight: 'calc(100vh - 100px)',
+                  top: belowSearchStickyTop,
+                  maxHeight: `calc(100vh - ${belowSearchStickyTop + 16}px)`,
                   overflowY: 'auto',
                   ...softInteractiveSurface(theme, false),
                 }}
@@ -164,8 +181,6 @@ export default function SearchPage() {
               viewMode={viewMode}
               onSort={setSortBy}
               onViewMode={setViewMode}
-              onOpenFilters={isMd ? () => setDrawerOpen(true) : undefined}
-              filtersActive={hasActiveFilters}
             />
 
             <VehicleTypeFilterChips value={filters.vehicleType} onChange={(vehicleType) => setFilter({ vehicleType })} />
@@ -230,12 +245,15 @@ export default function SearchPage() {
             aria-label="Open filters"
             sx={{
               position: 'fixed',
+              zIndex: theme.zIndex.speedDial,
               right: 16,
               bottom: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
             }}
             onClick={() => setDrawerOpen(true)}
           >
-            <FilterAlt />
+            <Badge color="error" variant="dot" invisible={!hasActiveFilters} sx={{ '& .MuiBadge-badge': { right: 6, top: 6 } }}>
+              <FilterAlt />
+            </Badge>
           </Fab>
           <FilterDrawer
             open={drawerOpen}

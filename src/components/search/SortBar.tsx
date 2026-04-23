@@ -1,18 +1,6 @@
-import FilterAlt from '@mui/icons-material/FilterAlt'
 import ReorderIcon from '@mui/icons-material/Reorder'
 import ViewModule from '@mui/icons-material/ViewModule'
-import {
-  Badge,
-  Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material'
+import { FormControl, InputLabel, MenuItem, Select, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 
 import type { SearchStoreState } from '../../store/useSearchStore'
 
@@ -24,9 +12,6 @@ interface SortBarProps {
   viewMode: 'grid' | 'list'
   onSort: (v: SearchStoreState['sortBy']) => void
   onViewMode: (v: 'grid' | 'list') => void
-  /** Opens filter bottom sheet on narrow screens when set */
-  onOpenFilters?: () => void
-  filtersActive?: boolean
 }
 
 export default function SortBar({
@@ -36,26 +21,9 @@ export default function SortBar({
   viewMode,
   onSort,
   onViewMode,
-  onOpenFilters,
-  filtersActive,
 }: SortBarProps) {
   return (
     <Stack spacing={2} sx={{ mb: 2 }}>
-      {onOpenFilters && (
-        <Badge color="primary" variant="dot" invisible={!filtersActive} sx={{ width: '100%', display: { xs: 'block', sm: 'none' } }}>
-          <Button
-            variant="outlined"
-            color="primary"
-            fullWidth
-            startIcon={<FilterAlt />}
-            onClick={onOpenFilters}
-            sx={{ justifyContent: 'center', py: 1.25 }}
-          >
-            Filters
-          </Button>
-        </Badge>
-      )}
-
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         alignItems={{ xs: 'stretch', sm: 'center' }}

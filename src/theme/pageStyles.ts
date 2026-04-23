@@ -9,12 +9,15 @@ export const containerGutters: SxProps<Theme> = {
   px: { xs: 2, sm: 3 },
 }
 
-/** Sticky toolbar under navbar (search, etc.) */
+/**
+ * Sticky toolbar directly below the app bar (search, etc.).
+ * `top` must match {@link Navbar} `Toolbar` minHeight: xs 56, md 64.
+ */
 export function stickyToolbarPaper(theme: Theme): SxProps<Theme> {
   return {
     position: 'sticky',
-    top: 0,
-    zIndex: 10,
+    top: { xs: 56, md: 64 },
+    zIndex: theme.zIndex.appBar - 1,
     borderRadius: 0,
     border: 'none',
     borderBottom: '1px solid',
