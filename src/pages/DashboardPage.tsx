@@ -16,8 +16,8 @@ import {
   useTheme,
 } from '@mui/material'
 import dayjs from 'dayjs'
-import { useMemo, useState } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
 import PageHeader from '../components/layout/PageHeader'
@@ -31,6 +31,7 @@ import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pag
 export default function DashboardPage() {
   const theme = useTheme()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const updateProfile = useAuthStore((s) => s.updateProfile)
   const logout = useAuthStore((s) => s.logout)
@@ -42,6 +43,13 @@ export default function DashboardPage() {
   const savedIds = useCarsStore((s) => s.savedCarIds)
 
   const [tab, setTab] = useState(0)
+
+  useEffect(() => {
+    if (searchParams.get('nav') === 'trips') {
+      setTab(0)
+    }
+  }, [searchParams])
+
   const [pf, setPf] = useState({
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
@@ -73,7 +81,24 @@ export default function DashboardPage() {
           </Box>
         </Stack>
 
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => {
+            setTab(v)
+            if (v >= 2) {
+              setSearchParams(
+                (prev) => {
+                  const n = new URLSearchParams(prev)
+                  n.delete('nav')
+                  return n
+                },
+                { replace: true },
+              )
+            }
+          }}
+          variant="scrollable"
+          sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+        >
         <Tab label="Upcoming" />
         <Tab label="Past" />
         <Tab label="Saved" />

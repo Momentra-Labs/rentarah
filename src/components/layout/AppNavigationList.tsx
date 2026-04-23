@@ -1,7 +1,7 @@
 import DirectionsCarOutlined from '@mui/icons-material/DirectionsCarOutlined'
 import ElectricMopedOutlined from '@mui/icons-material/ElectricMopedOutlined'
 import EventNoteOutlined from '@mui/icons-material/EventNoteOutlined'
-import HelpOutlineOutlined from '@mui/icons-material/HelpOutlineOutlined'
+import HomeOutlined from '@mui/icons-material/HomeOutlined'
 import LoginOutlined from '@mui/icons-material/LoginOutlined'
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
 import LuggageOutlined from '@mui/icons-material/LuggageOutlined'
@@ -18,6 +18,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 import { useAuthStore } from '../../store/useAuthStore'
 import type { VehicleType } from '../../types'
+import { resolveNavItemSelected } from './navSelection'
 
 type ItemKind = 'link' | 'auth' | 'logout'
 
@@ -27,7 +28,6 @@ export type NavRow = {
   kind: ItemKind
   to?: string
   icon: ReactNode
-  match: (pathname: string, hash: string, search: string) => boolean
 }
 
 const VEHICLE_QUICK_FILTER: { key: string; label: string; vt: VehicleType; icon: ReactNode }[] = [
@@ -41,32 +41,30 @@ function getVtParam(search: string) {
   return new URLSearchParams(search).get('vt')
 }
 
-const MAIN_NAV: NavRow[] = [
+const EXPLORE_NAV_BASE: NavRow[] = [
   {
     key: 'browse',
     label: 'Browse vehicles',
     kind: 'link',
     to: '/search',
     icon: <SearchOutlined fontSize="small" />,
-    match: (p, _h, s) => p.startsWith('/search') && (getVtParam(s) == null || getVtParam(s) === ''),
   },
   {
-    key: 'how',
-    label: 'How it Works',
+    key: 'home',
+    label: 'Home',
     kind: 'link',
-    to: '/#how',
-    icon: <HelpOutlineOutlined fontSize="small" />,
-    match: (_p, h, _s) => h === '#how',
-  },
-  {
-    key: 'list',
-    label: 'List a vehicle',
-    kind: 'link',
-    to: '/host',
-    icon: <DirectionsCarOutlined fontSize="small" />,
-    match: (p, _h, _s) => p === '/host' || p.startsWith('/host'),
+    to: '/',
+    icon: <HomeOutlined fontSize="small" />,
   },
 ]
+
+const LIST_VEHICLE_ROW: NavRow = {
+  key: 'list',
+  label: 'List a vehicle',
+  kind: 'link',
+  to: '/host?section=list',
+  icon: <DirectionsCarOutlined fontSize="small" />,
+}
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -135,6 +133,8 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
   const search = location.search
   const user = useAuthStore((s) => s.user)
 
+  const exploreNav: NavRow[] = [...EXPLORE_NAV_BASE, ...(user ? [LIST_VEHICLE_ROW] : [])]
+
   const accountLinks: NavRow[] = user
     ? [
         ...(!user.isHost
@@ -145,7 +145,6 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
                 kind: 'link' as const,
                 to: '/host',
                 icon: <StorefrontOutlined fontSize="small" />,
-                match: (p: string, _h: string, _s: string) => p === '/host' || p.startsWith('/host'),
               },
             ]
           : []),
@@ -153,9 +152,8 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           key: 'my-trips',
           label: 'My Trips',
           kind: 'link',
-          to: '/dashboard',
+          to: '/dashboard?nav=trips',
           icon: <LuggageOutlined fontSize="small" />,
-          match: (p, _h, _s) => p === '/dashboard' || p.startsWith('/dashboard'),
         },
         {
           key: 'notifications',
@@ -163,7 +161,6 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/notifications',
           icon: <NotificationsOutlined fontSize="small" />,
-          match: (p, _h, _s) => p === '/notifications' || p.startsWith('/notifications/'),
         },
         {
           key: 'dashboard',
@@ -171,7 +168,6 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/dashboard',
           icon: <EventNoteOutlined fontSize="small" />,
-          match: (p, _h, _s) => p === '/dashboard' || p.startsWith('/dashboard'),
         },
         {
           key: 'host-dash',
@@ -179,17 +175,12 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/host',
           icon: <StorefrontOutlined fontSize="small" />,
-          match: (p, _h, _s) => p === '/host' || p.startsWith('/host'),
         },
       ]
     : []
 
   const renderRow = (row: NavRow) => {
-    let selected = row.match(pathname, hash, search)
-    // "List a vehicle" and "Host dashboard" both point to /host; only one should look active for hosts
-    if (user?.isHost && row.key === 'list' && (pathname === '/host' || pathname.startsWith('/host/'))) {
-      selected = false
-    }
+    const selected = resolveNavItemSelected(row.key, pathname, hash, search, user)
 
     if (row.kind === 'auth') {
       return (
@@ -241,7 +232,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
   return (
     <List component="nav" disablePadding sx={{ py: 1 }}>
       <SectionLabel>Explore</SectionLabel>
-      {MAIN_NAV.map(renderRow)}
+      {exploreNav.map(renderRow)}
 
       <SectionLabel>Vehicles</SectionLabel>
       {VEHICLE_QUICK_FILTER.map((row) => {

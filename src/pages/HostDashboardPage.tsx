@@ -22,7 +22,8 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import ListingForm from '../components/host/ListingForm'
 import PageHeader from '../components/layout/PageHeader'
@@ -36,6 +37,7 @@ import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurf
 
 export default function HostDashboardPage() {
   const theme = useTheme()
+  const [searchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const becomeHost = useAuthStore((s) => s.becomeHost)
   const cars = useCarsStore((s) => s.cars)
@@ -48,6 +50,12 @@ export default function HostDashboardPage() {
 
   const [tab, setTab] = useState(0)
   const [listingOpen, setListingOpen] = useState(false)
+
+  useEffect(() => {
+    if (user?.isHost && searchParams.get('section') === 'list') {
+      setTab(0)
+    }
+  }, [searchParams, user?.isHost])
 
   const hostCars = useMemo(() => cars.filter((c) => c.hostId === user?.id), [cars, user?.id])
 
