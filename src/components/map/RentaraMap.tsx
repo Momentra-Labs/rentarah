@@ -3,6 +3,7 @@ import L from 'leaflet'
 import { useEffect, useMemo, useState } from 'react'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 
+import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { haversineKm, type LatLng } from '../../utils/distance'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
 import { fetchOsrmDrivingRoute } from '../../utils/osrmRoute'
@@ -25,6 +26,14 @@ function FitBounds({ positions }: { positions: L.LatLngTuple[] }) {
   return null
 }
 
+function FitPickupOnly({ host }: { host: L.LatLngTuple }) {
+  const map = useMap()
+  useEffect(() => {
+    map.setView(host, 14, { animate: false })
+  }, [map, host[0], host[1]])
+  return null
+}
+
 function openDirections(host: HostLocation, user: LatLng | null) {
   const dest = `${host.lat},${host.lng}`
   const url = user
@@ -35,8 +44,8 @@ function openDirections(host: HostLocation, user: LatLng | null) {
 
 export default function RentaraMap({ hostLocation }: RentaraMapProps) {
   const [mounted, setMounted] = useState(false)
-  const [userPos, setUserPos] = useState<LatLng | null>(null)
-  const [geoUnavailable, setGeoUnavailable] = useState(false)
+  const userPos = useGeolocationStore((s) => s.userLocation)
+  const geoStatus = useGeolocationStore((s) => s.status)
   /** Road-following polyline (OSRM); if routing fails, two-point straight fallback. */
   const [drivingLine, setDrivingLine] = useState<L.LatLngTuple[] | null>(null)
   const [driveKm, setDriveKm] = useState<number | null>(null)
@@ -48,24 +57,6 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
 
   useEffect(() => {
     ensureLeafletDefaultIcons()
-  }, [])
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setGeoUnavailable(true)
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude })
-        setGeoUnavailable(false)
-      },
-      () => {
-        setUserPos(null)
-        setGeoUnavailable(true)
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60_000 },
-    )
   }, [])
 
   useEffect(() => {
@@ -135,7 +126,16 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
 
   const distanceLabel = (() => {
     if (!userPos) {
-      return geoUnavailable ? 'Location unavailable — enable access to see distance' : 'Getting your location…'
+      if (geoStatus === 'denied') {
+        return 'Location blocked — allow access in the browser, or use the pin icon in the header to try again.'
+      }
+      if (geoStatus === 'unsupported') {
+        return 'This browser cannot share location.'
+      }
+      if (geoStatus === 'pending') {
+        return 'Getting your position…'
+      }
+      return 'Use the pin icon in the header to share your location for distance and driving route.'
     }
     if (routeLoading) return 'Calculating driving route…'
     if (driveKm != null) return `${driveKm} km driving`
@@ -182,6 +182,7 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {boundsPositions && <FitBounds positions={boundsPositions} />}
+        {!userPos && <FitPickupOnly host={hostTuple} />}
         <Marker position={hostTuple}>
           <Popup>Pickup Location</Popup>
         </Marker>

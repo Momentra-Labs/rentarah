@@ -32,6 +32,7 @@ import { useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
+import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import DateRangePicker from '../components/common/DateRangePicker'
 import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
 import { useCarsStore } from '../store/useCarsStore'
@@ -64,6 +65,8 @@ export default function LandingPage() {
   const setLocation = useSearchStore((s) => s.setLocation)
   const setDates = useSearchStore((s) => s.setDates)
   const setFilter = useSearchStore((s) => s.setFilter)
+
+  useOfferGeoPrompt('landing')
 
   const [loc, setLoc] = useState('Makati')
   const [pickup, setPickup] = useState<Dayjs | null>(() => dayjs().add(1, 'day'))

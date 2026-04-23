@@ -1,4 +1,5 @@
 import MenuIcon from '@mui/icons-material/Menu'
+import MyLocation from '@mui/icons-material/MyLocation'
 import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
 import {
   AppBar,
@@ -25,7 +26,9 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import NotificationPanelContent from '../notifications/NotificationPanelContent'
 import AppNavigationList from './AppNavigationList'
+import GeolocationShareDialog from './GeolocationShareDialog'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { useNotificationStore, useUnreadNotificationCount } from '../../store/useNotificationStore'
 
 export type NavbarProps = {
@@ -44,6 +47,8 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchor, setAnchor] = useState<null | HTMLElement>(null)
   const [notifEl, setNotifEl] = useState<null | HTMLElement>(null)
+  const openGeoDialog = useGeolocationStore((s) => s.openGeoDialog)
+  const geoActive = useGeolocationStore((s) => s.status === 'ready' && s.userLocation != null)
   const unread = useUnreadNotificationCount()
   const markAsRead = useNotificationStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
@@ -131,6 +136,13 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           {!isMd &&
             (!user ? (
               <Stack direction="row" spacing={1} alignItems="center">
+                <IconButton
+                  onClick={() => openGeoDialog()}
+                  aria-label={geoActive ? 'Location sharing is on. Open location settings' : 'Share your location for maps'}
+                  sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
+                >
+                  <MyLocation fontSize="small" />
+                </IconButton>
                 <Button variant="text" onClick={() => onAuthOpen()} sx={{ fontWeight: 600 }}>
                   Sign In
                 </Button>
@@ -140,6 +152,13 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
               </Stack>
             ) : (
               <Stack direction="row" spacing={0.5} alignItems="center">
+                <IconButton
+                  onClick={() => openGeoDialog()}
+                  aria-label={geoActive ? 'Location sharing is on. Open location settings' : 'Share your location for maps'}
+                  sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
+                >
+                  <MyLocation fontSize="small" />
+                </IconButton>
                 <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
                   <Badge
                     color="error"
@@ -214,6 +233,13 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
 
           {isMd && (
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
+              <IconButton
+                onClick={() => openGeoDialog()}
+                aria-label={geoActive ? 'Location sharing is on. Open location settings' : 'Share your location for maps'}
+                sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
+              >
+                <MyLocation fontSize="small" />
+              </IconButton>
               {user && (
                 <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
                   <Badge
@@ -240,6 +266,8 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           )}
         </Toolbar>
       </AppBar>
+
+      <GeolocationShareDialog />
 
       <Popover
         open={Boolean(notifEl) && !isMd}

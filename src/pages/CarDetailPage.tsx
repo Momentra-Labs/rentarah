@@ -28,6 +28,7 @@ import AvailabilityCalendar from '../components/detail/AvailabilityCalendar'
 import ReviewsList from '../components/detail/ReviewsList'
 import CarDetailSkeleton from '../components/skeletons/CarDetailSkeleton'
 import { useDateValidation } from '../hooks/useDateValidation'
+import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import { usePricing } from '../hooks/usePricing'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
@@ -59,6 +60,7 @@ export default function CarDetailPage() {
   const navigate = useNavigate()
   const cars = useCarsStore((s) => s.cars)
   const car = cars.find((c) => c.id === id)
+  useOfferGeoPrompt('car-detail', Boolean(car))
   const user = useAuthStore((s) => s.user)
   const initBooking = useBookingStore((s) => s.initBooking)
 
