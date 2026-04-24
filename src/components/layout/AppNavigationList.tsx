@@ -6,7 +6,6 @@ import MapOutlined from '@mui/icons-material/MapOutlined'
 import LoginOutlined from '@mui/icons-material/LoginOutlined'
 import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
 import LuggageOutlined from '@mui/icons-material/LuggageOutlined'
-import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
 import PersonAddOutlined from '@mui/icons-material/PersonAddOutlined'
 import SearchOutlined from '@mui/icons-material/SearchOutlined'
 import SportsMotorsportsOutlined from '@mui/icons-material/SportsMotorsportsOutlined'
@@ -43,7 +42,14 @@ function getVtParam(search: string) {
   return new URLSearchParams(search).get('vt')
 }
 
-const EXPLORE_NAV_BASE: NavRow[] = [
+const EXPLORE_CORE: NavRow[] = [
+  {
+    key: 'home',
+    label: 'Home',
+    kind: 'link',
+    to: '/',
+    icon: <HomeOutlined fontSize="small" />,
+  },
   {
     key: 'browse',
     label: 'Browse vehicles',
@@ -58,21 +64,15 @@ const EXPLORE_NAV_BASE: NavRow[] = [
     to: '/map',
     icon: <MapOutlined fontSize="small" />,
   },
-  {
-    key: 'host-invite',
-    label: 'Become a host',
-    kind: 'link',
-    to: '/become-a-host',
-    icon: <StorefrontOutlined fontSize="small" />,
-  },
-  {
-    key: 'home',
-    label: 'Home',
-    kind: 'link',
-    to: '/',
-    icon: <HomeOutlined fontSize="small" />,
-  },
 ]
+
+const BECOME_HOST_ROW: NavRow = {
+  key: 'host-invite',
+  label: 'Become a host',
+  kind: 'link',
+  to: '/become-a-host',
+  icon: <StorefrontOutlined fontSize="small" />,
+}
 
 const LIST_VEHICLE_ROW: NavRow = {
   key: 'list',
@@ -149,7 +149,9 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
   const search = location.search
   const user = useAuthStore((s) => s.user)
 
-  const exploreNav: NavRow[] = [...EXPLORE_NAV_BASE, ...(user ? [LIST_VEHICLE_ROW] : [])]
+  const exploreNav: NavRow[] = user
+    ? [...EXPLORE_CORE, ...(user.isHost ? [LIST_VEHICLE_ROW] : [BECOME_HOST_ROW])]
+    : [...EXPLORE_CORE, BECOME_HOST_ROW]
 
   const accountLinks: NavRow[] = user
     ? [
@@ -161,26 +163,23 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           icon: <LuggageOutlined fontSize="small" />,
         },
         {
-          key: 'notifications',
-          label: 'Notifications',
-          kind: 'link',
-          to: '/notifications',
-          icon: <NotificationsOutlined fontSize="small" />,
-        },
-        {
           key: 'dashboard',
           label: 'Dashboard',
           kind: 'link',
           to: '/dashboard',
           icon: <EventNoteOutlined fontSize="small" />,
         },
-        {
-          key: 'host-dash',
-          label: 'Host dashboard',
-          kind: 'link',
-          to: '/host',
-          icon: <StorefrontOutlined fontSize="small" />,
-        },
+        ...(user.isHost
+          ? [
+              {
+                key: 'host-dash',
+                label: 'Host dashboard',
+                kind: 'link' as const,
+                to: '/host',
+                icon: <StorefrontOutlined fontSize="small" />,
+              },
+            ]
+          : []),
       ]
     : []
 
@@ -239,26 +238,30 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
       <SectionLabel>Explore</SectionLabel>
       {exploreNav.map(renderRow)}
 
-      <SectionLabel>Vehicles</SectionLabel>
-      {VEHICLE_QUICK_FILTER.map((row) => {
-        const selected = pathname.startsWith('/search') && getVtParam(search) === row.vt
-        return (
-          <ListItemButton
-            key={row.key}
-            component={RouterLink}
-            to={`/search?vt=${row.vt}`}
-            selected={selected}
-            onClick={() => onNavigate?.()}
-            sx={(theme) => navItemSx(theme, selected)}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>{row.icon}</ListItemIcon>
-            <ListItemText
-              primary={row.label}
-              primaryTypographyProps={{ fontWeight: selected ? 700 : 600, fontSize: '0.9375rem' }}
-            />
-          </ListItemButton>
-        )
-      })}
+      {!user ? (
+        <>
+          <SectionLabel>Vehicles</SectionLabel>
+          {VEHICLE_QUICK_FILTER.map((row) => {
+            const selected = pathname.startsWith('/search') && getVtParam(search) === row.vt
+            return (
+              <ListItemButton
+                key={row.key}
+                component={RouterLink}
+                to={`/search?vt=${row.vt}`}
+                selected={selected}
+                onClick={() => onNavigate?.()}
+                sx={(theme) => navItemSx(theme, selected)}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>{row.icon}</ListItemIcon>
+                <ListItemText
+                  primary={row.label}
+                  primaryTypographyProps={{ fontWeight: selected ? 700 : 600, fontSize: '0.9375rem' }}
+                />
+              </ListItemButton>
+            )
+          })}
+        </>
+      ) : null}
 
       {user ? (
         <>

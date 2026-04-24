@@ -315,7 +315,10 @@ export default function HostDashboardPage() {
         sx={{
           position: 'fixed',
           right: 16,
-          bottom: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
+          bottom: {
+            xs: `max(24px, calc(56px + env(safe-area-inset-bottom, 0px) + 16px))`,
+            md: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
+          },
           display: tab === 0 ? 'inline-flex' : 'none',
         }}
         onClick={() => setListingOpen(true)}

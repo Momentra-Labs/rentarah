@@ -2,6 +2,8 @@
 
 Production-oriented reference for PostgreSQL, REST APIs, and alignment with `mock-data/` fixtures. API payloads may use **camelCase**; database columns typically use **snake_case** with a clear mapping layer.
 
+**SPA contract (what the React app calls today, field-by-field `Car` JSON, mock vs real HTTP):** see [API_AND_DATA_REQUIREMENTS.md](./API_AND_DATA_REQUIREMENTS.md).
+
 ---
 
 ## Design principles
@@ -177,6 +179,8 @@ Production-oriented reference for PostgreSQL, REST APIs, and alignment with `moc
 
 Group routes by resource. Auth may live in a separate module or service.
 
+**Client implementation note:** the Vite app currently calls **`GET /vehicles`**, **`GET /vehicles/:id`**, **`GET /vehicles/:id/availability`**, and **`POST /bookings`** when `VITE_USE_MOCK=false` (`src/services/vehicleService.ts`, `bookingService.ts`). You may implement those paths literally or provide a gateway that maps them to **`/listings`** resources below.
+
 ### Auth / users
 
 - `POST /auth/register`
@@ -184,17 +188,19 @@ Group routes by resource. Auth may live in a separate module or service.
 - `GET /me`
 - `PATCH /me`
 
-### Listings
+### Listings (vehicles catalog)
 
-- `GET /listings` — query: `status`, `vehicleType`, `location`, `priceMin`, `priceMax`, `page`, `limit`
-- `GET /listings/:id`
+- `GET /listings` — query: `status`, `vehicleType`, `location`, `priceMin`, `priceMax`, `page`, `limit` (alias: **`GET /vehicles`** for the SPA today)
+- `GET /listings/:id` (alias: **`GET /vehicles/:id`**)
 - `POST /listings` (host)
 - `PATCH /listings/:id` (host)
-- `GET /listings/:id/availability?start=&end=`
+- `GET /listings/:id/availability?start=&end=` (alias: **`GET /vehicles/:id/availability`**)
+
+**Search:** the UI performs full filtering in-memory today. For scale, add **`POST /listings/search`** (or rich `GET /listings` query) — parameters described in [API_AND_DATA_REQUIREMENTS.md](./API_AND_DATA_REQUIREMENTS.md#search--filters-client-only-today).
 
 ### Bookings
 
-- `POST /listings/:listingId/bookings` or `POST /bookings` with `listingId` — returns `pending_payment` and payment client secret when applicable
+- `POST /listings/:listingId/bookings` or **`POST /bookings`** with `listingId` / `vehicleId` — returns `pending_payment` and payment client secret when applicable (see [API_AND_DATA_REQUIREMENTS.md](./API_AND_DATA_REQUIREMENTS.md) for the current JSON body shape used in the client service layer)
 - `GET /bookings` — query: `role=renter|host`
 - `GET /bookings/:id`
 - `POST /bookings/:id/cancel`

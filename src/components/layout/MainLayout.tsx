@@ -7,6 +7,7 @@ import LoadingScreen from '../brand/LoadingScreen'
 import AuthDialog from '../auth/AuthDialog'
 import { AppNavSidebar } from './AppNavigationList'
 import Footer from './Footer'
+import MobileBottomNav, { MOBILE_BOTTOM_NAV_SX_PB } from './MobileBottomNav'
 import Navbar from './Navbar'
 import { pageMotionTransition, pageMotionVariants } from './pageMotion'
 import { useVehicles } from '../../hooks/useVehicles'
@@ -124,7 +125,11 @@ export default function MainLayout() {
             sx={{
               flex: 1,
               width: '100%',
-              pb: { xs: 'max(12px, env(safe-area-inset-bottom))', sm: 0 },
+              pb: {
+                xs: MOBILE_BOTTOM_NAV_SX_PB,
+                sm: MOBILE_BOTTOM_NAV_SX_PB,
+                md: 'max(12px, env(safe-area-inset-bottom))',
+              },
             }}
           >
             <AnimatePresence mode="wait">
@@ -143,7 +148,8 @@ export default function MainLayout() {
           </Box>
         </Box>
       </Box>
-      <Footer />
+      <Footer onAuthOpen={handleAuthOpen} />
+      <MobileBottomNav onAuthOpen={handleAuthOpen} />
       <AuthDialog
         open={authOpen}
         onClose={handleAuthClose}

@@ -17,7 +17,10 @@ export default function LandingMapFab() {
       sx={{
         position: 'fixed',
         right: { xs: 16, sm: 24 },
-        bottom: { xs: `max(16px, env(safe-area-inset-bottom))`, sm: 24 },
+        bottom: {
+          xs: `max(16px, calc(56px + env(safe-area-inset-bottom, 0px) + 8px))`,
+          sm: 24,
+        },
         zIndex: (t) => t.zIndex.speedDial,
         px: 2,
         fontWeight: 700,

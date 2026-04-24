@@ -2,6 +2,7 @@ import FacebookOutlined from '@mui/icons-material/FacebookOutlined'
 import Instagram from '@mui/icons-material/Instagram'
 import {
   Box,
+  Button,
   Container,
   Divider,
   Link,
@@ -13,6 +14,7 @@ import { Fragment } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
+import { useAuthStore } from '../../store/useAuthStore'
 
 const FOOTER_LINKS = [
   { label: 'Home', to: '/' },
@@ -44,6 +46,119 @@ const linkSx = {
   },
 } as const
 
+function MobileFooterQuickNav({ onAuthOpen }: { onAuthOpen?: () => void }) {
+  const user = useAuthStore((s) => s.user)
+  return (
+    <Box sx={{ display: { xs: 'block', md: 'none' }, width: '100%', mb: 2.5 }}>
+      <Typography
+        component="div"
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: 'text.secondary',
+          display: 'block',
+          mb: 1,
+        }}
+      >
+        Quick navigation
+      </Typography>
+      <Stack
+        component="nav"
+        aria-label="Quick navigation"
+        direction="row"
+        spacing={1}
+        sx={{
+          overflowX: 'auto',
+          pb: 0.5,
+          mx: -0.5,
+          px: 0.5,
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        <Button
+          component={RouterLink}
+          to="/"
+          variant="outlined"
+          size="small"
+          sx={{
+            flexShrink: 0,
+            borderRadius: 999,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 1.75,
+          }}
+        >
+          Home
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/search"
+          variant="outlined"
+          size="small"
+          sx={{
+            flexShrink: 0,
+            borderRadius: 999,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 1.75,
+          }}
+        >
+          Browse
+        </Button>
+        <Button
+          component={RouterLink}
+          to="/map"
+          variant="outlined"
+          size="small"
+          sx={{
+            flexShrink: 0,
+            borderRadius: 999,
+            textTransform: 'none',
+            fontWeight: 600,
+            px: 1.75,
+          }}
+        >
+          Map
+        </Button>
+        {user ? (
+          <Button
+            component={RouterLink}
+            to="/dashboard"
+            variant="outlined"
+            size="small"
+            sx={{
+              flexShrink: 0,
+              borderRadius: 999,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 1.75,
+            }}
+          >
+            Account
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => onAuthOpen?.()}
+            sx={{
+              flexShrink: 0,
+              borderRadius: 999,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 1.75,
+            }}
+          >
+            Sign in
+          </Button>
+        )}
+      </Stack>
+    </Box>
+  )
+}
+
 function FooterNavLink({ item }: { item: (typeof FOOTER_LINKS)[number] }) {
   if ('href' in item && item.external) {
     return (
@@ -59,10 +174,14 @@ function FooterNavLink({ item }: { item: (typeof FOOTER_LINKS)[number] }) {
   )
 }
 
+export type FooterProps = {
+  onAuthOpen?: () => void
+}
+
 /**
  * Site footer — brand column + grouped nav/social, aligned and visually balanced on all breakpoints.
  */
-export default function Footer() {
+export default function Footer({ onAuthOpen }: FooterProps) {
   const year = new Date().getFullYear()
 
   return (
@@ -77,7 +196,12 @@ export default function Footer() {
         bgcolor: (t) => alpha(t.palette.grey[50], 0.97),
         backgroundImage: (t) =>
           `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.04)} 0%, transparent 42%, ${alpha(t.palette.grey[100], 0.35)} 100%)`,
-        py: { xs: 4, md: 5 },
+        pt: { xs: 4, md: 5 },
+        pb: {
+          xs: (t) =>
+            `calc(${t.spacing(4)} + 56px + env(safe-area-inset-bottom, 0px))`,
+          md: 5,
+        },
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -91,6 +215,7 @@ export default function Footer() {
       }}
     >
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative' }}>
+        <MobileFooterQuickNav onAuthOpen={onAuthOpen} />
         <Stack
           direction={{ xs: 'column', md: 'row' }}
           spacing={{ xs: 3, md: 2 }}
