@@ -13,6 +13,9 @@ import { useAuthStore } from '../../store/useAuthStore'
 export const MOBILE_BOTTOM_NAV_SX_PB =
   'max(12px, calc(56px + env(safe-area-inset-bottom, 0px)))'
 
+/** Fixed `bottom` for FABs on screens where the mobile tab bar is shown (below `md`). */
+export const MOBILE_TAB_BAR_FAB_BOTTOM = `max(24px, calc(56px + env(safe-area-inset-bottom, 0px) + 16px))`
+
 type MobileBottomNavProps = {
   onAuthOpen?: () => void
 }

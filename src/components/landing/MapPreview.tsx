@@ -138,6 +138,7 @@ export default function MapPreview({ cars }: MapPreviewProps) {
     <Box
       ref={sectionRef}
       id="explore-map-preview"
+      data-onboarding="map"
       component="section"
       aria-label="Map preview of rental locations"
       sx={{

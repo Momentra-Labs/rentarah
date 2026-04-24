@@ -5,6 +5,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import LoadingScreen from '../brand/LoadingScreen'
 import AuthDialog from '../auth/AuthDialog'
+import OnboardingFlow from '../onboarding/OnboardingFlow'
 import { AppNavSidebar } from './AppNavigationList'
 import Footer from './Footer'
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_SX_PB } from './MobileBottomNav'
@@ -156,6 +157,7 @@ export default function MainLayout() {
         onAuthenticated={handleAuthenticated}
         defaultTab={authDialogDefaultTab}
       />
+      {!showLoadingScreen ? <OnboardingFlow /> : null}
     </Box>
   )
 }

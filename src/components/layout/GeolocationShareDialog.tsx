@@ -10,6 +10,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material'
+import { useRef } from 'react'
 
 import { useGeolocationStore } from '../../store/useGeolocationStore'
 
@@ -26,8 +27,35 @@ export default function GeolocationShareDialog() {
   const unsupported = status === 'unsupported'
   const ready = status === 'ready' && Boolean(userLocation)
 
+  /** Capture before Modal mutates `body`; re-apply after enter/exit so the page doesn’t jump to the top. */
+  const savedScrollYRef = useRef(0)
+
+  const restoreScroll = () => {
+    const y = savedScrollYRef.current
+    const restore = () => window.scrollTo({ top: y, behavior: 'auto' })
+    restore()
+    requestAnimationFrame(() => {
+      restore()
+      requestAnimationFrame(restore)
+    })
+  }
+
   return (
-    <Dialog open={open} onClose={closeGeoDialog} maxWidth="xs" fullWidth aria-labelledby="geo-share-title">
+    <Dialog
+      open={open}
+      onClose={closeGeoDialog}
+      maxWidth="xs"
+      fullWidth
+      aria-labelledby="geo-share-title"
+      disableRestoreFocus
+      TransitionProps={{
+        onEnter: () => {
+          savedScrollYRef.current = window.scrollY
+        },
+        onEntered: restoreScroll,
+        onExited: restoreScroll,
+      }}
+    >
       <DialogTitle id="geo-share-title" sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1 }}>
         <LocationSearching color="primary" />
         Location for Rentara

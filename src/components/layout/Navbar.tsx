@@ -88,6 +88,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
     focusMenu()
   }, [location.hash, location.pathname, location.search])
   const [anchor, setAnchor] = useState<null | HTMLElement>(null)
+  const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null)
   const [notifEl, setNotifEl] = useState<null | HTMLElement>(null)
   const openGeoDialog = useGeolocationStore((s) => s.openGeoDialog)
   const geoActive = useGeolocationStore((s) => s.status === 'ready' && s.userLocation != null)
@@ -223,10 +224,26 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                     <NotificationsOutlined />
                   </Badge>
                 </IconButton>
-                <IconButton onClick={(e) => setAnchor(e.currentTarget)} aria-label="Open account menu" sx={{ ml: 0 }}>
+                <IconButton
+                  ref={accountMenuButtonRef}
+                  onClick={(e) => setAnchor(e.currentTarget)}
+                  aria-label="Open account menu"
+                  sx={{ ml: 0 }}
+                >
                   <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: 14 }}>{user.avatar}</Avatar>
                 </IconButton>
-                <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
+                <Menu
+                  anchorEl={anchor}
+                  open={Boolean(anchor)}
+                  onClose={() => {
+                    setAnchor(null)
+                    requestAnimationFrame(() => {
+                      accountMenuButtonRef.current?.focus({ preventScroll: true })
+                    })
+                  }}
+                  disableScrollLock
+                  disableRestoreFocus
+                >
                   <MenuItem
                     onClick={() => {
                       setAnchor(null)

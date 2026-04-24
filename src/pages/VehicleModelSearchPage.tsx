@@ -30,6 +30,7 @@ import { useListingSearch } from '../hooks/useListingSearch'
 import { useVehicles } from '../hooks/useVehicles'
 import { useSearchStore } from '../store/useSearchStore'
 import type { SearchFilters, VehicleType } from '../types'
+import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
 import { isValidVehicleType } from '../utils/vehicleUtils'
 
@@ -300,7 +301,7 @@ export default function VehicleModelSearchPage() {
               position: 'fixed',
               zIndex: theme.zIndex.speedDial,
               right: 16,
-              bottom: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
+              bottom: MOBILE_TAB_BAR_FAB_BOTTOM,
             }}
             onClick={() => setDrawerOpen(true)}
           >

@@ -144,7 +144,11 @@ export default function LandingPage() {
           <Grid container spacing={{ xs: 4, md: 5 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7}>
               <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.32 }}>
-                <Stack spacing={{ xs: 2.5, md: 3 }} sx={{ maxWidth: 560 }}>
+                <Stack
+                  data-onboarding="hero"
+                  spacing={{ xs: 2.5, md: 3 }}
+                  sx={{ maxWidth: 560 }}
+                >
                   <Chip
                     label="Available across the Philippines"
                     color="primary"
@@ -288,6 +292,7 @@ export default function LandingPage() {
               >
                 <Paper
                   id="trip-search"
+                  data-onboarding="search"
                   elevation={0}
                   sx={{
                     height: '100%',
@@ -531,7 +536,7 @@ export default function LandingPage() {
       )}
 
       {/* Featured */}
-      <Container maxWidth="lg" sx={{ py: { xs: 7, md: 9 }, px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 7, md: 9 }, px: { xs: 2, sm: 3 } }} data-onboarding="listings">
         <motion.div
           initial="hidden"
           whileInView="visible"

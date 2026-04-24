@@ -197,7 +197,14 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
   }
 
   return (
-    <Dialog open={open} onClose={resetAndClose} maxWidth="sm" fullWidth>
+    <Dialog
+      open={open}
+      onClose={resetAndClose}
+      maxWidth="sm"
+      fullWidth
+      scroll="paper"
+      disableRestoreFocus
+    >
       <DialogTitle>List a new vehicle — step {step + 1} of 4</DialogTitle>
       <DialogContent dividers>
         {step === 0 && (

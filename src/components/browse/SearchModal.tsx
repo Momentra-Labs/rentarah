@@ -78,10 +78,17 @@ export default function SearchModal({
 
   useEffect(() => {
     if (!open) return
+    const scrollY = window.scrollY
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = prev
+      const go = () => window.scrollTo({ top: scrollY, behavior: 'auto' })
+      go()
+      requestAnimationFrame(() => {
+        go()
+        requestAnimationFrame(go)
+      })
     }
   }, [open])
 

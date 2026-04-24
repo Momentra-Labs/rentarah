@@ -39,7 +39,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 
 import type { RegisterAccountRole } from '../../store/useAuthStore'
@@ -217,6 +217,18 @@ interface AuthDialogProps {
 export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab = 'login' }: AuthDialogProps) {
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
+  /** `scroll="body"` scrolls the window when the dialog opens — sticky nav appears to jump to the top. */
+  const backdropScrollYRef = useRef(0)
+
+  const restoreBackdropScroll = useCallback(() => {
+    const y = backdropScrollYRef.current
+    const go = () => window.scrollTo({ top: y, behavior: 'auto' })
+    go()
+    requestAnimationFrame(() => {
+      go()
+      requestAnimationFrame(go)
+    })
+  }, [])
   const [tab, setTab] = useState<'login' | 'register'>(defaultTab)
   const [registerStep, setRegisterStep] = useState(0)
   const [showLoginPassword, setShowLoginPassword] = useState(false)
@@ -381,8 +393,16 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       maxWidth="sm"
       fullWidth
       fullScreen={fullScreen}
-      scroll="body"
+      scroll="paper"
+      disableRestoreFocus
       aria-labelledby="auth-dialog-title"
+      TransitionProps={{
+        onEnter: () => {
+          backdropScrollYRef.current = window.scrollY
+        },
+        onEntered: restoreBackdropScroll,
+        onExited: restoreBackdropScroll,
+      }}
       PaperProps={{
         sx: {
           borderRadius: fullScreen ? 0 : 3,
