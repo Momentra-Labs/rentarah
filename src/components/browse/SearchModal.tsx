@@ -14,8 +14,12 @@ const MOCK_LOCATIONS = [
   'Pasig',
   'Cebu City',
   'Davao City',
+  'Iloilo City',
+  'Baguio',
+  'Cagayan de Oro',
   'Clark, Pampanga',
   'Bonifacio Global City',
+  'Philippines',
 ]
 
 export type SearchModalProps = {

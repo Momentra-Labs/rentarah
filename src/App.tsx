@@ -7,10 +7,12 @@ import BookingPage from './pages/BookingPage'
 import CarDetailPage from './pages/CarDetailPage'
 import DashboardPage from './pages/DashboardPage'
 import HostDashboardPage from './pages/HostDashboardPage'
+import HostInvitePage from './pages/HostInvitePage'
 import LandingPage from './pages/LandingPage'
 import MapPage from './pages/MapPage'
 import NotificationsPage from './pages/NotificationsPage'
 import SearchPage from './pages/SearchPage'
+import VehicleModelSearchPage from './pages/VehicleModelSearchPage'
 
 function NotFoundPage() {
   return <Navigate to="/" replace />
@@ -30,7 +32,9 @@ export default function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/search/model" element={<VehicleModelSearchPage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/become-a-host" element={<HostInvitePage />} />
           <Route path="/cars/:id" element={<CarDetailRoute />} />
           <Route
             path="/booking/:carId"

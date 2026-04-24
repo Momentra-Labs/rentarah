@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
+import { DEFAULT_SEARCH_LOCATION } from '../constants/geo'
 import CarCard from '../components/common/CarCard'
 import BrowseCarSearch from '../components/browse/BrowseCarSearch'
 import EmptyState from '../components/common/EmptyState'
@@ -12,11 +13,12 @@ import FilterDrawer from '../components/search/FilterDrawer'
 import FilterPanel from '../components/search/FilterPanel'
 import SortBar from '../components/search/SortBar'
 import VehicleTypeFilterChips from '../components/search/VehicleTypeFilterChips'
-import { useFilteredCars } from '../hooks/useFilteredCars'
+import { useListingSearch } from '../hooks/useListingSearch'
 import { useVehicles } from '../hooks/useVehicles'
 import { useSearchStore } from '../store/useSearchStore'
 import type { SearchFilters } from '../types'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
+import { vehicleModelSearchPath } from '../utils/vehicleBrowsePaths'
 import { isValidVehicleType } from '../utils/vehicleUtils'
 
 const PAGE_SIZE = 6
@@ -34,10 +36,18 @@ const defaultFilters: SearchFilters = {
 export default function SearchPage() {
   const theme = useTheme()
   const isMd = useMediaQuery(theme.breakpoints.down('md'))
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'))
   const navigate = useNavigate()
   const routeLocation = useLocation()
   const { isLoading: vehiclesLoading, isError: vehiclesFatalError, error: vehiclesError, refetch: refetchVehicles } =
     useVehicles()
+  const {
+    hits,
+    isLoading: searchLoading,
+    error: searchError,
+    refetch: refetchSearch,
+    availabilityApplied,
+  } = useListingSearch()
   const [, setSearchParams] = useSearchParams()
 
   const location = useSearchStore((s) => s.location)
@@ -98,12 +108,13 @@ export default function SearchPage() {
     setSearchParams(params, { replace: true })
   }, [location, pickup, dropoff, filters.types, filters.vehicleType, setSearchParams])
 
-  const { cars, totalCount } = useFilteredCars()
+  const totalCount = hits.length
+  const effectiveViewMode = isSmDown ? 'list' : viewMode
 
   const pageItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE
-    return cars.slice(start, start + PAGE_SIZE)
-  }, [cars, page])
+    return hits.slice(start, start + PAGE_SIZE)
+  }, [hits, page])
 
   useEffect(() => {
     setPage(1)
@@ -124,7 +135,7 @@ export default function SearchPage() {
 
   const handleClear = () => {
     clearFilters()
-    setLocation('Metro Manila')
+    setLocation(DEFAULT_SEARCH_LOCATION)
   }
 
   return (
@@ -176,17 +187,18 @@ export default function SearchPage() {
           <Grid item xs={12} md={isMd ? 12 : 9}>
             <SortBar
               total={totalCount}
-              areaLabel={(location || 'Metro Manila').split(',')[0]?.trim() || 'Metro Manila'}
+              areaLabel={(location || DEFAULT_SEARCH_LOCATION).split(',')[0]?.trim() || DEFAULT_SEARCH_LOCATION}
               sortBy={sortBy}
-              viewMode={viewMode}
+              viewMode={effectiveViewMode}
               onSort={setSortBy}
               onViewMode={setViewMode}
+              showViewModeToggle={!isSmDown}
             />
 
             <VehicleTypeFilterChips value={filters.vehicleType} onChange={(vehicleType) => setFilter({ vehicleType })} />
 
-            {vehiclesLoading ? (
-              <CarGridSkeleton count={PAGE_SIZE} layout={viewMode} />
+            {vehiclesLoading || searchLoading ? (
+              <CarGridSkeleton count={PAGE_SIZE} layout={effectiveViewMode} />
             ) : vehiclesFatalError && vehiclesError ? (
               <EmptyState
                 title="Couldn’t load vehicles"
@@ -194,23 +206,44 @@ export default function SearchPage() {
                 actionLabel="Try again"
                 onAction={() => refetchVehicles()}
               />
+            ) : searchError ? (
+              <EmptyState
+                title="Couldn’t refresh results"
+                description={searchError}
+                actionLabel="Try again"
+                onAction={() => refetchSearch()}
+              />
             ) : pageItems.length === 0 ? (
               <EmptyState
-                title="No vehicles match your filters"
-                description="Try changing vehicle type, widening your price range, or clearing filters."
+                title={
+                  availabilityApplied ? 'Nothing available for those dates' : 'No vehicles match your filters'
+                }
+                description={
+                  availabilityApplied
+                    ? 'Try different pickup and return dates, another area, or clear filters to see more options.'
+                    : 'Try changing vehicle type, widening your price range, or clearing filters.'
+                }
                 actionLabel="Clear filters"
                 onAction={handleClear}
               />
             ) : (
               <>
                 <Grid container spacing={{ xs: 2.5, md: 3 }}>
-                  {pageItems.map((car) => (
-                    <Grid item xs={12} sm={viewMode === 'grid' ? 6 : 12} md={viewMode === 'grid' ? 4 : 12} key={car.id}>
+                  {pageItems.map((hit) => (
+                    <Grid
+                      item
+                      xs={12}
+                      sm={effectiveViewMode === 'grid' ? 6 : 12}
+                      md={effectiveViewMode === 'grid' ? 4 : 12}
+                      key={hit.vehicle.id}
+                    >
                       <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: 3, height: '100%' } }}>
                         <CarCard
-                          car={car}
-                          layout={viewMode}
-                          onNavigate={(c) => navigate(`/cars/${c.id}`)}
+                          car={hit.vehicle}
+                          layout={effectiveViewMode}
+                          showDateAvailabilityHint={availabilityApplied && hit.availability.availableForRange}
+                          distanceKm={hit.distanceKm}
+                          onNavigate={(c) => navigate(vehicleModelSearchPath(c))}
                           onReserve={(c) => navigate(`/cars/${c.id}`)}
                         />
                       </Box>

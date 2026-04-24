@@ -59,6 +59,13 @@ const EXPLORE_NAV_BASE: NavRow[] = [
     icon: <MapOutlined fontSize="small" />,
   },
   {
+    key: 'host-invite',
+    label: 'Become a host',
+    kind: 'link',
+    to: '/become-a-host',
+    icon: <StorefrontOutlined fontSize="small" />,
+  },
+  {
     key: 'home',
     label: 'Home',
     kind: 'link',
@@ -146,17 +153,6 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
 
   const accountLinks: NavRow[] = user
     ? [
-        ...(!user.isHost
-          ? [
-              {
-                key: 'become-host',
-                label: 'Become a Host',
-                kind: 'link' as const,
-                to: '/host',
-                icon: <StorefrontOutlined fontSize="small" />,
-              },
-            ]
-          : []),
         {
           key: 'my-trips',
           label: 'My Trips',

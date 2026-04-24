@@ -41,6 +41,7 @@ import PageHeader from '../components/layout/PageHeader'
 import RentaraMap from '../components/map/RentaraMap'
 import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 import { getCarPickupLatLng } from '../utils/mapPickupLocation'
+import { vehicleModelSearchPath } from '../utils/vehicleBrowsePaths'
 
 /** Match Browse search dates when opening from listings; else fallback window. */
 function initialTripFromSearchStore(): { pickup: Dayjs; dropoff: Dayjs } {
@@ -135,6 +136,16 @@ export default function CarDetailPage() {
             {car.make} {car.model}
           </Typography>
         </Breadcrumbs>
+        <Link
+          component={RouterLink}
+          to={vehicleModelSearchPath(car)}
+          underline="hover"
+          fontWeight={600}
+          color="primary"
+          sx={{ display: 'inline-block', mb: { xs: 2, md: 3 } }}
+        >
+          Compare listings from other hosts
+        </Link>
 
         <Grid container spacing={{ xs: 3, md: 4 }}>
           <Grid item xs={12} md={8} order={{ xs: 2, md: 1 }}>

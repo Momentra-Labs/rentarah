@@ -168,7 +168,7 @@ export default function MapPage() {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
             <TextField
               size="small"
-              placeholder="Search by area (e.g. Makati, Pasig)"
+              placeholder="Search by area (e.g. Cebu City, Davao, Makati)"
               value={locationQuery}
               onChange={(e) => setLocationQuery(e.target.value)}
               sx={{ flex: { md: 1 }, minWidth: { md: 240 } }}

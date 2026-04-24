@@ -1,8 +1,10 @@
 import AirportShuttle from '@mui/icons-material/AirportShuttle'
 import ArrowForward from '@mui/icons-material/ArrowForward'
 import Bolt from '@mui/icons-material/Bolt'
+import BookOnline from '@mui/icons-material/BookOnline'
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import Key from '@mui/icons-material/Key'
+import SearchRounded from '@mui/icons-material/SearchRounded'
 import LocalOffer from '@mui/icons-material/LocalOffer'
 import Security from '@mui/icons-material/Security'
 import Shield from '@mui/icons-material/Shield'
@@ -43,7 +45,18 @@ import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
 import type { Car } from '../types'
 
-const LOCATIONS = ['Makati', 'BGC', 'Ortigas', 'Quezon City', 'Pasig', 'Taguig']
+const LOCATIONS = [
+  'Makati',
+  'BGC, Taguig',
+  'Ortigas, Pasig',
+  'Quezon City',
+  'Cebu City',
+  'Davao City',
+  'Iloilo City',
+  'Baguio',
+  'Cagayan de Oro',
+  'Philippines',
+]
 
 const CATS = [
   { icon: DirectionsCar, label: 'SUV', type: 'SUV' },
@@ -104,11 +117,11 @@ export default function LandingPage() {
   }, [cars])
 
   const search = () => {
-    setLocation(`${loc}, Metro Manila`)
+    setLocation(loc)
     setDates(pickup, dropoff)
     setFilter({ types: [], vehicleType: 'all' })
     const params = new URLSearchParams()
-    params.set('location', `${loc}, Metro Manila`)
+    params.set('location', loc)
     if (pickup?.isValid()) params.set('pickup', pickup.format('YYYY-MM-DD'))
     if (dropoff?.isValid()) params.set('dropoff', dropoff.format('YYYY-MM-DD'))
     navigate(`/search?${params.toString()}`)
@@ -133,7 +146,7 @@ export default function LandingPage() {
               <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.32 }}>
                 <Stack spacing={{ xs: 2.5, md: 3 }} sx={{ maxWidth: 560 }}>
                   <Chip
-                    label="Available in Metro Manila"
+                    label="Available across the Philippines"
                     color="primary"
                     size="small"
                     sx={{
@@ -155,11 +168,11 @@ export default function LandingPage() {
                       whiteSpace: { xs: 'normal', sm: 'pre-line' },
                     }}
                   >
-                    {'Rent the right ride—\ncars and motorcycles\nfor every city trip.'}
+                    {'Rent the right ride—\ncars and motorcycles\nfor trips anywhere in the PH.'}
                   </Typography>
                   <Typography variant="body1" color="text.secondary" sx={{ fontSize: { md: '1.0625rem' }, lineHeight: 1.65 }}>
-                    Transparent pricing in PHP, verified hosts, and pickup across NCR — from sedans to sport bikes, book
-                    in minutes and ride with confidence.
+                    Transparent pricing in PHP, verified hosts, and pickup from Luzon to Mindanao — from sedans to sport
+                    bikes, book in minutes and ride with confidence.
                   </Typography>
 
                   <Stack spacing={1.5} sx={{ pt: 0.5 }}>
@@ -485,7 +498,7 @@ export default function LandingPage() {
                   Two wheels
                 </Typography>
                 <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                  Motorcycles in Metro Manila
+                  Motorcycles nationwide
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6 }}>
                   Sport, naked, and touring bikes with helmets on many listings — filter the full range on search.
@@ -594,11 +607,13 @@ export default function LandingPage() {
             </Stack>
             <Grid container spacing={3}>
               {[
-                { n: '1', t: 'Search', d: 'Choose area and dates that fit your trip.' },
-                { n: '2', t: 'Book', d: 'Confirm details and pay securely (test mode).' },
-                { n: '3', t: 'Drive', d: 'Meet your host, grab the keys, and go.' },
-              ].map((s) => (
-                <Grid item xs={12} md={4} key={s.n}>
+                { icon: SearchRounded, t: 'Search', d: 'Choose area and dates that fit your trip.' },
+                { icon: BookOnline, t: 'Book', d: 'Confirm details and pay securely (test mode).' },
+                { icon: DirectionsCar, t: 'Drive', d: 'Meet your host, grab the keys, and go.' },
+              ].map((s) => {
+                const Icon = s.icon
+                return (
+                <Grid item xs={12} md={4} key={s.t}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -616,18 +631,21 @@ export default function LandingPage() {
                       },
                     }}
                   >
-                    <Typography
-                      variant="h3"
-                      color="primary"
+                    <Box
                       sx={{
-                        fontWeight: 800,
-                        opacity: 0.9,
-                        fontSize: { xs: '2.25rem', md: '2.5rem' },
-                        lineHeight: 1,
+                        mx: 'auto',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: 'primary.main',
                       }}
                     >
-                      {s.n}
-                    </Typography>
+                      <Icon sx={{ fontSize: 30 }} aria-hidden />
+                    </Box>
                     <Typography variant="h6" sx={{ my: 1.5, fontWeight: 700 }}>
                       {s.t}
                     </Typography>
@@ -636,7 +654,8 @@ export default function LandingPage() {
                     </Typography>
                   </Paper>
                 </Grid>
-              ))}
+                )
+              })}
             </Grid>
           </motion.div>
         </Container>
@@ -665,7 +684,7 @@ export default function LandingPage() {
                 { icon: Shield, t: 'Insured trips', d: 'Protection options on every booking.' },
                 { icon: Verified, t: 'Verified hosts', d: 'Profiles and reviews you can trust.' },
                 { icon: Security, t: 'Secure payments', d: 'Stripe test mode — your card stays with Stripe.' },
-                { icon: Key, t: 'Flexible pickup', d: 'Metro Manila locations with clear addresses.' },
+                { icon: Key, t: 'Flexible pickup', d: 'City pickup points with clear addresses across the PH.' },
               ].map(({ icon: Icon, t, d }) => (
                 <Grid item xs={12} sm={6} md={3} key={t}>
                   <Stack

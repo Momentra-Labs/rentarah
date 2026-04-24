@@ -29,6 +29,10 @@ export interface CarCardProps {
   layout?: 'grid' | 'list'
   onReserve?: (car: Car) => void
   onNavigate?: (car: Car) => void
+  /** When true, show a chip that this listing is free for the user’s selected trip dates. */
+  showDateAvailabilityHint?: boolean
+  /** Distance from the user’s search area (km); omitted when unknown. */
+  distanceKm?: number | null
 }
 
 export default function CarCard({
@@ -36,6 +40,8 @@ export default function CarCard({
   layout = 'grid',
   onReserve,
   onNavigate,
+  showDateAvailabilityHint = false,
+  distanceKm,
 }: CarCardProps) {
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.down('sm'))
@@ -221,7 +227,7 @@ export default function CarCard({
             </Typography>
           </Typography>
         </Stack>
-        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flexShrink: 0 }}>
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ minWidth: 0, flexShrink: 0, flexWrap: 'wrap', gap: 0.5 }}>
           <PlaceOutlined sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0, opacity: 0.9 }} aria-hidden />
           <Typography
             variant="body2"
@@ -233,7 +239,29 @@ export default function CarCard({
           >
             {car.location.split(',')[0]}
           </Typography>
+          {typeof distanceKm === 'number' && (
+            <Chip
+              label={`${distanceKm} km away`}
+              size="small"
+              variant="outlined"
+              sx={{ height: 22, fontSize: '0.65rem', fontWeight: 600 }}
+            />
+          )}
         </Stack>
+        {showDateAvailabilityHint && (
+          <Chip
+            label="Available for your dates"
+            size="small"
+            sx={{
+              alignSelf: 'flex-start',
+              bgcolor: 'success.50',
+              color: 'success.dark',
+              fontWeight: 700,
+              border: '1px solid',
+              borderColor: 'success.light',
+            }}
+          />
+        )}
         <Typography
           variant="body2"
           color="text.secondary"

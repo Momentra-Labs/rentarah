@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { isNationalLocationQuery } from '../constants/geo'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { matchesVehicleTypeFilter } from '../utils/vehicleUtils'
@@ -13,8 +14,9 @@ export function useFilteredCars() {
   const result = useMemo(() => {
     let list = [...cars]
 
-    const q = location.trim().toLowerCase()
-    if (q) {
+    const qRaw = location.trim()
+    const q = qRaw.toLowerCase()
+    if (q && !isNationalLocationQuery(qRaw)) {
       list = list.filter(
         (c) =>
           c.location.toLowerCase().includes(q) ||
@@ -65,7 +67,7 @@ export function useFilteredCars() {
     })
 
     const isFiltered =
-      q.length > 0 ||
+      (q.length > 0 && !isNationalLocationQuery(qRaw)) ||
       filters.types.length > 0 ||
       filters.vehicleType !== 'all' ||
       filters.transmission !== 'all' ||

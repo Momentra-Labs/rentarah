@@ -1,5 +1,6 @@
 import { mockCars } from '../data/mockCars'
 import type { BookingStatus, Car } from '../types'
+import { rangeConflictsBooked } from '../utils/bookingCalendar'
 
 import { USE_MOCK_API } from './config'
 
@@ -59,15 +60,8 @@ export async function mockCheckAvailability(
     return { available: false, unavailableDates: v.bookedDates }
   }
 
-  const conflicts: string[] = []
-  const cur = new Date(start)
-  while (cur <= end) {
-    const iso = cur.toISOString().slice(0, 10)
-    if (v.bookedDates.includes(iso)) conflicts.push(iso)
-    cur.setDate(cur.getDate() + 1)
-  }
-
-  return { available: conflicts.length === 0, unavailableDates: conflicts }
+  const { conflictingDates, availableForRange } = rangeConflictsBooked(v.bookedDates, startDate, endDate)
+  return { available: availableForRange, unavailableDates: conflictingDates }
 }
 
 // --- bookings (future: `POST /bookings`) ---

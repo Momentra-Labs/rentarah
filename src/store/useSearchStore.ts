@@ -1,6 +1,7 @@
 import type { Dayjs } from 'dayjs'
 import { create } from 'zustand'
 
+import { DEFAULT_SEARCH_LOCATION } from '../constants/geo'
 import type { SearchFilters } from '../types'
 
 const defaultFilters: SearchFilters = {
@@ -18,7 +19,7 @@ export interface SearchStoreState {
   pickup: Dayjs | null
   dropoff: Dayjs | null
   filters: SearchFilters
-  sortBy: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'newest'
+  sortBy: 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'newest' | 'distance_asc'
   viewMode: 'grid' | 'list'
   setLocation: (location: string) => void
   setDates: (pickup: Dayjs | null, dropoff: Dayjs | null) => void
@@ -29,7 +30,7 @@ export interface SearchStoreState {
 }
 
 export const useSearchStore = create<SearchStoreState>((set) => ({
-  location: 'Metro Manila',
+  location: DEFAULT_SEARCH_LOCATION,
   pickup: null,
   dropoff: null,
   filters: { ...defaultFilters },

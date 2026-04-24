@@ -12,6 +12,8 @@ interface SortBarProps {
   viewMode: 'grid' | 'list'
   onSort: (v: SearchStoreState['sortBy']) => void
   onViewMode: (v: 'grid' | 'list') => void
+  /** When false, hide grid/list toggle (e.g. narrow screens default to list). */
+  showViewModeToggle?: boolean
 }
 
 export default function SortBar({
@@ -21,6 +23,7 @@ export default function SortBar({
   viewMode,
   onSort,
   onViewMode,
+  showViewModeToggle = true,
 }: SortBarProps) {
   return (
     <Stack spacing={2} sx={{ mb: 2 }}>
@@ -72,22 +75,25 @@ export default function SortBar({
               <MenuItem value="price_desc">Price: high to low</MenuItem>
               <MenuItem value="rating">Rating</MenuItem>
               <MenuItem value="newest">Newest year</MenuItem>
+              <MenuItem value="distance_asc">Nearest first</MenuItem>
             </Select>
           </FormControl>
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={viewMode}
-            onChange={(_, v) => v && onViewMode(v)}
-            sx={{ flexShrink: 0 }}
-          >
-            <ToggleButton value="grid" aria-label="grid">
-              <ViewModule fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="list" aria-label="list">
-              <ReorderIcon fontSize="small" />
-            </ToggleButton>
-          </ToggleButtonGroup>
+          {showViewModeToggle && (
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              value={viewMode}
+              onChange={(_, v) => v && onViewMode(v)}
+              sx={{ flexShrink: 0 }}
+            >
+              <ToggleButton value="grid" aria-label="grid">
+                <ViewModule fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="list" aria-label="list">
+                <ReorderIcon fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          )}
         </Stack>
       </Stack>
     </Stack>

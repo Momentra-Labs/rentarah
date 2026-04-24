@@ -29,6 +29,7 @@ export default function MainLayout() {
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const [authOpen, setAuthOpen] = useState(false)
+  const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
   /** Survives re-renders: after auth, continue reserve → checkout if set. */
   const pendingBookCarIdRef = useRef<string | null>(null)
@@ -48,10 +49,14 @@ export default function MainLayout() {
     navigate('/')
   }, [logout, navigate])
 
-  const handleAuthOpen = useCallback(() => setAuthOpen(true), [])
+  const handleAuthOpen = useCallback(() => {
+    setAuthDialogDefaultTab('login')
+    setAuthOpen(true)
+  }, [])
 
   const handleAuthClose = useCallback(() => {
     setAuthOpen(false)
+    setAuthDialogDefaultTab('login')
     pendingBookCarIdRef.current = null
   }, [])
 
@@ -60,6 +65,7 @@ export default function MainLayout() {
     const st = location.state as AuthLocationState | undefined
     if (!st?.auth) return
     if (st.pendingBookCarId) pendingBookCarIdRef.current = st.pendingBookCarId
+    setAuthDialogDefaultTab(st.authTab === 'register' ? 'register' : 'login')
     setAuthOpen(true)
     navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
   }, [location.pathname, location.search, location.state, navigate])
@@ -138,7 +144,12 @@ export default function MainLayout() {
         </Box>
       </Box>
       <Footer />
-      <AuthDialog open={authOpen} onClose={handleAuthClose} onAuthenticated={handleAuthenticated} />
+      <AuthDialog
+        open={authOpen}
+        onClose={handleAuthClose}
+        onAuthenticated={handleAuthenticated}
+        defaultTab={authDialogDefaultTab}
+      />
     </Box>
   )
 }

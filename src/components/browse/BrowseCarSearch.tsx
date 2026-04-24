@@ -2,6 +2,7 @@ import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { useCallback, useMemo, useState } from 'react'
 
+import { DEFAULT_SEARCH_LOCATION } from '../../constants/geo'
 import { useSearchStore } from '../../store/useSearchStore'
 import SearchBar from './SearchBar'
 import SearchModal from './SearchModal'
@@ -49,7 +50,7 @@ export default function BrowseCarSearch() {
 
   const handleSearch = () => {
     const loc = draftLocation.trim()
-    setLocation(loc.length ? loc : 'Metro Manila')
+    setLocation(loc.length ? loc : DEFAULT_SEARCH_LOCATION)
 
     const pu = draftPickup ? dayjs(draftPickup) : null
     let ret = draftReturn ? dayjs(draftReturn) : null

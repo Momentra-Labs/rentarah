@@ -36,14 +36,12 @@ export function resolveNavItemSelected(
       )
     case 'home':
       return pathname === '/' || pathname === ''
+    case 'host-invite':
+      return pathname === '/become-a-host'
     case 'map':
       return pathname === '/map'
     case 'list':
       return isHostPath(pathname) && section === 'list'
-    case 'become-host':
-      return Boolean(
-        user && !user.isHost && isHostPath(pathname) && section !== 'list',
-      )
     case 'my-trips':
       return isDashboardPath(pathname) && nav === 'trips'
     case 'notifications':

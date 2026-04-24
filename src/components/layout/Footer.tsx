@@ -17,7 +17,7 @@ import RentaraLogoMark from '../brand/RentaraLogoMark'
 const FOOTER_LINKS = [
   { label: 'Home', to: '/' },
   { label: 'Browse rentals', to: '/search' },
-  { label: 'List your vehicle', to: '/host' },
+  { label: 'Become a host', to: '/become-a-host' },
   { label: 'Contact / support', href: 'mailto:hello@rentara.com', external: true },
 ] as const
 
@@ -131,7 +131,7 @@ export default function Footer() {
                 maxWidth: 360,
               }}
             >
-              Rent vehicles easily — anytime, anywhere in Metro Manila and beyond.
+              Rent vehicles easily — anytime, anywhere in the Philippines.
             </Typography>
           </Stack>
 

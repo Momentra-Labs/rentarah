@@ -1,3 +1,4 @@
+import { isNationalLocationQuery } from '../constants/geo'
 import type { Car } from '../types'
 import { haversineKm, type LatLng } from './distance'
 import { getCarPickupLatLng } from './mapPickupLocation'
@@ -117,8 +118,9 @@ export function applyExploreMapFilters(
   if (priceMax != null && priceMax > 0) {
     out = out.filter((l) => l.vehicle.pricePerDay <= priceMax)
   }
-  const q = locationQuery.trim().toLowerCase()
-  if (q) {
+  const qRaw = locationQuery.trim()
+  const q = qRaw.toLowerCase()
+  if (q && !isNationalLocationQuery(qRaw)) {
     out = out.filter((l) => l.vehicle.locationName.toLowerCase().includes(q))
   }
   return out

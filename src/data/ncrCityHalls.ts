@@ -1,11 +1,17 @@
 /**
- * Approximate main city / municipal hall coordinates (WGS84) for NCR cities
- * referenced in listing {@link Car.location} strings. Used for map pickup pins.
+ * Approximate city / municipal hall coordinates (WGS84) for PH locations in
+ * listing {@link Car.location} strings. Used for map pickup pins and distance sort.
  * Sources: public maps / OSM-style placemarks (not survey-grade).
  */
 export type CityHallCoords = { lat: number; lng: number }
 
 const MANILA: CityHallCoords = { lat: 14.5906, lng: 120.9829 }
+const CEBU_CITY: CityHallCoords = { lat: 10.3157, lng: 123.8854 }
+const DAVAO_CITY: CityHallCoords = { lat: 7.0731, lng: 125.6128 }
+const ILOILO_CITY: CityHallCoords = { lat: 10.7202, lng: 122.5621 }
+const BAGUIO: CityHallCoords = { lat: 16.4023, lng: 120.5931 }
+const CAGAYAN_DE_ORO: CityHallCoords = { lat: 8.4542, lng: 124.6319 }
+const CLARK_AREA: CityHallCoords = { lat: 15.1861, lng: 120.5594 }
 const MAKATI: CityHallCoords = { lat: 14.5548, lng: 121.0247 }
 const QUEZON_CITY: CityHallCoords = { lat: 14.6507, lng: 121.0499 }
 const PASIG: CityHallCoords = { lat: 14.5765, lng: 121.0858 }
@@ -21,6 +27,12 @@ const LAS_PINAS: CityHallCoords = { lat: 14.4496, lng: 120.9828 }
  * Longer / more specific patterns must come before looser ones.
  */
 const RULES: ReadonlyArray<{ test: RegExp; coords: CityHallCoords }> = [
+  { test: /cebu/i, coords: CEBU_CITY },
+  { test: /davao/i, coords: DAVAO_CITY },
+  { test: /iloilo/i, coords: ILOILO_CITY },
+  { test: /baguio/i, coords: BAGUIO },
+  { test: /cagayan\s*de\s*oro|\bcdo\b/i, coords: CAGAYAN_DE_ORO },
+  { test: /clark|pampanga|angeles/i, coords: CLARK_AREA },
   { test: /quezon\s*city/i, coords: QUEZON_CITY },
   { test: /las\s*pi[ñn]as|las\s*pinas/i, coords: LAS_PINAS },
   { test: /san\s*juan/i, coords: SAN_JUAN },
@@ -51,6 +63,9 @@ export function resolveCityHallCoords(location: string): CityHallCoords {
   for (const { test, coords } of RULES) {
     if (test.test(n)) return coords
   }
+
+  /** Nationwide browse — use NCR centroid so distance sort stays stable for mostly-Luzon mock data. */
+  if (n === 'philippines' || n === 'ph' || n === 'pilipinas') return MANILA
 
   /** e.g. unknown barangay but clearly NCR */
   if (n.includes('metro manila')) return MANILA

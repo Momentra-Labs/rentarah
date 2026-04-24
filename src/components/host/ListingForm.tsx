@@ -20,6 +20,7 @@ import {
 } from '@mui/material'
 import { useMemo, useState } from 'react'
 
+import { DEFAULT_SEARCH_LOCATION } from '../../constants/geo'
 import type { Car, VehicleType } from '../../types'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCarsStore } from '../../store/useCarsStore'
@@ -154,7 +155,7 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
       features: selectedFeatures.length ? selectedFeatures : ['Bluetooth'],
       tags: ['New'],
       available: true,
-      location: form.location.trim() || 'Metro Manila',
+      location: form.location.trim() || DEFAULT_SEARCH_LOCATION,
       hostId: user.id,
       hostName: `${user.firstName} ${user.lastName}`,
       hostAvatar: user.avatar,
