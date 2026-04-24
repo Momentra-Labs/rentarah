@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 import type { LatLng } from '../utils/distance'
+import { useOnboardingUiStore } from './useOnboardingUiStore'
 
 export type GeolocationShareStatus = 'off' | 'pending' | 'ready' | 'denied' | 'unsupported'
 
@@ -20,7 +21,10 @@ export const useGeolocationStore = create<GeolocationState>((set) => ({
   status: 'off',
   geoDialogOpen: false,
 
-  openGeoDialog: () => set({ geoDialogOpen: true }),
+  openGeoDialog: () => {
+    if (useOnboardingUiStore.getState().suppressGeoDialog) return
+    set({ geoDialogOpen: true })
+  },
   closeGeoDialog: () => set({ geoDialogOpen: false }),
 
   requestLocation: () => {

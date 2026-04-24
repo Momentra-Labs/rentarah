@@ -1,7 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { isOnboardingDone, markOnboardingDone } from '../../constants/onboardingStorage'
+import { useGeolocationStore } from '../../store/useGeolocationStore'
+import { useOnboardingUiStore } from '../../store/useOnboardingUiStore'
 import OnboardingModal from './OnboardingModal'
 import type { OnboardingModalStep } from './OnboardingModal'
 import ProductTour from './ProductTour'
@@ -19,6 +21,19 @@ export default function OnboardingFlow() {
   )
   const [modalStep, setModalStep] = useState<OnboardingModalStep>('welcome')
   const [dontShowAgain, setDontShowAgain] = useState(false)
+  const setSuppressGeoDialog = useOnboardingUiStore((s) => s.setSuppressGeoDialog)
+  const closeGeoDialog = useGeolocationStore((s) => s.closeGeoDialog)
+
+  /** Keep suppress in sync; never clear suppress in cleanup (that briefly opened geo between modal → tour). */
+  useEffect(() => {
+    const active = phase === 'modal' || phase === 'tour'
+    setSuppressGeoDialog(active)
+    if (active) closeGeoDialog()
+  }, [phase, setSuppressGeoDialog, closeGeoDialog])
+
+  useEffect(() => {
+    return () => setSuppressGeoDialog(false)
+  }, [setSuppressGeoDialog])
 
   const skipAll = useCallback(() => {
     markOnboardingDone()

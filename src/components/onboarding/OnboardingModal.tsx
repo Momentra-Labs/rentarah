@@ -137,16 +137,44 @@ export default function OnboardingModal({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            style={{ width: '100%' }}
           >
-            <Stack spacing={2.5} sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 3, sm: 4 }, textAlign: 'center' }}>
+            <Stack
+              spacing={2.5}
+              sx={{
+                px: { xs: 2.5, sm: 4 },
+                py: { xs: 3, sm: 4 },
+                textAlign: 'center',
+                alignItems: 'stretch',
+                maxWidth: 440,
+                mx: 'auto',
+                width: '100%',
+              }}
+            >
               <Typography
                 variant="h5"
                 component="h1"
-                sx={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.2, fontSize: { xs: '1.5rem', sm: '1.65rem' } }}
+                sx={{
+                  fontWeight: 800,
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1.2,
+                  fontSize: { xs: '1.5rem', sm: '1.65rem' },
+                  textAlign: 'center',
+                }}
               >
                 Rent cars &amp; motorcycles with ease
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.65, maxWidth: 400, mx: 'auto' }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{
+                  lineHeight: 1.65,
+                  textAlign: 'center',
+                  maxWidth: 400,
+                  mx: 'auto',
+                  width: '100%',
+                }}
+              >
                 Find vehicles near you, chat with hosts, and book instantly.
               </Typography>
               <FormControlLabel
@@ -158,9 +186,17 @@ export default function OnboardingModal({
                   />
                 }
                 label={<Typography variant="body2">Don&apos;t show this again</Typography>}
-                sx={{ justifyContent: 'center', mr: 0 }}
+                sx={{
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  mx: 0,
+                  mr: 0,
+                  ml: 0,
+                  width: '100%',
+                  '& .MuiFormControlLabel-label': { textAlign: 'center' },
+                }}
               />
-              <Stack spacing={1.25} sx={{ pt: 1 }}>
+              <Stack spacing={1.25} sx={{ pt: 1, width: '100%' }}>
                 <Button
                   variant="contained"
                   size="large"

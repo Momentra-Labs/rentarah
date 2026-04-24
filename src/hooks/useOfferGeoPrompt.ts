@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { useGeolocationStore } from '../store/useGeolocationStore'
+import { useOnboardingUiStore } from '../store/useOnboardingUiStore'
 
 const KEY_LANDING = 'rentara:geo-auto-landing'
 const KEY_CAR_DETAIL = 'rentara:geo-auto-car-detail'
@@ -12,10 +13,12 @@ const KEY_CAR_DETAIL = 'rentara:geo-auto-car-detail'
 export function useOfferGeoPrompt(context: 'landing' | 'car-detail', enabled = true) {
   const status = useGeolocationStore((s) => s.status)
   const openGeoDialog = useGeolocationStore((s) => s.openGeoDialog)
+  const suppressGeoDialog = useOnboardingUiStore((s) => s.suppressGeoDialog)
 
   useEffect(() => {
     if (!enabled) return
     if (status === 'ready') return
+    if (suppressGeoDialog) return
 
     const key = context === 'landing' ? KEY_LANDING : KEY_CAR_DETAIL
     if (sessionStorage.getItem(key)) return
@@ -25,10 +28,11 @@ export function useOfferGeoPrompt(context: 'landing' | 'car-detail', enabled = t
     const t = window.setTimeout(() => {
       if (useGeolocationStore.getState().status === 'ready') return
       if (sessionStorage.getItem(key)) return
+      if (useOnboardingUiStore.getState().suppressGeoDialog) return
       sessionStorage.setItem(key, '1')
       openGeoDialog()
     }, delayMs)
 
     return () => clearTimeout(t)
-  }, [context, enabled, status, openGeoDialog])
+  }, [context, enabled, status, openGeoDialog, suppressGeoDialog])
 }
