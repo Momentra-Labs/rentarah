@@ -1,4 +1,4 @@
-import { Box, useTheme } from '@mui/material'
+import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { motion, useReducedMotion } from 'framer-motion'
 
@@ -16,9 +16,11 @@ const easeMirror = {
 export default function HeroAmbientBackground() {
   const theme = useTheme()
   const reduceMotion = useReducedMotion()
+  /** Animated blurs + infinite loops are costly on mobile GPUs — use static hero like reduced-motion. */
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const p = theme.palette.primary.main
 
-  if (reduceMotion) {
+  if (reduceMotion || isMobile) {
     return (
       <Box
         aria-hidden

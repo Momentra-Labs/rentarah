@@ -34,6 +34,7 @@ import { useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
+import { useMobileLightMotion } from '../hooks/useMobileLightMotion'
 import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import DateRangePicker from '../components/common/DateRangePicker'
 import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
@@ -67,14 +68,6 @@ const CATS = [
   { icon: AirportShuttle, label: 'Truck', type: 'Truck' },
 ] as const
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0 },
-}
-
-/** Slightly conservative: fewer scroll callbacks + less motion work while fast-scrolling. */
-const viewport = { once: true, amount: 0.12, margin: '0px 0px -80px 0px' }
-
 export default function LandingPage() {
   const theme = useTheme()
   const navigate = useNavigate()
@@ -82,6 +75,31 @@ export default function LandingPage() {
   const setLocation = useSearchStore((s) => s.setLocation)
   const setDates = useSearchStore((s) => s.setDates)
   const setFilter = useSearchStore((s) => s.setFilter)
+  const lightMotion = useMobileLightMotion()
+
+  const fadeUpVariants = useMemo(
+    () =>
+      lightMotion
+        ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
+        : { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } },
+    [lightMotion],
+  )
+
+  /** Tighter margins on mobile = fewer whileInView recalculations while scrolling. */
+  const landingViewport = useMemo(
+    () =>
+      lightMotion
+        ? { once: true, amount: 0.06, margin: '0px 0px -24px 0px' as const }
+        : { once: true, amount: 0.12, margin: '0px 0px -80px 0px' as const },
+    [lightMotion],
+  )
+
+  const tHero = useMemo(() => (lightMotion ? { duration: 0.2 } : { duration: 0.32 }), [lightMotion])
+  const tHeroDelay = useMemo(
+    () => (lightMotion ? { duration: 0.2 } : { duration: 0.32, delay: 0.06 }),
+    [lightMotion],
+  )
+  const tSection = useMemo(() => (lightMotion ? { duration: 0.26 } : { duration: 0.4 }), [lightMotion])
 
   useOfferGeoPrompt('landing')
 
@@ -143,7 +161,7 @@ export default function LandingPage() {
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
           <Grid container spacing={{ xs: 4, md: 5 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7}>
-              <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ duration: 0.32 }}>
+              <motion.div initial="hidden" animate="visible" variants={fadeUpVariants} transition={tHero}>
                 <Stack
                   data-onboarding="hero"
                   spacing={{ xs: 2.5, md: 3 }}
@@ -286,8 +304,8 @@ export default function LandingPage() {
               <motion.div
                 initial="hidden"
                 animate="visible"
-                variants={fadeUp}
-                transition={{ duration: 0.32, delay: 0.06 }}
+                variants={fadeUpVariants}
+                transition={tHeroDelay}
                 style={{ height: '100%' }}
               >
                 <Paper
@@ -388,9 +406,9 @@ export default function LandingPage() {
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={viewport}
-            variants={fadeUp}
-            transition={{ duration: 0.4 }}
+            viewport={landingViewport}
+            variants={fadeUpVariants}
+            transition={tSection}
           >
             <Stack spacing={1} sx={{ mb: { xs: 3, md: 4 }, textAlign: 'center', maxWidth: 640, mx: 'auto' }}>
               <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
@@ -487,9 +505,9 @@ export default function LandingPage() {
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={viewport}
-            variants={fadeUp}
-            transition={{ duration: 0.4 }}
+            viewport={landingViewport}
+            variants={fadeUpVariants}
+            transition={tSection}
           >
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
@@ -540,9 +558,9 @@ export default function LandingPage() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={viewport}
-          variants={fadeUp}
-          transition={{ duration: 0.4 }}
+          viewport={landingViewport}
+          variants={fadeUpVariants}
+          transition={tSection}
         >
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -598,9 +616,9 @@ export default function LandingPage() {
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={viewport}
-            variants={fadeUp}
-            transition={{ duration: 0.4 }}
+            viewport={landingViewport}
+            variants={fadeUpVariants}
+            transition={tSection}
           >
             <Stack spacing={1} sx={{ mb: 4, textAlign: 'center' }}>
               <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
@@ -672,9 +690,9 @@ export default function LandingPage() {
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={viewport}
-            variants={fadeUp}
-            transition={{ duration: 0.4 }}
+            viewport={landingViewport}
+            variants={fadeUpVariants}
+            transition={tSection}
           >
             <Stack spacing={1} sx={{ mb: { xs: 4, md: 5 }, textAlign: 'center', maxWidth: 560, mx: 'auto' }}>
               <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>

@@ -16,9 +16,11 @@ import {
   useTheme,
 } from '@mui/material'
 import { motion } from 'framer-motion'
+import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 
 import type { Car } from '../../types'
+import { useMobileLightMotion } from '../../hooks/useMobileLightMotion'
 import { formatPeso } from '../../utils/formatCurrency'
 import { getVehicleType, isTwoWheeler, VEHICLE_TYPE_LABELS } from '../../utils/vehicleUtils'
 import { useCarsStore } from '../../store/useCarsStore'
@@ -45,6 +47,7 @@ export default function CarCard({
 }: CarCardProps) {
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.down('sm'))
+  const lightMotion = useMobileLightMotion()
   const toggleSaved = useCarsStore((s) => s.toggleSaved)
   const savedIds = useCarsStore((s) => s.savedCarIds)
 
@@ -115,6 +118,7 @@ export default function CarCard({
           alt={title}
           onError={() => setImageFailed(true)}
           loading="lazy"
+          decoding="async"
           sx={{
             display: 'block',
             width: '100%',
@@ -142,7 +146,12 @@ export default function CarCard({
         <Chip
           label={VEHICLE_TYPE_LABELS[vehicleClass]}
           size="small"
-          sx={{ bgcolor: 'rgba(255,255,255,0.95)', color: 'primary.dark', fontWeight: 700, backdropFilter: 'blur(4px)' }}
+          sx={{
+            bgcolor: 'rgba(255,255,255,0.95)',
+            color: 'primary.dark',
+            fontWeight: 700,
+            backdropFilter: { xs: 'none', sm: 'blur(4px)' },
+          }}
         />
         <Chip
           label={car.tags[0] ?? car.type}
@@ -379,12 +388,14 @@ export default function CarCard({
     flexDirection: 'column',
     height: '100%',
     overflow: 'hidden',
-    '&:hover': {
-      transform: 'translateY(-3px)',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06)',
-      borderColor: 'action.hover',
-    },
     transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.2s ease',
+    '@media (hover: hover) and (pointer: fine)': {
+      '&:hover': {
+        transform: 'translateY(-3px)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06)',
+        borderColor: 'action.hover',
+      },
+    },
   }
 
   if (layout === 'list') {
@@ -404,15 +415,29 @@ export default function CarCard({
     )
   }
 
-  return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ height: '100%' }}>
-      <Card variant="outlined" onClick={handleCardClick} sx={{ ...cardSx }}>
-        <Stack sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          {mediaBox}
-          {body}
-          {actions}
-        </Stack>
-      </Card>
-    </motion.div>
+  const gridCard = (
+    <Card variant="outlined" onClick={handleCardClick} sx={{ ...cardSx }}>
+      <Stack sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {mediaBox}
+        {body}
+        {actions}
+      </Stack>
+    </Card>
   )
+
+  const wrapGrid = (node: ReactNode) =>
+    lightMotion ? (
+      <Box sx={{ height: '100%' }}>{node}</Box>
+    ) : (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
+        style={{ height: '100%' }}
+      >
+        {node}
+      </motion.div>
+    )
+
+  return wrapGrid(gridCard)
 }

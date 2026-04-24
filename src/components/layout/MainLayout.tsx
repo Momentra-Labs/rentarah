@@ -1,4 +1,4 @@
-import { Box, useTheme } from '@mui/material'
+import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -27,6 +27,8 @@ const loadingExitEase = [0.33, 1, 0.68, 1] as const
 export default function MainLayout() {
   const theme = useTheme()
   const reduceMotion = useReducedMotion()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
+  const lightRouteMotion = Boolean(reduceMotion || isMobile)
   const location = useLocation()
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
@@ -140,7 +142,11 @@ export default function MainLayout() {
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                transition={pageMotionTransition}
+                transition={
+                  lightRouteMotion
+                    ? { duration: 0.12, ease: 'easeOut' as const }
+                    : pageMotionTransition
+                }
                 style={{ minHeight: '100%' }}
               >
                 <Outlet />
