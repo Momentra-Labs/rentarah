@@ -209,10 +209,12 @@ function RoleCard({
 interface AuthDialogProps {
   open: boolean
   onClose: () => void
+  /** Called after a successful sign-in or registration (before `onClose`). Use for return-to-flow (e.g. checkout). */
+  onAuthenticated?: () => void
   defaultTab?: 'login' | 'register'
 }
 
-export default function AuthDialog({ open, onClose, defaultTab = 'login' }: AuthDialogProps) {
+export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab = 'login' }: AuthDialogProps) {
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   const [tab, setTab] = useState<'login' | 'register'>(defaultTab)
@@ -329,6 +331,7 @@ export default function AuthDialog({ open, onClose, defaultTab = 'login' }: Auth
       }
       const u = useAuthStore.getState().user
       showSuccess(u ? `Welcome back, ${u.firstName}!` : 'Signed in')
+      onAuthenticated?.()
       onClose()
     } catch {
       lf.setError('root', {
@@ -357,6 +360,7 @@ export default function AuthDialog({ open, onClose, defaultTab = 'login' }: Auth
       })
       const u = useAuthStore.getState().user
       showSuccess(u ? `Welcome, ${u.firstName}!` : 'Account created')
+      onAuthenticated?.()
       onClose()
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Something went wrong. Please try again.'

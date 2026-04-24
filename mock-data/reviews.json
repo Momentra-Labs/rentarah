@@ -1,0 +1,35 @@
+[
+  {
+    "id": "rev_001",
+    "bookingId": "bkg_001",
+    "listingId": "lst_001",
+    "reviewerUserId": "user_003",
+    "revieweeUserId": "user_001",
+    "rating": 5,
+    "comment": "Fortuner was spotless and pickup was smooth. Host replied within minutes.",
+    "visibility": "public",
+    "createdAt": "2026-02-15T10:00:00.000Z"
+  },
+  {
+    "id": "rev_002",
+    "bookingId": "bkg_006",
+    "listingId": "lst_003",
+    "reviewerUserId": "user_003",
+    "revieweeUserId": "user_002",
+    "rating": 5,
+    "comment": "MT-07 was a blast. Helmet fit well.",
+    "visibility": "public",
+    "createdAt": "2026-01-07T08:00:00.000Z"
+  },
+  {
+    "id": "rev_003",
+    "bookingId": "bkg_001",
+    "listingId": "lst_001",
+    "reviewerUserId": "user_001",
+    "revieweeUserId": "user_003",
+    "rating": 5,
+    "comment": "Renter returned the vehicle on time and full tank. Welcome anytime.",
+    "visibility": "public",
+    "createdAt": "2026-02-16T09:00:00.000Z"
+  }
+]

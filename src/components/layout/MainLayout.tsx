@@ -1,6 +1,6 @@
 import { Box, useTheme } from '@mui/material'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import LoadingScreen from '../brand/LoadingScreen'
@@ -11,9 +11,13 @@ import Navbar from './Navbar'
 import { pageMotionTransition, pageMotionVariants } from './pageMotion'
 import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useBookingStore } from '../../store/useBookingStore'
+import { useCarsStore } from '../../store/useCarsStore'
+import { useSearchStore } from '../../store/useSearchStore'
+import type { AuthLocationState } from '../../types/authFlow'
 
-/** Minimum time the branded loader stays up so the animation is noticeable (ms). */
-const MIN_LOADING_SCREEN_MS = 2500
+/** Short beat so the brand mark registers without blocking return visits. */
+const MIN_LOADING_SCREEN_MS = 800
 
 /** Easing: fast start, gentle settle as the sheet clears the viewport */
 const loadingExitEase = [0.33, 1, 0.68, 1] as const
@@ -26,6 +30,8 @@ export default function MainLayout() {
   const logout = useAuthStore((s) => s.logout)
   const [authOpen, setAuthOpen] = useState(false)
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
+  /** Survives re-renders: after auth, continue reserve → checkout if set. */
+  const pendingBookCarIdRef = useRef<string | null>(null)
 
   /** Boots the shared vehicle catalog (mock or API) for all routes. */
   const { isLoading: vehiclesLoading } = useVehicles()
@@ -44,7 +50,32 @@ export default function MainLayout() {
 
   const handleAuthOpen = useCallback(() => setAuthOpen(true), [])
 
-  const handleAuthClose = useCallback(() => setAuthOpen(false), [])
+  const handleAuthClose = useCallback(() => {
+    setAuthOpen(false)
+    pendingBookCarIdRef.current = null
+  }, [])
+
+  /** Open auth from navigation state (e.g. Reserve while logged out) without losing the URL. */
+  useEffect(() => {
+    const st = location.state as AuthLocationState | undefined
+    if (!st?.auth) return
+    if (st.pendingBookCarId) pendingBookCarIdRef.current = st.pendingBookCarId
+    setAuthOpen(true)
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
+  }, [location.pathname, location.search, location.state, navigate])
+
+  const handleAuthenticated = useCallback(() => {
+    const carId = pendingBookCarIdRef.current
+    pendingBookCarIdRef.current = null
+    if (!carId) return
+    const car = useCarsStore.getState().cars.find((c) => c.id === carId)
+    const pickup = useSearchStore.getState().pickup
+    const dropoff = useSearchStore.getState().dropoff
+    if (car && pickup?.isValid() && dropoff?.isValid()) {
+      useBookingStore.getState().initBooking(car, pickup, dropoff)
+      navigate(`/booking/${carId}`)
+    }
+  }, [navigate])
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -107,7 +138,7 @@ export default function MainLayout() {
         </Box>
       </Box>
       <Footer />
-      <AuthDialog open={authOpen} onClose={handleAuthClose} />
+      <AuthDialog open={authOpen} onClose={handleAuthClose} onAuthenticated={handleAuthenticated} />
     </Box>
   )
 }

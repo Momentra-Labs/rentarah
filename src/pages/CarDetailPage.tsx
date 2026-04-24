@@ -1,3 +1,4 @@
+import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined'
 import ChevronRight from '@mui/icons-material/ChevronRight'
 import LocationOn from '@mui/icons-material/LocationOn'
 import {
@@ -19,7 +20,7 @@ import dayjs from 'dayjs'
 import { motion } from 'framer-motion'
 import type { Dayjs } from 'dayjs'
 import { useMemo, useState } from 'react'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
+import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import DateRangePicker from '../components/common/DateRangePicker'
 import PriceBreakdown from '../components/common/PriceBreakdown'
@@ -58,6 +59,8 @@ export default function CarDetailPage() {
   const theme = useTheme()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const setSearchDates = useSearchStore((s) => s.setDates)
   const cars = useCarsStore((s) => s.cars)
   const car = cars.find((c) => c.id === id)
   useOfferGeoPrompt('car-detail', Boolean(car))
@@ -104,7 +107,11 @@ export default function CarDetailPage() {
   const reserve = () => {
     if (!pickup?.isValid() || !dropoff?.isValid() || conflict) return
     if (!user) {
-      navigate('/', { state: { auth: true } })
+      setSearchDates(pickup, dropoff)
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: location.hash },
+        { state: { auth: true, pendingBookCarId: car.id }, replace: false },
+      )
       return
     }
     initBooking(car, pickup, dropoff)
@@ -272,6 +279,16 @@ export default function CarDetailPage() {
               <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
                 Book
               </Typography>
+              {pickup?.isValid() && dropoff?.isValid() && (
+                <Chip
+                  icon={<CalendarMonthOutlined sx={{ '&&': { fontSize: 18 } }} />}
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  label={`${pickup.format('MMM D')} – ${dropoff.format('MMM D, YYYY')}`}
+                  sx={{ mt: 1, fontWeight: 600, '& .MuiChip-label': { px: 0.5 } }}
+                />
+              )}
               <Typography variant="h3" color="primary.main" sx={{ mt: 0.5, fontWeight: 800 }}>
                 {formatPeso(car.pricePerDay)}
                 <Typography component="span" variant="body1" color="text.secondary">
@@ -284,7 +301,10 @@ export default function CarDetailPage() {
                 <DateRangePicker
                   pickup={pickup}
                   dropoff={dropoff}
-                  onChange={({ pickup: p, dropoff: d }) => setTrip({ pickup: p, dropoff: d })}
+                  onChange={({ pickup: p, dropoff: d }) => {
+                    setTrip({ pickup: p, dropoff: d })
+                    if (p?.isValid() && d?.isValid()) setSearchDates(p, d)
+                  }}
                   minDate={dayjs()}
                 />
               </Box>

@@ -118,14 +118,6 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
   }, [])
 
   useEffect(() => {
-    const st = location.state as { auth?: boolean } | undefined
-    if (st?.auth) {
-      onAuthOpen()
-      navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
-    }
-  }, [location, navigate, onAuthOpen])
-
-  useEffect(() => {
     if (isMd) setNotifEl(null)
   }, [isMd])
 

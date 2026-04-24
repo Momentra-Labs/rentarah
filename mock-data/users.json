@@ -1,0 +1,80 @@
+[
+  {
+    "id": "user_001",
+    "email": "carlo.reyes@example.com",
+    "firstName": "Carlo",
+    "lastName": "Reyes",
+    "phone": "+639171234567",
+    "role": "host",
+    "avatarUrl": null,
+    "licenseNumber": "N12345678",
+    "emailVerifiedAt": "2025-06-01T08:00:00.000Z",
+    "createdAt": "2025-06-01T08:00:00.000Z",
+    "updatedAt": "2026-03-01T10:00:00.000Z"
+  },
+  {
+    "id": "user_002",
+    "email": "maria.santos@example.com",
+    "firstName": "Maria",
+    "lastName": "Santos",
+    "phone": "+639189876543",
+    "role": "host",
+    "avatarUrl": null,
+    "licenseNumber": "N98765432",
+    "emailVerifiedAt": "2025-07-15T12:00:00.000Z",
+    "createdAt": "2025-07-15T12:00:00.000Z",
+    "updatedAt": "2026-02-20T09:00:00.000Z"
+  },
+  {
+    "id": "user_003",
+    "email": "james.lim@example.com",
+    "firstName": "James",
+    "lastName": "Lim",
+    "phone": "+639178889900",
+    "role": "renter",
+    "avatarUrl": null,
+    "licenseNumber": "N11112222",
+    "emailVerifiedAt": "2025-08-01T00:00:00.000Z",
+    "createdAt": "2025-08-01T00:00:00.000Z",
+    "updatedAt": "2026-04-01T14:00:00.000Z"
+  },
+  {
+    "id": "user_004",
+    "email": "ana.garcia@example.com",
+    "firstName": "Ana",
+    "lastName": "Garcia",
+    "phone": "+639165554433",
+    "role": "renter",
+    "avatarUrl": null,
+    "licenseNumber": "N33334444",
+    "emailVerifiedAt": "2025-09-10T00:00:00.000Z",
+    "createdAt": "2025-09-10T00:00:00.000Z",
+    "updatedAt": "2026-03-28T11:00:00.000Z"
+  },
+  {
+    "id": "user_005",
+    "email": "rico.torres@example.com",
+    "firstName": "Rico",
+    "lastName": "Torres",
+    "phone": "+639199900011",
+    "role": "host",
+    "avatarUrl": null,
+    "licenseNumber": "N55556666",
+    "emailVerifiedAt": "2025-11-20T00:00:00.000Z",
+    "createdAt": "2025-11-20T00:00:00.000Z",
+    "updatedAt": "2026-01-05T16:00:00.000Z"
+  },
+  {
+    "id": "user_006",
+    "email": "sofia.cruz@example.com",
+    "firstName": "Sofia",
+    "lastName": "Cruz",
+    "phone": "+639122233344",
+    "role": "renter",
+    "avatarUrl": null,
+    "licenseNumber": null,
+    "emailVerifiedAt": null,
+    "createdAt": "2026-04-10T08:30:00.000Z",
+    "updatedAt": "2026-04-10T08:30:00.000Z"
+  }
+]
