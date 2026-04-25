@@ -15,6 +15,7 @@ import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useBookingStore } from '../../store/useBookingStore'
 import { useCarsStore } from '../../store/useCarsStore'
+import { useChatStore } from '../../store/useChatStore'
 import { useSearchStore } from '../../store/useSearchStore'
 import type { AuthLocationState } from '../../types/authFlow'
 
@@ -32,6 +33,9 @@ export default function MainLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
+  const user = useAuthStore((s) => s.user)
+  const bookings = useBookingStore((s) => s.bookings)
+  const syncThreadsFromBookings = useChatStore((s) => s.syncThreadsFromBookings)
   const [authOpen, setAuthOpen] = useState(false)
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
@@ -45,6 +49,10 @@ export default function MainLayout() {
     const id = window.setTimeout(() => setMinSplashElapsed(true), MIN_LOADING_SCREEN_MS)
     return () => window.clearTimeout(id)
   }, [])
+
+  useEffect(() => {
+    if (user) syncThreadsFromBookings(bookings)
+  }, [user, bookings, syncThreadsFromBookings])
 
   const showLoadingScreen = vehiclesLoading || !minSplashElapsed
 

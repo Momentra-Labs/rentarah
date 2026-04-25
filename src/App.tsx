@@ -5,6 +5,7 @@ import MainLayout from './components/layout/MainLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import BookingPage from './pages/BookingPage'
 import CarDetailPage from './pages/CarDetailPage'
+import ChatPage from './pages/ChatPage'
 import DashboardPage from './pages/DashboardPage'
 import HostDashboardPage from './pages/HostDashboardPage'
 import HostInvitePage from './pages/HostInvitePage'
@@ -65,6 +66,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages/:threadId"
+            element={
+              <ProtectedRoute>
+                <ChatPage />
               </ProtectedRoute>
             }
           />

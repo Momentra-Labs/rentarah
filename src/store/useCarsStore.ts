@@ -22,6 +22,7 @@ export interface CarsStoreState {
   toggleSaved: (carId: string) => void
   addListing: (carData: Omit<Car, 'id' | 'rating' | 'reviewCount' | 'bookedDates'> & Partial<Pick<Car, 'bookedDates'>>) => Car
   updateListing: (id: string, data: Partial<Car>) => void
+  removeListing: (id: string) => void
   getCarById: (id: string) => Car | undefined
 }
 
@@ -131,6 +132,12 @@ export const useCarsStore = create<CarsStoreState>()(
       updateListing: (id, data) =>
         set((state) => ({
           cars: state.cars.map((c) => (c.id === id ? { ...c, ...data } : c)),
+        })),
+
+      removeListing: (id) =>
+        set((state) => ({
+          cars: state.cars.filter((c) => c.id !== id),
+          savedCarIds: state.savedCarIds.filter((x) => x !== id),
         })),
 
       getCarById: (id) => get().cars.find((c) => c.id === id),

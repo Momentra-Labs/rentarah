@@ -14,6 +14,10 @@ export function isNotificationsPath(pathname: string) {
   return pathname === '/notifications' || pathname.startsWith('/notifications/')
 }
 
+export function isMessagesPath(pathname: string) {
+  return pathname === '/messages' || pathname.startsWith('/messages/')
+}
+
 /**
  * Resolve `selected` for sidebar `NavRow` so links that share a pathname stay mutually exclusive
  * (e.g. /dashboard?nav=trips vs /dashboard, /host?section=list vs /host).
@@ -52,6 +56,8 @@ export function resolveNavItemSelected(
       return Boolean(
         user && user.isHost && isHostPath(pathname) && section !== 'list',
       )
+    case 'messages':
+      return isMessagesPath(pathname)
     default:
       return false
   }

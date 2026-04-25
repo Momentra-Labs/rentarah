@@ -31,6 +31,7 @@ import GeolocationShareDialog from './GeolocationShareDialog'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { useNotificationStore, useUnreadNotificationCount } from '../../store/useNotificationStore'
+import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 
 export type NavbarProps = {
   onAuthOpen: () => void
@@ -93,6 +94,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
   const openGeoDialog = useGeolocationStore((s) => s.openGeoDialog)
   const geoActive = useGeolocationStore((s) => s.status === 'ready' && s.userLocation != null)
   const unread = useUnreadNotificationCount()
+  const chatUnread = useChatUnreadForCurrentUser()
   const markAsRead = useNotificationStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationStore((s) => s.markAllAsRead)
 
@@ -251,6 +253,15 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                     }}
                   >
                     Notifications
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      setAnchor(null)
+                      navigate('/messages')
+                    }}
+                  >
+                    Messages
+                    {chatUnread > 0 ? ` (${chatUnread > 9 ? '9+' : chatUnread})` : ''}
                   </MenuItem>
                   <MenuItem
                     onClick={() => {

@@ -11,6 +11,8 @@ import {
   Paper,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -44,6 +46,8 @@ export default function ExploreMapListingStrip({
   title = 'Browse along the map',
   layout = 'panel',
 }: ExploreMapListingStripProps) {
+  const theme = useTheme()
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(false)
@@ -94,10 +98,25 @@ export default function ExploreMapListingStrip({
     border: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.paper',
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     '&:hover': { bgcolor: 'action.hover' },
-    '&.Mui-disabled': { opacity: 0.45 },
+    '&.Mui-disabled': { opacity: 0.4 },
+  } as const
+
+  const navOverlaySx = {
+    position: 'absolute' as const,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: 2,
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: alpha(theme.palette.background.paper, 0.97),
+    boxShadow: `0 2px 10px ${alpha('#000', 0.1)}`,
+    width: 36,
+    height: 36,
+    '&:hover': { bgcolor: 'background.paper' },
+    '&.Mui-disabled': { opacity: 0.3, pointerEvents: 'none' as const },
   }
 
   const cards = listings.map((l) => {
@@ -169,13 +188,21 @@ export default function ExploreMapListingStrip({
             p: 1.5,
             pt: 1.25,
             flex: 1,
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
             gap: 0.75,
+            flexGrow: 1,
+            boxSizing: 'border-box',
             '&:last-child': { pb: 1.5 },
           }}
         >
-          <Stack direction="row" alignItems="flex-start" spacing={0.5} sx={{ minHeight: 40 }}>
+          <Stack
+            direction="row"
+            alignItems="flex-start"
+            spacing={0.5}
+            sx={{ minHeight: { xs: 0, sm: 40 } }}
+          >
             <LocationOnOutlined sx={{ fontSize: 16, color: 'text.secondary', mt: 0.15, flexShrink: 0 }} />
             <Typography
               variant="caption"
@@ -200,7 +227,7 @@ export default function ExploreMapListingStrip({
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              minHeight: 40,
+              minHeight: { xs: 0, sm: 40 },
             }}
           >
             {l.vehicle.displayName}
@@ -214,18 +241,19 @@ export default function ExploreMapListingStrip({
           <Button
             fullWidth
             size="small"
-            variant="outlined"
+            variant={isCompact ? 'contained' : 'outlined'}
             color="primary"
             onClick={(e) => {
               e.stopPropagation()
               onViewDetails(l)
             }}
             sx={{
-              mt: 'auto',
+              mt: 1.25,
               textTransform: 'none',
               fontWeight: 700,
               borderRadius: 1.5,
-              py: 0.75,
+              py: 0.85,
+              boxShadow: 'none',
             }}
           >
             View details
@@ -235,7 +263,57 @@ export default function ExploreMapListingStrip({
     )
   })
 
-  const carousel = (
+  const scrollBoxSx = {
+    flex: 1,
+    minWidth: 0,
+    display: 'flex',
+    gap: 2,
+    overflowX: 'auto',
+    overflowY: 'hidden',
+    py: 0.5,
+    scrollSnapType: 'x mandatory' as const,
+    WebkitOverflowScrolling: 'touch' as const,
+    overscrollBehaviorX: 'contain' as const,
+    scrollbarWidth: 'none' as const,
+    msOverflowStyle: 'none' as const,
+    '&::-webkit-scrollbar': { display: 'none' },
+  }
+
+  const carousel = isCompact ? (
+    <Box sx={{ position: 'relative', mx: 0, px: 0, pb: 0.5 }}>
+      <IconButton
+        aria-label="Previous listings"
+        onClick={() => scrollByStep(-1)}
+        disabled={!canPrev}
+        size="small"
+        sx={{ ...navOverlaySx, left: 4 }}
+      >
+        <ChevronLeft fontSize="small" />
+      </IconButton>
+      <Box
+        ref={scrollRef}
+        sx={{
+          ...scrollBoxSx,
+          pl: 0.5,
+          pr: 0.5,
+          // Keep tap targets from overlapping the first/last card edges
+          scrollPaddingLeft: 8,
+          scrollPaddingRight: 8,
+        }}
+      >
+        {cards}
+      </Box>
+      <IconButton
+        aria-label="Next listings"
+        onClick={() => scrollByStep(1)}
+        disabled={!canNext}
+        size="small"
+        sx={{ ...navOverlaySx, right: 4 }}
+      >
+        <ChevronRight fontSize="small" />
+      </IconButton>
+    </Box>
+  ) : (
     <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
       <IconButton
         aria-label="Previous listings"
@@ -246,24 +324,7 @@ export default function ExploreMapListingStrip({
       >
         <ChevronLeft />
       </IconButton>
-      <Box
-        ref={scrollRef}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          display: 'flex',
-          gap: 2,
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          py: 0.5,
-          scrollSnapType: 'x mandatory',
-          WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorX: 'contain',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
-        }}
-      >
+      <Box ref={scrollRef} sx={scrollBoxSx}>
         {cards}
       </Box>
       <IconButton
@@ -308,7 +369,7 @@ export default function ExploreMapListingStrip({
         flexWrap="wrap"
         useFlexGap
         gap={1}
-        sx={{ px: 2, pt: 2, pb: 1 }}
+        sx={{ px: { xs: 1.75, sm: 2 }, pt: { xs: 1.75, sm: 2 }, pb: { xs: 1, sm: 1 } }}
       >
         <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
           {title}
@@ -321,7 +382,7 @@ export default function ExploreMapListingStrip({
           sx={{ fontWeight: 700 }}
         />
       </Stack>
-      <Box sx={{ px: 1.5, pb: 2 }}>{carousel}</Box>
+      <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: { xs: 1.5, sm: 2 }, pt: 0, overflow: 'hidden' }}>{carousel}</Box>
     </Paper>
   )
 }

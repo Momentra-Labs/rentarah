@@ -1,4 +1,6 @@
 import Add from '@mui/icons-material/Add'
+import DeleteOutline from '@mui/icons-material/DeleteOutline'
+import Edit from '@mui/icons-material/Edit'
 import MonetizationOn from '@mui/icons-material/MonetizationOn'
 import Settings from '@mui/icons-material/Settings'
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
@@ -12,7 +14,12 @@ import {
   CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Fab,
+  FormControlLabel,
   Grid,
   Paper,
   Stack,
@@ -20,13 +27,15 @@ import {
   Tab,
   Tabs,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 
 import ListingForm from '../components/host/ListingForm'
 import PageHeader from '../components/layout/PageHeader'
+import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
 import EarningsCard, { EarningsPlaceholderChart } from '../components/host/EarningsCard'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
@@ -42,6 +51,7 @@ export default function HostDashboardPage() {
   const becomeHost = useAuthStore((s) => s.becomeHost)
   const cars = useCarsStore((s) => s.cars)
   const updateListing = useCarsStore((s) => s.updateListing)
+  const removeListing = useCarsStore((s) => s.removeListing)
   const bookings = useBookingStore((s) => s.bookings)
   const cancelBooking = useBookingStore((s) => s.cancelBooking)
 
@@ -50,6 +60,14 @@ export default function HostDashboardPage() {
 
   const [tab, setTab] = useState(0)
   const [listingOpen, setListingOpen] = useState(false)
+  const [editingCarId, setEditingCarId] = useState<string | null>(null)
+  const [deleteForId, setDeleteForId] = useState<string | null>(null)
+  const shortTabLabels = useMediaQuery(theme.breakpoints.down('md'))
+
+  const closeListingForm = useCallback(() => {
+    setListingOpen(false)
+    setEditingCarId(null)
+  }, [])
 
   useEffect(() => {
     if (user?.isHost && searchParams.get('section') === 'list') {
@@ -140,65 +158,165 @@ export default function HostDashboardPage() {
           dense
         />
 
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tab icon={<DirectionsCar />} iconPosition="start" label="My listings" />
-          <Tab icon={<MonetizationOn />} iconPosition="start" label="Earnings" />
-          <Tab icon={<EventAvailable />} iconPosition="start" label="Booking requests" />
-          <Tab icon={<Settings />} iconPosition="start" label="Listing settings" />
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label="Host dashboard sections"
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            mb: 3,
+            minHeight: 48,
+            '& .MuiTab-root': {
+              minWidth: 0,
+              minHeight: 48,
+              px: { xs: 1, sm: 1.5 },
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+            },
+          }}
+        >
+          <Tab
+            icon={<DirectionsCar fontSize="small" />}
+            iconPosition="start"
+            label={shortTabLabels ? 'Listings' : 'My listings'}
+          />
+          <Tab icon={<MonetizationOn fontSize="small" />} iconPosition="start" label="Earnings" />
+          <Tab
+            icon={<EventAvailable fontSize="small" />}
+            iconPosition="start"
+            label={shortTabLabels ? 'Bookings' : 'Booking requests'}
+          />
+          <Tab
+            icon={<Settings fontSize="small" />}
+            iconPosition="start"
+            label={shortTabLabels ? 'Settings' : 'Listing settings'}
+          />
         </Tabs>
 
       {tab === 0 && (
         <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
           {hostCars.map((car) => (
             <Grid item xs={12} md={6} key={car.id} sx={{ display: 'flex' }}>
-              <Card elevation={0} sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', ...listRowSurface(theme) }}>
-                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Stack direction="row" spacing={2} alignItems="flex-start" sx={{ flex: 1 }}>
-                    <Box
-                      component="img"
-                      src={car.images[0] ?? undefined}
-                      alt=""
-                      onError={(e) => {
-                        e.currentTarget.onerror = null
-                        e.currentTarget.src =
-                          'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=250&fit=crop'
-                      }}
-                      sx={{
-                        width: 140,
-                        height: 88,
-                        objectFit: 'cover',
-                        borderRadius: 2,
-                        bgcolor: 'grey.200',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <Stack flex={1} spacing={1}>
-                      <Typography fontWeight={700}>
-                        {car.year} {car.make} {car.model}
+              <Card
+                elevation={0}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2.5,
+                  ...listRowSurface(theme),
+                }}
+              >
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  alignItems="stretch"
+                  spacing={0}
+                  sx={{ flex: 1 }}
+                >
+                  <Box
+                    component="img"
+                    src={car.images[0] ?? undefined}
+                    alt={`${car.year} ${car.make} ${car.model}`}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null
+                      e.currentTarget.src =
+                        'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&h=250&fit=crop'
+                    }}
+                    sx={{
+                      width: { xs: '100%', sm: 168 },
+                      minHeight: { xs: 160, sm: 120 },
+                      maxHeight: { xs: 200, sm: 160 },
+                      objectFit: 'cover',
+                      bgcolor: 'grey.200',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <CardContent
+                    sx={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      py: 2.5,
+                      '&:last-child': { pb: 2.5 },
+                    }}
+                  >
+                    <Typography variant="h6" component="h3" fontWeight={800} letterSpacing="-0.02em" sx={{ pr: 0.5 }}>
+                      {car.year} {car.make} {car.model}
+                    </Typography>
+                    <Typography color="primary.main" fontWeight={800} fontSize="1.1rem" sx={{ mt: 0.5 }}>
+                      {formatPeso(car.pricePerDay)}
+                      <Typography component="span" variant="body2" color="text.secondary" fontWeight={600} sx={{ ml: 0.5 }}>
+                        /day
                       </Typography>
-                      <Typography color="primary" fontWeight={700}>
-                        {formatPeso(car.pricePerDay)}/day
-                      </Typography>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        <Typography variant="body2">Active listing</Typography>
+                    </Typography>
+                    <FormControlLabel
+                      sx={{ alignItems: 'center', mt: 1.5, ml: 0, mr: 0, gap: 1 }}
+                      control={
                         <Switch
+                          size="small"
                           checked={car.available}
                           onChange={(_, checked) => {
                             updateListing(car.id, { available: checked })
                             showInfo(checked ? 'Listing is live' : 'Listing paused')
                           }}
                         />
-                      </Stack>
+                      }
+                      label={
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          {car.available ? 'Active on search' : 'Hidden from search'}
+                        </Typography>
+                      }
+                    />
+                    <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mt: 'auto', pt: 2 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Edit fontSize="small" />}
+                        onClick={() => {
+                          setEditingCarId(car.id)
+                          setListingOpen(true)
+                        }}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        startIcon={<DeleteOutline fontSize="small" />}
+                        onClick={() => setDeleteForId(car.id)}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Remove
+                      </Button>
                     </Stack>
-                  </Stack>
-                </CardContent>
+                  </CardContent>
+                </Stack>
               </Card>
             </Grid>
           ))}
           {hostCars.length === 0 && (
             <Stack spacing={1.5} alignItems="flex-start" sx={{ py: 1 }}>
               <Typography color="text.secondary">No listings yet — add a vehicle to appear in search for renters.</Typography>
-              <Button variant="contained" startIcon={<Add />} onClick={() => setListingOpen(true)} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => {
+                  setEditingCarId(null)
+                  setListingOpen(true)
+                }}
+                sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}
+              >
                 Add listing
               </Button>
             </Stack>
@@ -276,6 +394,16 @@ export default function HostDashboardPage() {
                       size="small"
                     />
                     <Button
+                      component={RouterLink}
+                      to={`/messages/${b.id}`}
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      disabled={b.status === 'cancelled'}
+                    >
+                      Message
+                    </Button>
+                    <Button
                       size="small"
                       variant="outlined"
                       disabled={b.status === 'cancelled' || b.status === 'confirmed'}
@@ -308,7 +436,33 @@ export default function HostDashboardPage() {
         </Paper>
       )}
 
-      <ListingForm open={listingOpen} onClose={() => setListingOpen(false)} />
+      <ListingForm open={listingOpen} onClose={closeListingForm} editingCarId={editingCarId} />
+
+      <Dialog open={deleteForId != null} onClose={() => setDeleteForId(null)} fullWidth maxWidth="xs">
+        <DialogTitle>Remove this listing?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Renters can no longer find or book it. This cannot be undone in the demo, but you can add a new listing
+            anytime.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button onClick={() => setDeleteForId(null)}>Cancel</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              if (deleteForId) {
+                removeListing(deleteForId)
+                showSuccess('Listing removed')
+              }
+              setDeleteForId(null)
+            }}
+          >
+            Remove
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Fab
         color="primary"
@@ -316,12 +470,15 @@ export default function HostDashboardPage() {
           position: 'fixed',
           right: 16,
           bottom: {
-            xs: `max(24px, calc(56px + env(safe-area-inset-bottom, 0px) + 16px))`,
+            xs: MOBILE_TAB_BAR_FAB_BOTTOM,
             md: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
           },
           display: tab === 0 ? 'inline-flex' : 'none',
         }}
-        onClick={() => setListingOpen(true)}
+        onClick={() => {
+          setEditingCarId(null)
+          setListingOpen(true)
+        }}
         aria-label="add listing"
       >
         <Add />

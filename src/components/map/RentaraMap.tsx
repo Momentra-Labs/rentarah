@@ -1,8 +1,13 @@
+import MyLocation from '@mui/icons-material/MyLocation'
+import Place from '@mui/icons-material/Place'
 import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import L from 'leaflet'
-import { useEffect, useMemo, useState } from 'react'
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap, ZoomControl } from 'react-leaflet'
 
+import { RENTARA_MAP_TILE_URL } from '../../constants/rentaraMapStyle'
+import { getHostPickupMapIcon, getRenterUserLocationMapIcon } from '../../utils/pickupRouteMapIcons'
+import MapAttributionNote from './MapAttributionNote'
 import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { haversineKm, type LatLng } from '../../utils/distance'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
@@ -21,7 +26,7 @@ function FitBounds({ positions }: { positions: L.LatLngTuple[] }) {
   useEffect(() => {
     if (positions.length < 2) return
     const b = L.latLngBounds(positions)
-    map.fitBounds(b, { padding: [48, 48], maxZoom: 16 })
+    map.fitBounds(b, { padding: [56, 56], maxZoom: 16 })
   }, [map, positions])
   return null
 }
@@ -34,6 +39,24 @@ function FitPickupOnly({ host }: { host: L.LatLngTuple }) {
     map.setView([lat, lng], 14, { animate: false })
   }, [map, lat, lng])
   return null
+}
+
+function MapMarkerPopup({ title, body, icon }: { title: string; body: string; icon: ReactNode }) {
+  return (
+    <Box sx={{ minWidth: { xs: 220, sm: 270 }, py: 0.25, pr: 0.25 }}>
+      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+        <Box sx={{ flexShrink: 0, pt: 0.2, display: 'flex' }}>{icon}</Box>
+        <Box>
+          <Typography variant="subtitle2" fontWeight={800} sx={{ lineHeight: 1.3, color: 'text.primary' }}>
+            {title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75, lineHeight: 1.5 }}>
+            {body}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
+  )
 }
 
 function openDirections(host: HostLocation, user: LatLng | null) {
@@ -98,18 +121,8 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
     return () => ac.abort()
   }, [userPos, hostLocation])
 
-  const userIcon = useMemo(
-    () =>
-      L.divIcon({
-        className: 'rentara-map-user-marker',
-        html: '<div style="width:14px;height:14px;background:#1A56DB;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.25)"></div>',
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-      }),
-    [],
-  )
-
   const hostTuple: L.LatLngTuple = [hostLocation.lat, hostLocation.lng]
+
   const fitPositions = useMemo((): L.LatLngTuple[] | null => {
     if (!userPos) return null
     return [
@@ -137,11 +150,11 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
       if (geoStatus === 'pending') {
         return 'Getting your position…'
       }
-      return 'Use the pin icon in the header to share your location for distance and driving route.'
+      return 'Use the location pin in the header so we can show you on the map and draw a route to pickup.'
     }
-    if (routeLoading) return 'Calculating driving route…'
-    if (driveKm != null) return `${driveKm} km driving`
-    if (crowKm != null) return `${crowKm} km away · Could not load road route`
+    if (routeLoading) return 'Calculating driving route from your position to the pickup point…'
+    if (driveKm != null) return `About ${driveKm} km by road from you to the pickup point`
+    if (crowKm != null) return `~${crowKm} km straight-line · Road route could not be loaded`
     return ''
   })()
 
@@ -150,101 +163,159 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
       <Box
         sx={{
           width: '100%',
-          height: { xs: 400, sm: 460 },
           borderRadius: 2,
-          bgcolor: 'grey.100',
           border: '1px solid',
           borderColor: 'divider',
+          overflow: 'hidden',
         }}
-      />
+      >
+        <Box sx={{ height: { xs: 300, sm: 360 }, bgcolor: 'grey.100' }} />
+        <Box sx={{ height: 64, borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }} />
+      </Box>
     )
   }
 
   return (
     <Box
       sx={{
-        position: 'relative',
         width: '100%',
-        height: { xs: 400, sm: 460 },
         borderRadius: 2,
         overflow: 'hidden',
         border: '1px solid',
         borderColor: 'divider',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
         '& .leaflet-container': { fontFamily: 'inherit' },
       }}
     >
-      <MapContainer
-        center={MANILA_CENTER}
-        zoom={12}
-        scrollWheelZoom
-        style={{ height: '100%', width: '100%', zIndex: 0 }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {boundsPositions && <FitBounds positions={boundsPositions} />}
-        {!userPos && <FitPickupOnly host={hostTuple} />}
-        <Marker position={hostTuple}>
-          <Popup>Pickup Location</Popup>
-        </Marker>
-        {userPos && (
-          <Marker position={[userPos.lat, userPos.lng]} icon={userIcon}>
-            <Popup>You are here</Popup>
-          </Marker>
-        )}
-        {userPos && drivingLine && drivingLine.length >= 2 && (
-          <Polyline
-            positions={drivingLine}
-            pathOptions={{
-              color: '#1A56DB',
-              weight: 5,
-              opacity: driveKm != null ? 0.88 : 0.55,
-              lineCap: 'round',
-              lineJoin: 'round',
-            }}
-          />
-        )}
-      </MapContainer>
-
-      <Paper
-        elevation={3}
+      <Box
         sx={{
-          position: 'absolute',
-          left: 12,
-          right: 12,
-          bottom: 12,
-          zIndex: 1000,
-          p: 2,
-          borderRadius: 2,
-          bgcolor: '#FFFFFF',
-          color: '#111827',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+          height: { xs: 300, sm: 360 },
+          position: 'relative',
+          minHeight: 0,
         }}
       >
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} justifyContent="space-between">
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#111827' }}>
-              Pickup Location
+        <MapContainer
+          center={MANILA_CENTER}
+          zoom={12}
+          scrollWheelZoom
+          zoomControl={false}
+          attributionControl={false}
+          className="rentara-leaflet-surface"
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer attribution="" url={RENTARA_MAP_TILE_URL} />
+          <ZoomControl position="topright" />
+          {boundsPositions && <FitBounds positions={boundsPositions} />}
+          {!userPos && <FitPickupOnly host={hostTuple} />}
+          {userPos && drivingLine && drivingLine.length >= 2 && (
+            <Polyline
+              positions={drivingLine}
+              pathOptions={{
+                color: '#1A56DB',
+                weight: 5,
+                opacity: driveKm != null ? 0.88 : 0.55,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+            />
+          )}
+          <Marker position={hostTuple} icon={getHostPickupMapIcon()} zIndexOffset={1000}>
+            <Popup className="rentara-map-popup">
+              <MapMarkerPopup
+                title="Vehicle pickup (host)"
+                body="This is where you meet the host and pick up the vehicle. Use Get directions to open your maps app."
+                icon={<Place sx={{ color: 'warning.main', fontSize: 22 }} />}
+              />
+            </Popup>
+          </Marker>
+          {userPos && (
+            <Marker position={[userPos.lat, userPos.lng]} icon={getRenterUserLocationMapIcon()} zIndexOffset={100}>
+              <Popup className="rentara-map-popup">
+                <MapMarkerPopup
+                  title="Your location (renter)"
+                  body="This dot is you — we use it to show distance and a driving line to the pickup point."
+                  icon={<MyLocation sx={{ color: 'primary.main', fontSize: 22 }} />}
+                />
+              </Popup>
+            </Marker>
+          )}
+        </MapContainer>
+      </Box>
+      <MapAttributionNote />
+      <Paper
+        elevation={0}
+        square
+        sx={{
+          p: 1.5,
+          borderTop: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.25}
+          alignItems={{ xs: 'stretch', sm: 'center' }}
+          useFlexGap
+        >
+          <Stack direction="row" flexWrap="wrap" alignItems="center" useFlexGap gap={1.25} sx={{ flexShrink: 0 }}>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  flexShrink: 0,
+                  background: 'linear-gradient(160deg, #1e88e5 0%, #0d47a0 100%)',
+                  border: '1px solid',
+                  borderColor: 'common.white',
+                  boxShadow: 1,
+                }}
+              />
+              <Typography variant="caption" fontWeight={800}>
+                You
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.disabled" component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+              |
             </Typography>
-            <Typography variant="body2" sx={{ color: '#111827', opacity: 0.85, mt: 0.25 }}>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 1,
+                  flexShrink: 0,
+                  bgcolor: '#e65100',
+                  boxShadow: 1,
+                }}
+              />
+              <Typography variant="caption" fontWeight={800}>
+                Pickup
+              </Typography>
+            </Stack>
+          </Stack>
+          {distanceLabel ? (
+            <Typography variant="caption" color="text.secondary" sx={{ flex: 1, minWidth: 0, lineHeight: 1.5 }}>
               {distanceLabel}
             </Typography>
-          </Box>
+          ) : null}
           <Button
             variant="contained"
-            size="medium"
+            size="small"
             onClick={() => openDirections(hostLocation, userPos)}
             sx={{
-              flexShrink: 0,
-              bgcolor: '#1A56DB',
-              '&:hover': { bgcolor: '#1647b8' },
-              borderRadius: 2,
               textTransform: 'none',
-              fontWeight: 600,
+              fontWeight: 700,
+              borderRadius: 1.5,
+              px: 2,
+              flexShrink: 0,
+              alignSelf: { xs: 'stretch', sm: 'center' },
             }}
           >
-            Get Directions
+            Get directions
           </Button>
         </Stack>
       </Paper>

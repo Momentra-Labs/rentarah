@@ -287,6 +287,33 @@ export interface StoredUser extends AuthUser {
   passwordHash: string
 }
 
+// --- in-app host ↔ guest chat (MVP: client-only; future `GET /conversations` / websockets) ---
+
+/**
+ * One thread per booking (same id as {@link BookingRecord.id} for easy linking from trips).
+ */
+export interface ChatThread {
+  id: string
+  bookingId: string
+  carId: string
+  hostId: string
+  renterId: string
+  carName: string
+  hostName: string
+  renterName: string
+  /** Denormalized for list preview */
+  lastMessageAt: string
+  lastPreview: string
+}
+
+export interface ChatMessage {
+  id: string
+  threadId: string
+  senderId: string
+  body: string
+  createdAt: string
+}
+
 // --- in-app notifications (client + future `GET /notifications`) ---
 
 /** Drives icon, color, and filter tab grouping in the UI */

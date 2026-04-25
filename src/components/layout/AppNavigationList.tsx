@@ -11,13 +11,15 @@ import SearchOutlined from '@mui/icons-material/SearchOutlined'
 import SportsMotorsportsOutlined from '@mui/icons-material/SportsMotorsportsOutlined'
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import TwoWheelerOutlined from '@mui/icons-material/TwoWheelerOutlined'
-import { alpha, Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material'
+import { alpha, Badge, Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } from '@mui/material'
+import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
 import type { Theme } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { VehicleType } from '../../types'
 import { resolveNavItemSelected } from './navSelection'
 
@@ -148,6 +150,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
   const hash = location.hash
   const search = location.search
   const user = useAuthStore((s) => s.user)
+  const chatUnread = useChatUnreadForCurrentUser()
 
   const exploreNav: NavRow[] = user
     ? [...EXPLORE_CORE, ...(user.isHost ? [LIST_VEHICLE_ROW] : [BECOME_HOST_ROW])]
@@ -168,6 +171,13 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           kind: 'link',
           to: '/dashboard',
           icon: <EventNoteOutlined fontSize="small" />,
+        },
+        {
+          key: 'messages',
+          label: 'Messages',
+          kind: 'link',
+          to: '/messages',
+          icon: <ChatBubbleOutline fontSize="small" />,
         },
         ...(user.isHost
           ? [
@@ -227,7 +237,22 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
         onClick={() => onNavigate?.()}
         sx={(theme) => navItemSx(theme, selected)}
       >
-        <ListItemIcon sx={{ minWidth: 40 }}>{row.icon}</ListItemIcon>
+        <ListItemIcon sx={{ minWidth: 40 }}>
+          {row.key === 'messages' && chatUnread > 0 ? (
+            <Badge
+              color="error"
+              badgeContent={chatUnread > 9 ? '9+' : chatUnread}
+              overlap="circular"
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <Box component="span" sx={{ display: 'inline-flex' }}>
+                {row.icon}
+              </Box>
+            </Badge>
+          ) : (
+            row.icon
+          )}
+        </ListItemIcon>
         <ListItemText primary={row.label} primaryTypographyProps={{ fontWeight: selected ? 700 : 600, fontSize: '0.9375rem' }} />
       </ListItemButton>
     )

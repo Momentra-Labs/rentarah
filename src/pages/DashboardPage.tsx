@@ -13,6 +13,7 @@ import {
   Tabs,
   TextField,
   Typography,
+  useMediaQuery,
   useTheme,
 } from '@mui/material'
 import dayjs from 'dayjs'
@@ -30,6 +31,7 @@ import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pag
 
 export default function DashboardPage() {
   const theme = useTheme()
+  const shortTabLabels = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
@@ -97,9 +99,25 @@ export default function DashboardPage() {
             }
           }}
           variant="scrollable"
-          sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label="Account sections"
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            mb: 3,
+            minHeight: 48,
+            '& .MuiTab-root': {
+              minWidth: 0,
+              minHeight: 48,
+              px: { xs: 1, sm: 1.5 },
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.8rem',
+            },
+          }}
         >
-        <Tab label="Upcoming" />
+        <Tab label={shortTabLabels ? 'Upcoming' : 'Upcoming trips'} />
         <Tab label="Past" />
         <Tab label="Saved" />
         <Tab label="Reviews" />
@@ -123,8 +141,11 @@ export default function DashboardPage() {
                       <Typography>{formatPeso(b.total)}</Typography>
                     </Box>
                   </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                     <Chip label={b.status} color="success" size="small" />
+                    <Button component={RouterLink} to={`/messages/${b.id}`} size="small" variant="contained" color="primary" sx={{ borderRadius: 1.5 }}>
+                      Message
+                    </Button>
                     <Button component={RouterLink} to={`/cars/${b.carId}`} size="small" variant="outlined" color="primary" sx={{ borderRadius: 1.5 }}>
                       View
                     </Button>
@@ -151,10 +172,17 @@ export default function DashboardPage() {
           {past.map((b) => (
             <Card key={b.id} elevation={0} sx={{ opacity: 0.92, ...listRowSurface(theme) }}>
               <CardContent>
-                <Typography fontWeight={700}>{b.carName}</Typography>
-                <Typography variant="body2">
-                  {b.pickup} – {b.dropoff}
-                </Typography>
+                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1} alignItems={{ sm: 'center' }}>
+                  <Box>
+                    <Typography fontWeight={700}>{b.carName}</Typography>
+                    <Typography variant="body2">
+                      {b.pickup} – {b.dropoff}
+                    </Typography>
+                  </Box>
+                  <Button component={RouterLink} to={`/messages/${b.id}`} size="small" variant="outlined" sx={{ borderRadius: 1.5, alignSelf: { xs: 'flex-start', sm: 'center' } }}>
+                    Message
+                  </Button>
+                </Stack>
               </CardContent>
             </Card>
           ))}

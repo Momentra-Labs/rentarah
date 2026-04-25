@@ -1,3 +1,4 @@
+import Close from '@mui/icons-material/Close'
 import {
   Box,
   Button,
@@ -9,6 +10,7 @@ import {
   FormControl,
   FormControlLabel,
   FormGroup,
+  IconButton,
   InputLabel,
   MenuItem,
   Radio,
@@ -18,7 +20,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { DEFAULT_SEARCH_LOCATION } from '../../constants/geo'
 import type { Car, VehicleType } from '../../types'
@@ -64,6 +66,8 @@ const PLACEHOLDER_IMAGE: Record<VehicleType, string> = {
 export interface ListingFormProps {
   open: boolean
   onClose: () => void
+  /** When set, the form loads that listing and updates it on save. */
+  editingCarId?: string | null
 }
 
 type FormState = {
@@ -104,23 +108,115 @@ const initialForm = (): FormState => ({
   features: Object.fromEntries(FEATURE_OPTIONS.map((f) => [f, false])) as Record<string, boolean>,
 })
 
-export default function ListingForm({ open, onClose }: ListingFormProps) {
+function carToForm(car: Car): FormState {
+  const base = initialForm()
+  const feat = { ...base.features }
+  for (const f of car.features) {
+    if (f in feat) feat[f] = true
+  }
+  const isCar = car.vehicleType === 'car'
+  const transmission =
+    !isCar && car.transmissionType
+      ? car.transmissionType === 'manual'
+        ? 'Manual'
+        : 'Automatic'
+      : /manual/i.test(car.transmission)
+        ? 'Manual'
+        : 'Automatic'
+  const odo = car.odometer === '—' ? '' : car.odometer
+  return {
+    ...base,
+    vehicleType: car.vehicleType,
+    make: car.make,
+    model: car.model,
+    year: String(car.year),
+    type: car.type,
+    pricePerDay: String(car.pricePerDay),
+    description: car.description,
+    seats: car.seats,
+    transmission,
+    fuel: car.fuel,
+    odometer: odo,
+    location: car.location,
+    plateNumber: car.plateNumber,
+    engineCapacity: car.engineCapacity != null ? String(car.engineCapacity) : '',
+    helmetIncluded: car.helmetIncluded ?? true,
+    features: feat,
+  }
+}
+
+function formSnapshotKey(f: FormState): string {
+  return JSON.stringify(f)
+}
+
+export default function ListingForm({ open, onClose, editingCarId = null }: ListingFormProps) {
   const user = useAuthStore((s) => s.user)
   const addListing = useCarsStore((s) => s.addListing)
+  const updateListing = useCarsStore((s) => s.updateListing)
+  const getCarById = useCarsStore((s) => s.getCarById)
   const showSuccess = useSnackbarStore((s) => s.showSuccess)
+  const showError = useSnackbarStore((s) => s.showError)
 
   const [step, setStep] = useState(0)
   const [form, setForm] = useState<FormState>(initialForm)
+  const [initialSnapshot, setInitialSnapshot] = useState<FormState | null>(null)
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false)
+  const isEditing = Boolean(editingCarId)
+
+  useEffect(() => {
+    if (!open) {
+      setInitialSnapshot(null)
+      setDiscardDialogOpen(false)
+      return
+    }
+    if (editingCarId) {
+      const car = getCarById(editingCarId)
+      if (car) {
+        const next = carToForm(car)
+        setForm(next)
+        setStep(0)
+        setInitialSnapshot(next)
+        return
+      }
+      showError('Could not load that listing.')
+      onClose()
+      return
+    }
+    const next = initialForm()
+    setForm(next)
+    setStep(0)
+    setInitialSnapshot(next)
+  }, [open, editingCarId, getCarById, onClose, showError])
 
   const selectedFeatures = useMemo(
     () => Object.entries(form.features).filter(([, v]) => v).map(([k]) => k),
     [form.features],
   )
 
+  const shouldConfirmDiscard = useMemo(() => {
+    if (!open || !initialSnapshot) return false
+    if (step > 0) return true
+    return formSnapshotKey(form) !== formSnapshotKey(initialSnapshot)
+  }, [open, initialSnapshot, form, step])
+
   const resetAndClose = () => {
     setStep(0)
     setForm(initialForm())
+    setInitialSnapshot(null)
+    setDiscardDialogOpen(false)
     onClose()
+  }
+
+  const requestClose = () => {
+    if (shouldConfirmDiscard) {
+      setDiscardDialogOpen(true)
+    } else {
+      resetAndClose()
+    }
+  }
+
+  const handleMainDialogClose = (_event: object, _reason: 'backdropClick' | 'escapeKeyDown') => {
+    requestClose()
   }
 
   const handleSubmit = () => {
@@ -140,7 +236,8 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
         }
       : {}
 
-    const payload: Omit<Car, 'id' | 'rating' | 'reviewCount' | 'bookedDates'> & { bookedDates?: string[] } = {
+    const featureList = selectedFeatures.length ? selectedFeatures : ['Bluetooth']
+    const commonFields = {
       vehicleType: form.vehicleType,
       make: form.make.trim(),
       model: form.model.trim(),
@@ -151,24 +248,52 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
       fuel: form.fuel,
       odometer: form.odometer.trim() || '—',
       seats: form.seats,
-      images: [PLACEHOLDER_IMAGE[form.vehicleType]],
-      features: selectedFeatures.length ? selectedFeatures : ['Bluetooth'],
-      tags: ['New'],
-      available: true,
+      features: featureList,
       location: form.location.trim() || DEFAULT_SEARCH_LOCATION,
-      hostId: user.id,
-      hostName: `${user.firstName} ${user.lastName}`,
-      hostAvatar: user.avatar,
-      hostTrips: 0,
-      hostResponseTime: '< 1 hour',
       description: form.description.trim() || 'Hosted on Rentara.',
       plateNumber: form.plateNumber.trim().toUpperCase() || 'NEW LST',
-      bookedDates: [],
       ...twoWheelerFields,
-    }
+    } satisfies Partial<Car>
 
-    addListing(payload)
-    showSuccess('New listing added!')
+    if (isEditing && editingCarId) {
+      const ex = getCarById(editingCarId)
+      if (!ex) {
+        showError('This listing is no longer available.')
+        return
+      }
+      updateListing(editingCarId, {
+        ...commonFields,
+        images: ex.images,
+        tags: ex.tags,
+        bookedDates: ex.bookedDates,
+        rating: ex.rating,
+        reviewCount: ex.reviewCount,
+        available: ex.available,
+        hostId: ex.hostId,
+        hostName: ex.hostName,
+        hostAvatar: ex.hostAvatar,
+        hostTrips: ex.hostTrips,
+        hostResponseTime: ex.hostResponseTime,
+        pickupLat: ex.pickupLat,
+        pickupLng: ex.pickupLng,
+      })
+      showSuccess('Listing updated.')
+    } else {
+      const payload: Omit<Car, 'id' | 'rating' | 'reviewCount' | 'bookedDates'> & { bookedDates?: string[] } = {
+        ...commonFields,
+        images: [PLACEHOLDER_IMAGE[form.vehicleType]],
+        tags: ['New'],
+        available: true,
+        hostId: user.id,
+        hostName: `${user.firstName} ${user.lastName}`,
+        hostAvatar: user.avatar,
+        hostTrips: 0,
+        hostResponseTime: '< 1 hour',
+        bookedDates: [],
+      }
+      addListing(payload)
+      showSuccess('New listing added!')
+    }
     resetAndClose()
   }
 
@@ -197,15 +322,39 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
   }
 
   return (
+    <>
     <Dialog
       open={open}
-      onClose={resetAndClose}
+      onClose={handleMainDialogClose}
       maxWidth="sm"
       fullWidth
       scroll="paper"
       disableRestoreFocus
     >
-      <DialogTitle>List a new vehicle — step {step + 1} of 4</DialogTitle>
+      <DialogTitle
+        sx={{
+          pr: 5,
+          pt: 2,
+          pb: 1.5,
+        }}
+      >
+        <IconButton
+          type="button"
+          aria-label="Close listing form"
+          onClick={() => requestClose()}
+          sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}
+        >
+          <Close />
+        </IconButton>
+        <Stack spacing={0.5} alignItems="flex-start" component="div">
+          <Typography component="span" variant="h6" sx={{ pr: 2, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+            {isEditing ? 'Edit listing' : 'List a new vehicle'} — step {step + 1} of 4
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ pr: 2, lineHeight: 1.4 }}>
+            If you close this window before saving, your changes will not be kept.
+          </Typography>
+        </Stack>
+      </DialogTitle>
       <DialogContent dividers>
         {step === 0 && (
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -385,7 +534,7 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={step === 0 ? resetAndClose : () => setStep((s) => s - 1)}>{step === 0 ? 'Cancel' : 'Back'}</Button>
+        <Button onClick={step === 0 ? requestClose : () => setStep((s) => s - 1)}>{step === 0 ? 'Cancel' : 'Back'}</Button>
         <Box sx={{ flex: '1 1 auto' }} />
         {step < 3 ? (
           <Button variant="contained" onClick={goNext}>
@@ -393,10 +542,39 @@ export default function ListingForm({ open, onClose }: ListingFormProps) {
           </Button>
         ) : (
           <Button variant="contained" onClick={handleSubmit}>
-            List my vehicle
+            {isEditing ? 'Save changes' : 'List my vehicle'}
           </Button>
         )}
       </DialogActions>
     </Dialog>
+
+    <Dialog
+      open={discardDialogOpen}
+      onClose={() => setDiscardDialogOpen(false)}
+      maxWidth="xs"
+      fullWidth
+      disableRestoreFocus
+    >
+      <DialogTitle>Discard your changes?</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary">
+          None of your edits will be saved. You can return and save when you are ready.
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ px: 2, pb: 2 }}>
+        <Button onClick={() => setDiscardDialogOpen(false)}>Keep editing</Button>
+        <Button
+          color="error"
+          variant="contained"
+          onClick={() => {
+            setDiscardDialogOpen(false)
+            resetAndClose()
+          }}
+        >
+          Close without saving
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   )
 }

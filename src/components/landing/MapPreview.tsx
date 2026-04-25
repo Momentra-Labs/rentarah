@@ -84,7 +84,7 @@ export default function MapPreview({ cars }: MapPreviewProps) {
           pointerEvents: 'none',
           position: 'absolute',
           inset: 0,
-          background: `linear-gradient(180deg, ${alpha('#fff', 0)} 0%, ${alpha('#fff', 0.08)} 45%, ${alpha('#fff', 0.92)} 100%)`,
+          background: `linear-gradient(180deg, transparent 0%, ${alpha('#dfe8d8', 0.28)} 40%, ${alpha('#fff', 0.97)} 100%)`,
           zIndex: 400,
         }}
       />

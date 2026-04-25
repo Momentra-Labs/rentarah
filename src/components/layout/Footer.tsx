@@ -199,7 +199,7 @@ export default function Footer({ onAuthOpen }: FooterProps) {
         pt: { xs: 4, md: 5 },
         pb: {
           xs: (t) =>
-            `calc(${t.spacing(4)} + 56px + env(safe-area-inset-bottom, 0px))`,
+            `calc(${t.spacing(4)} + 72px + env(safe-area-inset-bottom, 0px))`,
           md: 5,
         },
         '&::before': {
