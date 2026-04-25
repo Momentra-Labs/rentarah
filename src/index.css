@@ -27,9 +27,12 @@ body {
   border: none !important;
 }
 
-/* Pickup route map: custom DivIcons (renter = blue target, host = orange pin) */
-.rentara-pickup-route-icon {
-  background: transparent !important;
+/* Pickup route map: strip Leaflet’s default white tile on divIcon.
+   Never use `background: transparent !important` here — it overrides the renter
+   marker’s inline blue gradient. Higher specificity than `.leaflet-div-icon` so it wins
+   over leaflet.css; inline styles still beat this for the gradient. */
+.rentara-leaflet-surface .leaflet-marker-icon.rentara-pickup-route-icon.leaflet-div-icon {
+  background: transparent;
   border: none !important;
 }
 

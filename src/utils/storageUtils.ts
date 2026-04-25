@@ -15,3 +15,11 @@ export function lsGet<T>(key: string, fallback: T): T {
 export function lsSet(key: string, value: unknown) {
   localStorage.setItem(PREFIX + key, JSON.stringify(value))
 }
+
+export function lsRemove(key: string) {
+  try {
+    localStorage.removeItem(PREFIX + key)
+  } catch {
+    /* ignore */
+  }
+}

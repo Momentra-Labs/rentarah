@@ -16,6 +16,7 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { useBookingStore } from '../../store/useBookingStore'
 import { useCarsStore } from '../../store/useCarsStore'
 import { useChatStore } from '../../store/useChatStore'
+import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { useSearchStore } from '../../store/useSearchStore'
 import type { AuthLocationState } from '../../types/authFlow'
 
@@ -37,6 +38,7 @@ export default function MainLayout() {
   const bookings = useBookingStore((s) => s.bookings)
   const syncThreadsFromBookings = useChatStore((s) => s.syncThreadsFromBookings)
   const ensureMockChatPreview = useChatStore((s) => s.ensureMockChatPreview)
+  const restoreIfPermittedOnLoad = useGeolocationStore((s) => s.restoreIfPermittedOnLoad)
   const [authOpen, setAuthOpen] = useState(false)
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
@@ -56,6 +58,11 @@ export default function MainLayout() {
     syncThreadsFromBookings(bookings)
     ensureMockChatPreview()
   }, [user, bookings, syncThreadsFromBookings, ensureMockChatPreview])
+
+  /** Full reload wiped Zustand, but the browser can still have location allowed — re-fetch. */
+  useEffect(() => {
+    restoreIfPermittedOnLoad()
+  }, [restoreIfPermittedOnLoad])
 
   const showLoadingScreen = vehiclesLoading || !minSplashElapsed
 

@@ -18,7 +18,7 @@ let cachedPickup: L.DivIcon | null = null
 
 export function getRenterUserLocationMapIcon(): L.DivIcon {
   if (cachedYou) return cachedYou
-  const html = `<div class="rentara-pickup-route-icon rentara-pickup-route-you" style="width:40px;height:40px;border-radius:50%;background:${YOU_BG};border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center" aria-hidden="true">
+  const html = `<div class="rentara-pickup-route-icon rentara-pickup-route-you" style="width:40px;height:40px;border-radius:50%;background-color:#1565c0;background-image:${YOU_BG};border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center" aria-hidden="true">
 <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff" xmlns="http://www.w3.org/2000/svg"><path d="${MY_LOC_PATH}"/></svg>
 </div>`
   cachedYou = L.divIcon({
