@@ -22,10 +22,10 @@ export default function RentaraLoadingLogo() {
   return (
     <Box
       sx={{
-        width: '80%',
-        maxWidth: { xs: 150, sm: 248, md: 288 },
+        width: { xs: '100%', sm: '88%' },
+        maxWidth: { xs: 112, sm: 160, md: 184 },
         mx: 'auto',
-        filter: `drop-shadow(0 10px 28px ${alpha(theme.palette.primary.dark, 0.14)})`,
+        filter: `drop-shadow(0 6px 18px ${alpha(theme.palette.primary.dark, 0.12)})`,
       }}
     >
       <motion.div
@@ -35,7 +35,7 @@ export default function RentaraLoadingLogo() {
             ? {
                 opacity: 1,
                 scale: 1,
-                y: [0, -6, -4, -8, 0],
+                y: [0, -4, -3, -5, 0],
                 rotate: [0, -1.2, 0.9, -0.6, 0],
               }
             : { opacity: 1, scale: 1 }

@@ -33,8 +33,8 @@ function CarSilhouette({ scale = 1 }: VehicleProps) {
   return (
     <svg
       viewBox="0 0 72 36"
-      width={56 * scale}
-      height={28 * scale}
+      width={46 * scale}
+      height={23 * scale}
       style={{
         display: 'block',
         filter: `drop-shadow(0 2px 8px ${shadow})`,
@@ -66,8 +66,8 @@ function MotoSilhouette({ scale = 1 }: VehicleProps) {
   return (
     <svg
       viewBox="0 0 64 44"
-      width={44 * scale}
-      height={30 * scale}
+      width={36 * scale}
+      height={25 * scale}
       style={{
         display: 'block',
         filter: `drop-shadow(0 2px 8px ${shadow})`,
@@ -118,16 +118,16 @@ export default function LoadingRoadScene() {
     <Box
       sx={{
         width: '100%',
-        maxWidth: { xs: 340, sm: 400, md: 440 },
+        maxWidth: { xs: 260, sm: 300, md: 340 },
         mx: 'auto',
-        mt: { xs: 2, sm: 2.5 },
+        mt: { xs: 1.25, sm: 1.5 },
       }}
     >
       <Box
         aria-hidden
         sx={{
           position: 'relative',
-          height: { xs: 130, sm: 150 },
+          height: { xs: 92, sm: 108 },
           borderRadius: 3,
           overflow: 'hidden',
           border: '1px solid',
@@ -187,35 +187,35 @@ export default function LoadingRoadScene() {
           sx={{
             position: 'absolute',
             left: reduceMotion ? '8%' : 0,
-            bottom: 18,
+            bottom: 14,
             display: 'flex',
             alignItems: 'flex-end',
             ...vehicleMotion(5.2, '-1.2s'),
           }}
         >
-          <CarSilhouette scale={1.05} />
+          <CarSilhouette scale={1} />
         </Box>
 
         <Box
           sx={{
             position: 'absolute',
             left: reduceMotion ? '52%' : 0,
-            bottom: 22,
+            bottom: 16,
             display: 'flex',
             alignItems: 'flex-end',
             ...vehicleMotion(7.4, '-3.5s'),
           }}
         >
-          <MotoSilhouette scale={1} />
+          <MotoSilhouette scale={0.95} />
         </Box>
 
         <Box
           sx={{
             position: 'absolute',
             left: reduceMotion ? '22%' : 0,
-            bottom: 52,
+            bottom: 42,
             opacity: 0.9,
-            transform: 'scale(0.82)',
+            transform: 'scale(0.78)',
             transformOrigin: 'bottom left',
           }}
         >
@@ -226,7 +226,7 @@ export default function LoadingRoadScene() {
               ...vehicleMotion(9.5, '-0.8s'),
             }}
           >
-            <MotoSilhouette scale={0.95} />
+            <MotoSilhouette scale={0.9} />
           </Box>
         </Box>
 
@@ -234,9 +234,9 @@ export default function LoadingRoadScene() {
           sx={{
             position: 'absolute',
             left: reduceMotion ? '68%' : 0,
-            bottom: 56,
+            bottom: 46,
             opacity: 0.88,
-            transform: 'scale(0.78)',
+            transform: 'scale(0.72)',
             transformOrigin: 'bottom left',
           }}
         >
@@ -247,22 +247,26 @@ export default function LoadingRoadScene() {
               ...vehicleMotion(11, '-5s'),
             }}
           >
-            <CarSilhouette scale={0.9} />
+            <CarSilhouette scale={0.85} />
           </Box>
         </Box>
       </Box>
 
       <Typography
-        variant="body2"
+        variant="caption"
+        component="p"
         aria-hidden
         sx={{
-          mt: 2,
+          mt: 1.25,
           textAlign: 'center',
           fontWeight: 500,
-          lineHeight: 1.55,
-          px: 1,
-          color: alpha(theme.palette.text.secondary, 0.92),
-          letterSpacing: '0.01em',
+          lineHeight: 1.5,
+          fontSize: { xs: '0.7rem', sm: '0.75rem' },
+          px: 1.5,
+          maxWidth: 300,
+          mx: 'auto',
+          color: alpha(theme.palette.text.secondary, 0.9),
+          letterSpacing: '0.02em',
         }}
       >
         Enjoy the ride — cars and bikes on the move while we finish loading.

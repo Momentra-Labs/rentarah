@@ -10,6 +10,9 @@ export const MOCK_HOST_IDS = {
  */
 export const DEMO_USER_ID = MOCK_HOST_IDS.carlo
 
+/** Fictional renter in {@link buildMockChatPreview} when the demo user is the host. */
+export const MOCK_GUEST_RENTER_ID = 'user_003'
+
 export interface SeedHostInfo {
   id: string
   displayName: string

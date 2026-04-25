@@ -23,7 +23,7 @@ export default function LoadingScreen() {
         bgcolor: '#FFFFFF',
       }}
     >
-      <Box sx={{ mb: { xs: 0.25, sm: 0.5, md: 0.75 }, transition: 'opacity 0.25s ease' }}>
+      <Box sx={{ mb: { xs: 0, sm: 0.25 }, transition: 'opacity 0.25s ease' }}>
         <RentaraLoadingLogo />
       </Box>
 

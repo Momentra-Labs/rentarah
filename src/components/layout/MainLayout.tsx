@@ -36,6 +36,7 @@ export default function MainLayout() {
   const user = useAuthStore((s) => s.user)
   const bookings = useBookingStore((s) => s.bookings)
   const syncThreadsFromBookings = useChatStore((s) => s.syncThreadsFromBookings)
+  const ensureMockChatPreview = useChatStore((s) => s.ensureMockChatPreview)
   const [authOpen, setAuthOpen] = useState(false)
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
@@ -51,8 +52,10 @@ export default function MainLayout() {
   }, [])
 
   useEffect(() => {
-    if (user) syncThreadsFromBookings(bookings)
-  }, [user, bookings, syncThreadsFromBookings])
+    if (!user) return
+    syncThreadsFromBookings(bookings)
+    ensureMockChatPreview()
+  }, [user, bookings, syncThreadsFromBookings, ensureMockChatPreview])
 
   const showLoadingScreen = vehiclesLoading || !minSplashElapsed
 

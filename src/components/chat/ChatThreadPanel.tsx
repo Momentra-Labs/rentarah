@@ -1,5 +1,6 @@
 import Send from '@mui/icons-material/Send'
 import { Avatar, Box, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -26,12 +27,20 @@ export default function ChatThreadPanel({
   hideThreadHeader = false,
 }: ChatThreadPanelProps) {
   const [draft, setDraft] = useState('')
-  const bottomRef = useRef<HTMLDivElement | null>(null)
+  const scrollElRef = useRef<HTMLDivElement | null>(null)
 
   const sorted = useMemo(() => [...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)), [messages])
 
+  /** Only scroll the message list box — not the window (scrollIntoView was scrolling the page / other panels). */
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollElRef.current
+    if (!el) return
+    const run = () => {
+      el.scrollTop = el.scrollHeight
+    }
+    run()
+    const t = window.requestAnimationFrame(run)
+    return () => window.cancelAnimationFrame(t)
   }, [sorted.length, thread.id])
 
   const title = otherName(thread, currentUserId)
@@ -70,6 +79,7 @@ export default function ChatThreadPanel({
       )}
 
       <Box
+        ref={scrollElRef}
         sx={{
           flex: 1,
           overflow: 'auto',
@@ -102,7 +112,16 @@ export default function ChatThreadPanel({
                   borderColor: 'divider',
                 }}
               >
-                <Typography variant="body2" sx={{ lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    lineHeight: 1.45,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    /* theme body2/caption set explicit grays that override Paper color on sent bubbles */
+                    ...(mine ? { color: 'common.white' } : {}),
+                  }}
+                >
                   {m.body}
                 </Typography>
                 <Typography
@@ -110,9 +129,16 @@ export default function ChatThreadPanel({
                   sx={{
                     display: 'block',
                     mt: 0.75,
-                    opacity: 0.85,
                     textAlign: 'right',
                     fontSize: '0.7rem',
+                    ...(mine
+                      ? {
+                          color: (theme) => alpha(theme.palette.common.white, 0.88),
+                        }
+                      : {
+                          color: 'text.secondary',
+                          opacity: 0.9,
+                        }),
                   }}
                 >
                   {dayjs(m.createdAt).format('MMM D, h:mm a')}
@@ -121,7 +147,6 @@ export default function ChatThreadPanel({
             </Box>
           )
         })}
-        <div ref={bottomRef} />
       </Box>
 
       <Box

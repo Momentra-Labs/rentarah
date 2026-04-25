@@ -2,6 +2,7 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
 
+import { buildMockChatPreview, MOCK_CHAT_THREAD_ID } from '../data/mockChatPreview'
 import type { BookingRecord, ChatMessage, ChatThread } from '../types'
 import { useAuthStore } from './useAuthStore'
 import { useCarsStore } from './useCarsStore'
@@ -21,6 +22,8 @@ export interface ChatStoreState {
   markThreadRead: (threadId: string) => void
   getThreadsForUser: (userId: string) => ChatThread[]
   getUnreadForUser: (userId: string) => number
+  /** Ensures a sample thread + messages when there is no real booking (Messages UI dev/demo). */
+  ensureMockChatPreview: () => void
 }
 
 function seedWelcomeMessages(thread: ChatThread): ChatMessage[] {
@@ -167,6 +170,28 @@ export const useChatStore = create<ChatStoreState>()(
           }
         }
         return n
+      },
+
+      ensureMockChatPreview: () => {
+        const u = useAuthStore.getState().user
+        if (!u) return
+        let seeded = false
+        set((s) => {
+          const existing = s.threadById[MOCK_CHAT_THREAD_ID]
+          const msgs = s.messagesByThread[MOCK_CHAT_THREAD_ID] ?? []
+          if (existing) {
+            const inThread = existing.hostId === u.id || existing.renterId === u.id
+            if (inThread && msgs.length > 0) return s
+          }
+          const display = `${u.firstName} ${u.lastName}`.trim() || u.email
+          const { thread, messages } = buildMockChatPreview(u.id, display)
+          seeded = true
+          return {
+            threadById: { ...s.threadById, [MOCK_CHAT_THREAD_ID]: thread },
+            messagesByThread: { ...s.messagesByThread, [MOCK_CHAT_THREAD_ID]: messages },
+          }
+        })
+        if (seeded) get().markThreadRead(MOCK_CHAT_THREAD_ID)
       },
     }),
     {
