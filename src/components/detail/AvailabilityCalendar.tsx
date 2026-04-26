@@ -7,7 +7,7 @@ import dayjs from 'dayjs'
 
 import type { Car } from '../../types'
 import { useDateValidation } from '../../hooks/useDateValidation'
-import { generateRentalOccupancyDates } from '../../utils/dateUtils'
+import { formatTripDateTime, generateRentalOccupancyDates } from '../../utils/dateUtils'
 
 /** ~MUI DayPicker weeks area: (DAY_SIZE + 2*DAY_MARGIN) * 6 rows */
 const CALENDAR_GRID_MIN_HEIGHT = (36 + 4) * 6
@@ -172,6 +172,11 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Booked days and past dates can&apos;t be selected. The blue range matches the days you have the vehicle — the return day is your hand-back and isn&apos;t included in that range (same as your trip price).
       </Typography>
+      {pickup?.isValid() && dropoff?.isValid() && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontWeight: 600 }}>
+          Scheduled: {formatTripDateTime(pickup)} → {formatTripDateTime(dropoff)}
+        </Typography>
+      )}
       <Box
         sx={{
           width: '100%',

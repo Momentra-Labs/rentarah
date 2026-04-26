@@ -37,6 +37,7 @@ import { formatPeso } from '../utils/formatCurrency'
 import { useDateValidation } from '../hooks/useDateValidation'
 import { usePricing } from '../hooks/usePricing'
 import PageHeader from '../components/layout/PageHeader'
+import { formatTripDateTime } from '../utils/dateUtils'
 import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 
 const driverSchema = z.object({
@@ -164,7 +165,7 @@ export default function BookingPage() {
         {car.year} {car.make} {car.model}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        {pickup.format('MMM D')} → {dropoff.format('MMM D, YYYY')}
+        {formatTripDateTime(pickup)} → {formatTripDateTime(dropoff)}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         {car.location}
@@ -224,7 +225,7 @@ export default function BookingPage() {
                             {car.year} {car.make} {car.model}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {pickup.format('MMM D')} → {dropoff.format('MMM D, YYYY')}
+                            {formatTripDateTime(pickup)} → {formatTripDateTime(dropoff)}
                           </Typography>
                           <Typography variant="body2">{car.location}</Typography>
                         </Box>
@@ -333,7 +334,7 @@ export default function BookingPage() {
                         {car.make} {car.model}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {pickup.format('MMM D')} – {dropoff.format('MMM D, YYYY')}
+                        {formatTripDateTime(pickup)} – {formatTripDateTime(dropoff)}
                       </Typography>
                       <Typography variant="h6" sx={{ mt: 1 }}>
                         {pricing.pricing ? formatPeso(pricing.pricing.total) : ''}

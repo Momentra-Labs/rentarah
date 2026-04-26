@@ -4,14 +4,15 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { DEFAULT_SEARCH_LOCATION } from '../../constants/geo'
 import { useSearchStore } from '../../store/useSearchStore'
+import { withDefaultDropoffTime } from '../../utils/dateUtils'
 import SearchBar from './SearchBar'
 import SearchModal from './SearchModal'
 
 function formatDateRange(pickup: Dayjs | null, dropoff: Dayjs | null): string | null {
   if (!pickup?.isValid() || !dropoff?.isValid()) return null
-  const a = pickup.format('MMM D')
-  const b = dropoff.format('MMM D')
-  return `${a} - ${b}`
+  const a = pickup.format('MMM D · h:mm A')
+  const b = dropoff.format('MMM D · h:mm A')
+  return `${a} – ${b}`
 }
 
 function shortLocation(label: string): string {
@@ -30,15 +31,13 @@ export default function BrowseCarSearch() {
 
   const [open, setOpen] = useState(false)
   const [draftLocation, setDraftLocation] = useState(storeLocation)
-  const [draftPickup, setDraftPickup] = useState('')
-  const [draftReturn, setDraftReturn] = useState('')
-
-  const minPickup = useMemo(() => dayjs().format('YYYY-MM-DD'), [])
+  const [draftPickup, setDraftPickup] = useState<Dayjs | null>(null)
+  const [draftDropoff, setDraftDropoff] = useState<Dayjs | null>(null)
 
   const syncDraftFromStore = useCallback(() => {
     setDraftLocation(storeLocation)
-    setDraftPickup(pickup?.isValid() ? pickup.format('YYYY-MM-DD') : '')
-    setDraftReturn(dropoff?.isValid() ? dropoff.format('YYYY-MM-DD') : '')
+    setDraftPickup(pickup?.isValid() ? pickup : null)
+    setDraftDropoff(dropoff?.isValid() ? dropoff : null)
   }, [storeLocation, pickup, dropoff])
 
   const handleOpen = () => {
@@ -48,17 +47,42 @@ export default function BrowseCarSearch() {
 
   const handleClose = () => setOpen(false)
 
+  const handleDraftPickupChange = useCallback((next: Dayjs | null) => {
+    if (!next || !next.isValid()) {
+      setDraftPickup(null)
+      setDraftDropoff(null)
+      return
+    }
+    let adjusted = next
+    const now = dayjs()
+    if (adjusted.isBefore(now)) {
+      adjusted = now.add(1, 'minute').second(0).millisecond(0)
+    }
+    setDraftPickup(adjusted)
+    setDraftDropoff((prev) => {
+      if (!prev?.isValid()) return withDefaultDropoffTime(adjusted.startOf('day').add(3, 'day'))
+      if (!prev.startOf('day').isAfter(adjusted.startOf('day'), 'day')) {
+        return withDefaultDropoffTime(adjusted.startOf('day').add(1, 'day'))
+      }
+      return prev
+    })
+  }, [])
+
   const handleSearch = () => {
     const loc = draftLocation.trim()
     setLocation(loc.length ? loc : DEFAULT_SEARCH_LOCATION)
 
-    const pu = draftPickup ? dayjs(draftPickup) : null
-    let ret = draftReturn ? dayjs(draftReturn) : null
-    if (pu && ret && ret.isBefore(pu, 'day')) {
-      ret = pu.add(1, 'day')
+    const pu = draftPickup
+    let ret = draftDropoff
+    if (!pu?.isValid()) {
+      setOpen(false)
+      return
     }
-    if (pu && !ret) {
-      ret = pu.add(3, 'day')
+    if (!ret?.isValid()) {
+      ret = withDefaultDropoffTime(pu.startOf('day').add(3, 'day'))
+    }
+    if (!ret.startOf('day').isAfter(pu.startOf('day'), 'day')) {
+      ret = withDefaultDropoffTime(pu.startOf('day').add(1, 'day'))
     }
     setDates(pu, ret)
     setOpen(false)
@@ -71,7 +95,7 @@ export default function BrowseCarSearch() {
 
   const datesLabel = useMemo(() => {
     const range = formatDateRange(pickup, dropoff)
-    return range ?? 'Pickup - Return'
+    return range ?? 'Pickup – Return'
   }, [pickup, dropoff])
 
   const showMidDot = Boolean(storeLocation.trim() && formatDateRange(pickup, dropoff))
@@ -90,12 +114,12 @@ export default function BrowseCarSearch() {
         onClose={handleClose}
         location={draftLocation}
         onLocationChange={setDraftLocation}
-        pickupDate={draftPickup}
-        onPickupChange={setDraftPickup}
-        returnDate={draftReturn}
-        onReturnChange={setDraftReturn}
+        pickup={draftPickup}
+        onPickupChange={handleDraftPickupChange}
+        dropoff={draftDropoff}
+        onDropoffChange={setDraftDropoff}
         onSearch={handleSearch}
-        minPickupDate={minPickup}
+        minPickup={dayjs()}
       />
     </>
   )

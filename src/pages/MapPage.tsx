@@ -17,8 +17,8 @@ import {
   Typography,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import ExploreMapListingStrip from '../components/landing/ExploreMapListingStrip'
 import PageHeader from '../components/layout/PageHeader'
@@ -46,11 +46,50 @@ function formatPesoShort(n: number): string {
  */
 export default function MapPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const cars = useCarsStore((s) => s.cars)
   const userLocation = useGeolocationStore((s) => s.userLocation)
   const [filterMode, setFilterMode] = useState<ExploreMapFilterMode>('all')
   const [locationQuery, setLocationQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  /** When true, listing strip scrolls selected card into view; map marker picks keep the strip position. */
+  const [selectionFromListingStrip, setSelectionFromListingStrip] = useState(false)
+  /** Bumped when the user chooses “Show in listing below” so the strip scrolls even if that listing was already selected on the map. */
+  const [listingScrollRequest, setListingScrollRequest] = useState(0)
+  /** Bumped when the user chooses “View on map” on a strip card so the marker popup opens after fly-to. */
+  const [mapFocusNonce, setMapFocusNonce] = useState(0)
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname, location.key])
+
+  const handleMapSelect = useCallback((id: string) => {
+    setSelectionFromListingStrip(false)
+    setSelectedId(id)
+  }, [])
+
+  const handleListingStripSelect = useCallback((id: string) => {
+    setSelectionFromListingStrip(true)
+    setSelectedId(id)
+  }, [])
+
+  const handleShowInListing = useCallback((l: ExploreMapListing) => {
+    setSelectionFromListingStrip(true)
+    setSelectedId(l.id)
+    setListingScrollRequest((n) => n + 1)
+    requestAnimationFrame(() => {
+      document.getElementById('explore-map-listing-strip')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
+
+  const handleViewOnMap = useCallback((l: ExploreMapListing) => {
+    setSelectionFromListingStrip(false)
+    setSelectedId(l.id)
+    setMapFocusNonce((n) => n + 1)
+    requestAnimationFrame(() => {
+      document.getElementById('explore-map-canvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }, [])
 
   const priceExtent = useMemo((): [number, number] => {
     if (!cars.length) return [0, 12_000]
@@ -204,6 +243,7 @@ export default function MapPage() {
         </Stack>
 
         <Box
+          id="explore-map-canvas"
           sx={{
             height: { xs: '52dvh', sm: '56dvh', md: 'calc(100dvh - 280px)' },
             minHeight: 340,
@@ -214,6 +254,7 @@ export default function MapPage() {
             borderColor: 'divider',
             boxShadow: `0 8px 32px ${alpha('#000', 0.08)}`,
             bgcolor: 'grey.50',
+            scrollMarginTop: { xs: 72, md: 88 },
           }}
         >
           {cars.length === 0 ? (
@@ -239,9 +280,11 @@ export default function MapPage() {
                   <ExploreRentalsMapLazy
                     listings={filtered}
                     selectedId={selectedId}
-                    onSelect={setSelectedId}
+                    onSelect={handleMapSelect}
                     userLocation={userLocation}
                     onViewDetails={onViewDetails}
+                    onShowInListing={handleShowInListing}
+                    mapFocusNonce={mapFocusNonce}
                   />
                 </Box>
               </Suspense>
@@ -249,12 +292,18 @@ export default function MapPage() {
           )}
         </Box>
 
-        <Box sx={{ mt: 3 }}>
+        <Box
+          id="explore-map-listing-strip"
+          sx={{ mt: 3, scrollMarginTop: { xs: 72, md: 88 } }}
+        >
           <ExploreMapListingStrip
             listings={filtered}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={handleListingStripSelect}
             onViewDetails={onViewDetails}
+            onViewOnMap={handleViewOnMap}
+            autoScrollToSelected={selectionFromListingStrip}
+            listingScrollRequest={listingScrollRequest}
             title="Listings on this map"
           />
         </Box>

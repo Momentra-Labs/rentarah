@@ -20,6 +20,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   FormHelperText,
@@ -30,9 +31,9 @@ import {
   Link,
   Paper,
   Stack,
-  Tab,
-  Tabs,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
   useMediaQuery,
 } from '@mui/material'
@@ -93,53 +94,77 @@ const strengthBarValue = (level: PasswordStrengthLevel) => {
 function authOutlinedFieldSx(theme: Theme) {
   return {
     '& .MuiOutlinedInput-root': {
+      borderRadius: 2.5,
+      transition: 'box-shadow 0.2s ease',
       '&:hover fieldset': { borderColor: alpha(theme.palette.primary.main, 0.45) },
+      '&.Mui-focused': {
+        boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}`,
+      },
     },
   } as const
 }
 
 function SocialLoginPlaceholder() {
   return (
-    <Stack spacing={1} sx={{ mt: 2 }}>
-      <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontWeight: 600 }}>
-        Or continue with
-      </Typography>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="inherit"
-          disabled
-          startIcon={<Google />}
-          sx={{
-            borderColor: 'divider',
-            color: 'text.secondary',
-            py: 1.1,
-            '&.Mui-disabled': { opacity: 0.85 },
-          }}
-        >
-          Google
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="inherit"
-          disabled
-          startIcon={<Facebook />}
-          sx={{
-            borderColor: 'divider',
-            color: 'text.secondary',
-            py: 1.1,
-            '&.Mui-disabled': { opacity: 0.85 },
-          }}
-        >
-          Facebook
-        </Button>
+    <Box
+      sx={{
+        mt: 2.5,
+        p: 2,
+        borderRadius: 2.5,
+        border: '1px dashed',
+        borderColor: 'divider',
+        bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.03 : 0.08),
+      }}
+    >
+      <Stack spacing={1.5}>
+        <Stack direction="row" alignItems="center" spacing={1.5} justifyContent="center">
+          <Divider sx={{ flex: 1 }} />
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Or continue with
+          </Typography>
+          <Divider sx={{ flex: 1 }} />
+        </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="inherit"
+            disabled
+            startIcon={<Google />}
+            sx={{
+              borderColor: 'divider',
+              color: 'text.secondary',
+              py: 1.2,
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              '&.Mui-disabled': { opacity: 0.88 },
+            }}
+          >
+            Google
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="inherit"
+            disabled
+            startIcon={<Facebook />}
+            sx={{
+              borderColor: 'divider',
+              color: 'text.secondary',
+              py: 1.2,
+              borderRadius: 2,
+              bgcolor: 'background.paper',
+              '&.Mui-disabled': { opacity: 0.88 },
+            }}
+          >
+            Facebook
+          </Button>
+        </Stack>
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', lineHeight: 1.45, px: 0.5 }}>
+          Social sign-in is coming soon — use your email for now.
+        </Typography>
       </Stack>
-      <Typography variant="caption" color="text.disabled" sx={{ textAlign: 'center', lineHeight: 1.4 }}>
-        Social sign-in will be available soon — use email for now.
-      </Typography>
-    </Stack>
+    </Box>
   )
 }
 
@@ -171,9 +196,9 @@ function RoleCard({
       aria-checked={selected}
       tabIndex={0}
       sx={{
-        p: 2,
+        p: 2.25,
         cursor: 'pointer',
-        borderRadius: 2,
+        borderRadius: 2.5,
         borderWidth: 2,
         borderColor: selected ? 'primary.main' : 'divider',
         bgcolor: selected ? alpha(theme.palette.primary.main, 0.06) : 'background.paper',
@@ -239,6 +264,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
   const registerAction = useAuthStore((s) => s.register)
   const showSuccess = useSnackbarStore((s) => s.showSuccess)
   const showError = useSnackbarStore((s) => s.showError)
+  const showInfo = useSnackbarStore((s) => s.showInfo)
 
   const lf = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -396,6 +422,14 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       scroll="paper"
       disableRestoreFocus
       aria-labelledby="auth-dialog-title"
+      /** Sit above AppBar (1100) + mobile bottom nav so the page never shows through as “ghost” UI. */
+      sx={{ zIndex: (t) => t.zIndex.modal + 20 }}
+      BackdropProps={{
+        sx: {
+          backgroundColor: alpha(theme.palette.common.black, 0.58),
+          backdropFilter: 'blur(6px)',
+        },
+      }}
       TransitionProps={{
         onEnter: () => {
           backdropScrollYRef.current = window.scrollY
@@ -406,54 +440,115 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       PaperProps={{
         sx: {
           borderRadius: fullScreen ? 0 : 3,
-          // Don’t clip — `overflow: hidden` cuts off outlined TextField floating labels at the notch.
           overflow: 'visible',
+          border: fullScreen ? 'none' : '1px solid',
+          borderColor: 'divider',
+          boxShadow: fullScreen ? 'none' : `0 24px 48px -12px ${alpha(theme.palette.common.black, 0.2)}`,
+          /** Fully opaque surface — gradients with transparent stops let the page show through on some mobile GPUs. */
+          bgcolor: 'background.paper',
+          backgroundImage: 'none',
+          ...(fullScreen
+            ? {
+                minHeight: '100dvh',
+                maxHeight: '100dvh',
+                width: '100%',
+                maxWidth: '100%',
+                m: 0,
+              }
+            : {}),
+          position: 'relative',
         },
       }}
     >
       <DialogTitle
         id="auth-dialog-title"
         sx={{
-          px: { xs: 2, sm: 3 },
-          pr: fullScreen ? { xs: 7, sm: 8 } : { xs: 2, sm: 3 },
-          pt: 2,
-          pb: 1,
+          position: 'relative',
+          overflowX: 'hidden',
+          /** Match DialogContent `px` exactly so tabs + fields share one column width. */
+          px: { xs: 1.5, sm: 2.75 },
+          pt: { xs: `max(12px, env(safe-area-inset-top))`, sm: 3 },
+          pb: 2,
         }}
       >
-        {fullScreen && (
-          <IconButton aria-label="Close sign in" onClick={onClose} sx={{ position: 'absolute', right: 8, top: 12 }}>
-            <Close />
-          </IconButton>
-        )}
-        <Typography variant="h6" component="span" sx={{ fontWeight: 800, letterSpacing: '-0.02em', display: 'block', mb: 1 }}>
-          {tab === 'login' ? 'Welcome back' : 'Create your account'}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.5 }}>
-          {tab === 'login'
-            ? 'Sign in to book vehicles, manage trips, or host your fleet.'
-            : 'A quick guided setup — you’ll be browsing in under a minute.'}
-        </Typography>
-        <Tabs
-          value={tab}
-          onChange={(_, v) => {
-            setTab(v)
-            setRegisterStep(0)
-          }}
-          variant="fullWidth"
+        <IconButton
+          aria-label="Close"
+          onClick={onClose}
+          size="small"
           sx={{
-            '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', minHeight: 48 },
+            position: 'absolute',
+            right: 8,
+            top: { xs: `max(8px, env(safe-area-inset-top))`, sm: 12 },
+            zIndex: 2,
           }}
         >
-          <Tab label="Sign in" value="login" />
-          <Tab label="Register" value="register" />
-        </Tabs>
+          <Close />
+        </IconButton>
+        {/** Only the top heading needs inset so it doesn’t run under the floating close control. */}
+        <Box sx={{ mb: 2, pr: { xs: 5.5, sm: 6 } }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.3 }}>
+            {tab === 'login' ? 'Welcome back' : 'Create your account'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mt: 0.35 }}>
+            Rentara — Philippines rentals
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.55 }}>
+          {tab === 'login'
+            ? 'Sign in to book vehicles, manage trips, and message hosts — all in one place.'
+            : 'Three quick steps: secure your account, tell us about you, then choose how you’ll use Rentara.'}
+        </Typography>
+        <ToggleButtonGroup
+          exclusive
+          value={tab}
+          onChange={(_, v) => {
+            if (v != null) {
+              setTab(v)
+              setRegisterStep(0)
+            }
+          }}
+          fullWidth
+          sx={{
+            p: 0.5,
+            gap: 0,
+            display: 'flex',
+            width: '100%',
+            borderRadius: 2.5,
+            border: 'none',
+            bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.08 : 0.15),
+            /** Equal halves — default ToggleButton minWidth leaves a dead zone on the right. */
+            '& .MuiToggleButtonGroup-grouped': {
+              border: 0,
+              borderRadius: '10px !important',
+              mx: 0,
+              flex: '1 1 0',
+              minWidth: 0,
+              maxWidth: '50%',
+              justifyContent: 'center',
+              py: 1.15,
+              textTransform: 'none',
+              fontWeight: 800,
+              fontSize: '0.9375rem',
+              color: 'text.secondary',
+              '&.Mui-selected': {
+                bgcolor: 'background.paper',
+                color: 'primary.main',
+                boxShadow: `0 1px 4px ${alpha(theme.palette.common.black, 0.08)}`,
+                '&:hover': { bgcolor: 'background.paper' },
+              },
+            },
+          }}
+        >
+          <ToggleButton value="login">Sign in</ToggleButton>
+          <ToggleButton value="register">Register</ToggleButton>
+        </ToggleButtonGroup>
       </DialogTitle>
 
       <DialogContent
         sx={{
-          px: { xs: 2, sm: 3 },
-          pb: 2,
-          pt: 1,
+          px: { xs: 1.5, sm: 2.75 },
+          pb: 3,
+          pt: 0.5,
           overflow: 'visible',
         }}
       >
@@ -500,6 +595,17 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                 ),
               }}
             />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5 }}>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={() => showInfo('Password reset will be available when the live API is connected.')}
+                sx={{ fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+              >
+                Forgot password?
+              </Link>
+            </Box>
             <Controller
               name="rememberMe"
               control={lf.control}
@@ -543,11 +649,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
         ) : (
           <Stack component="form" onSubmit={onRegister} noValidate spacing={2} sx={{ width: '100%' }}>
             <Box sx={{ mb: 0.5 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.75 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                 <Typography variant="caption" color="primary" fontWeight={800} letterSpacing="0.06em" textTransform="uppercase">
                   Step {registerStep + 1} of {REGISTER_STEP_LABELS.length}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700}>
                   {REGISTER_STEP_LABELS[registerStep]}
                 </Typography>
               </Stack>
@@ -555,12 +661,27 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                 variant="determinate"
                 value={((registerStep + 1) / REGISTER_STEP_LABELS.length) * 100}
                 sx={{
-                  height: 6,
-                  borderRadius: 3,
+                  height: 8,
+                  borderRadius: 4,
                   bgcolor: alpha(theme.palette.primary.main, 0.12),
-                  '& .MuiLinearProgress-bar': { borderRadius: 3 },
+                  '& .MuiLinearProgress-bar': { borderRadius: 4 },
                 }}
               />
+              <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1.25 }}>
+                {REGISTER_STEP_LABELS.map((label, i) => (
+                  <Box
+                    key={label}
+                    sx={{
+                      width: i === registerStep ? 22 : 8,
+                      height: 8,
+                      borderRadius: 4,
+                      bgcolor: i <= registerStep ? 'primary.main' : alpha(theme.palette.primary.main, 0.2),
+                      transition: 'width 0.25s ease, background-color 0.2s ease',
+                    }}
+                    aria-hidden
+                  />
+                ))}
+              </Stack>
             </Box>
 
             {rf.formState.errors.root && (
@@ -851,7 +972,18 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
           </Stack>
         )}
 
-        <Stack alignItems="center" sx={{ mt: 2 }}>
+        <Box
+          sx={{
+            mt: 2.5,
+            pt: 2,
+            borderTop: 1,
+            borderColor: 'divider',
+            textAlign: 'center',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary" component="span" sx={{ mr: 0.75 }}>
+            {tab === 'login' ? 'New to Rentara?' : 'Already registered?'}
+          </Typography>
           <Link
             component="button"
             type="button"
@@ -860,11 +992,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               setTab(tab === 'login' ? 'register' : 'login')
               setRegisterStep(0)
             }}
-            sx={{ fontWeight: 600 }}
+            sx={{ fontWeight: 800, textDecoration: 'none', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
           >
-            {tab === 'login' ? 'Need an account? Register' : 'Already have an account? Sign in'}
+            {tab === 'login' ? 'Create an account' : 'Sign in instead'}
           </Link>
-        </Stack>
+        </Box>
       </DialogContent>
     </Dialog>
   )

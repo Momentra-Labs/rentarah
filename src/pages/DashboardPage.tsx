@@ -29,6 +29,7 @@ import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-d
 
 import CarCard from '../components/common/CarCard'
 import PageHeader from '../components/layout/PageHeader'
+import { formatBookingStoredDate } from '../utils/dateUtils'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
@@ -362,7 +363,7 @@ export default function DashboardPage() {
                     <Box>
                       <Typography fontWeight={700}>{b.carName}</Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {b.pickup} → {b.dropoff}
+                        {formatBookingStoredDate(b.pickup)} → {formatBookingStoredDate(b.dropoff)}
                       </Typography>
                       <Typography>{formatPeso(b.total)}</Typography>
                     </Box>
@@ -402,7 +403,7 @@ export default function DashboardPage() {
                   <Box>
                     <Typography fontWeight={700}>{b.carName}</Typography>
                     <Typography variant="body2">
-                      {b.pickup} – {b.dropoff}
+                      {formatBookingStoredDate(b.pickup)} – {formatBookingStoredDate(b.dropoff)}
                     </Typography>
                   </Box>
                   <Button component={RouterLink} to={`/messages/${b.id}`} size="small" variant="outlined" sx={{ borderRadius: 1.5, alignSelf: { xs: 'flex-start', sm: 'center' } }}>

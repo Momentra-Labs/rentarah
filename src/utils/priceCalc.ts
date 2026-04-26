@@ -23,8 +23,8 @@ export function calcPricing(
     return null
   }
 
-  /** Rental days = calendar days between pickup and return date (checkout). */
-  const days = Math.max(1, dropoffDate.diff(pickupDate, 'day'))
+  /** Rental days = calendar days between pickup and return (hand-back) dates; time of day does not shorten billing. */
+  const days = Math.max(1, dropoffDate.startOf('day').diff(pickupDate.startOf('day'), 'day'))
 
   const subtotal = pricePerDay * days
   const serviceFee = Math.round(subtotal * 0.1)

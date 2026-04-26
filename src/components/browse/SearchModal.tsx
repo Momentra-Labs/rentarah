@@ -1,9 +1,10 @@
 import CloseRounded from '@mui/icons-material/CloseRounded'
+import { Stack, TextField } from '@mui/material'
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { AnimatePresence, motion } from 'framer-motion'
+import type { Dayjs } from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-
-import DatePicker from './DatePicker'
 
 const MOCK_LOCATIONS = [
   'Manila',
@@ -27,12 +28,12 @@ export type SearchModalProps = {
   onClose: () => void
   location: string
   onLocationChange: (value: string) => void
-  pickupDate: string
-  onPickupChange: (value: string) => void
-  returnDate: string
-  onReturnChange: (value: string) => void
+  pickup: Dayjs | null
+  onPickupChange: (value: Dayjs | null) => void
+  dropoff: Dayjs | null
+  onDropoffChange: (value: Dayjs | null) => void
   onSearch: () => void
-  minPickupDate: string
+  minPickup: Dayjs
 }
 
 type Section = 'location' | 'pickup' | 'return'
@@ -42,17 +43,22 @@ export default function SearchModal({
   onClose,
   location,
   onLocationChange,
-  pickupDate,
+  pickup,
   onPickupChange,
-  returnDate,
-  onReturnChange,
+  dropoff,
+  onDropoffChange,
   onSearch,
-  minPickupDate,
+  minPickup,
 }: SearchModalProps) {
   const [activeSection, setActiveSection] = useState<Section>('location')
   /** Only show the location suggest list after the user has typed in this visit (not on open + focus). */
   const [locationQueryActive, setLocationQueryActive] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+
+  const dropoffMin = useMemo(() => {
+    if (pickup?.isValid()) return pickup.startOf('day').add(1, 'day')
+    return minPickup
+  }, [pickup, minPickup])
 
   const suggestions = useMemo(() => {
     const q = location.trim().toLowerCase()
@@ -92,18 +98,13 @@ export default function SearchModal({
     }
   }, [open])
 
-  const returnMin = pickupDate || minPickupDate
-
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose()
   }
 
-  const handlePickupChange = (value: string) => {
-    onPickupChange(value)
-    if (!value) onReturnChange('')
-    else if (returnDate && value && returnDate < value) {
-      onReturnChange(value)
-    }
+  const handlePickupChange = (next: Dayjs | null) => {
+    onPickupChange(next)
+    if (!next) onDropoffChange(null)
   }
 
   const modal = (
@@ -199,25 +200,58 @@ export default function SearchModal({
                 )}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                <DatePicker
-                  label="Pick-up"
-                  value={pickupDate}
+              <Stack spacing={2} sx={{ '& .MuiFormControl-root': { width: '100%' } }}>
+                <DateTimePicker
+                  ampm
+                  views={['year', 'month', 'day', 'hours', 'minutes']}
+                  label="Pick-up date & time"
+                  value={pickup}
                   onChange={handlePickupChange}
-                  min={minPickupDate}
-                  onFocus={() => setActiveSection('pickup')}
-                  isActive={activeSection === 'pickup'}
+                  minDate={minPickup}
+                  onOpen={() => setActiveSection('pickup')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      onFocus={() => setActiveSection('pickup')}
+                      sx={{
+                        ...(params.sx ?? {}),
+                        ...(activeSection === 'pickup'
+                          ? {
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
+                            }
+                          : {}),
+                      }}
+                    />
+                  )}
                 />
-                <DatePicker
-                  label="Return"
-                  value={returnDate}
-                  onChange={onReturnChange}
-                  min={returnMin}
-                  onFocus={() => setActiveSection('return')}
-                  isActive={activeSection === 'return'}
-                  disabled={!pickupDate}
+                <DateTimePicker
+                  ampm
+                  views={['year', 'month', 'day', 'hours', 'minutes']}
+                  label="Return date & time"
+                  value={dropoff}
+                  onChange={onDropoffChange}
+                  minDate={dropoffMin}
+                  disabled={!pickup}
+                  onOpen={() => setActiveSection('return')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      onFocus={() => setActiveSection('return')}
+                      sx={{
+                        ...(params.sx ?? {}),
+                        ...(activeSection === 'return'
+                          ? {
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
+                            }
+                          : {}),
+                      }}
+                    />
+                  )}
                 />
-              </div>
+              </Stack>
+              <p className="text-xs leading-snug text-neutral-500">
+                Choose times for pick-up and hand-back. Trip length is still counted by calendar day.
+              </p>
             </div>
 
             <div className="border-t border-neutral-100 px-4 py-3 sm:px-5 sm:py-4">

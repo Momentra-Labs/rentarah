@@ -123,6 +123,11 @@ body {
   background: #fff;
 }
 
+/* Explore map vehicle card: don’t clip tall popup content (buttons, multi-line text) */
+.leaflet-container .rentara-explore-popup .leaflet-popup-content-wrapper {
+  overflow: visible;
+}
+
 .rentara-leaflet-surface .leaflet-popup-tip {
   background: #fff;
   border: 1px solid #e2e8f0;

@@ -1,5 +1,6 @@
 import ChevronLeft from '@mui/icons-material/ChevronLeft'
 import ChevronRight from '@mui/icons-material/ChevronRight'
+import MapOutlined from '@mui/icons-material/MapOutlined'
 import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined'
 import {
   Box,
@@ -27,7 +28,18 @@ export type ExploreMapListingStripProps = {
   selectedId: string | null
   onSelect: (id: string) => void
   onViewDetails: (listing: ExploreMapListing) => void
+  /** Full map page: pan map to this pin and open its popup. */
+  onViewOnMap?: (listing: ExploreMapListing) => void
   title?: string
+  /**
+   * When false, the carousel does not auto-scroll when `selectedId` changes (e.g. map marker click).
+   * When true (default), selecting a card or changing selection from the strip scrolls the card into view.
+   */
+  autoScrollToSelected?: boolean
+  /**
+   * Increment (e.g. map “Show in listing below”) to scroll the current `selectedId` into view even if the id was already selected.
+   */
+  listingScrollRequest?: number
   /**
    * `panel` — bordered block aligned with map (default, for /map).
    * `minimal` — title + carousel only (e.g. tight layouts).
@@ -43,7 +55,10 @@ export default function ExploreMapListingStrip({
   selectedId,
   onSelect,
   onViewDetails,
+  onViewOnMap,
   title = 'Browse along the map',
+  autoScrollToSelected = true,
+  listingScrollRequest = 0,
   layout = 'panel',
 }: ExploreMapListingStripProps) {
   const theme = useTheme()
@@ -61,10 +76,10 @@ export default function ExploreMapListingStrip({
   }, [])
 
   useEffect(() => {
-    if (!selectedId || !scrollRef.current) return
+    if (!autoScrollToSelected || !selectedId || !scrollRef.current) return
     const el = scrollRef.current.querySelector(`[data-listing-id="${selectedId}"]`)
     el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [selectedId])
+  }, [selectedId, autoScrollToSelected, listingScrollRequest])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -238,26 +253,48 @@ export default function ExploreMapListingStrip({
               / day
             </Typography>
           </Typography>
-          <Button
-            fullWidth
-            size="small"
-            variant={isCompact ? 'contained' : 'outlined'}
-            color="primary"
-            onClick={(e) => {
-              e.stopPropagation()
-              onViewDetails(l)
-            }}
-            sx={{
-              mt: 1.25,
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: 1.5,
-              py: 0.85,
-              boxShadow: 'none',
-            }}
-          >
-            View details
-          </Button>
+          <Stack spacing={1} sx={{ mt: 1.25, width: '100%' }}>
+            <Button
+              fullWidth
+              size="small"
+              variant={isCompact ? 'contained' : 'outlined'}
+              color="primary"
+              onClick={(e) => {
+                e.stopPropagation()
+                onViewDetails(l)
+              }}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 1.5,
+                py: 0.85,
+                boxShadow: 'none',
+              }}
+            >
+              View details
+            </Button>
+            {onViewOnMap ? (
+              <Button
+                fullWidth
+                size="small"
+                variant="text"
+                color="primary"
+                startIcon={<MapOutlined sx={{ fontSize: 18 }} />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onViewOnMap(l)
+                }}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  borderRadius: 1.5,
+                  py: 0.5,
+                }}
+              >
+                View on map
+              </Button>
+            ) : null}
+          </Stack>
         </CardContent>
       </Card>
     )

@@ -1,6 +1,6 @@
 import { Box, Button, Stack, Typography } from '@mui/material'
 import L from 'leaflet'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode } from 'react'
 import {
   CircleMarker,
   MapContainer,
@@ -28,6 +28,16 @@ export type ExploreRentalsMapInnerProps = {
   onSelect: (id: string) => void
   userLocation: LatLng | null
   onViewDetails: (listing: ExploreMapListing) => void
+  /**
+   * Full map page: scroll the horizontal listing strip to this vehicle (optional).
+   * Omit on landing preview — button is hidden.
+   */
+  onShowInListing?: (listing: ExploreMapListing) => void
+  /**
+   * Increment when the listing strip requests “view on map” so the marker popup opens after fly-to.
+   * Omit on previews where that control does not exist.
+   */
+  mapFocusNonce?: number
   /** Embedded previews: disable wheel zoom so the page scrolls; touch/pinch still pans/zooms on mobile. */
   scrollWheelZoom?: boolean
   /** When false, skip fly-to animation (e.g. compact preview). */
@@ -55,6 +65,32 @@ function MapBoundsController({
   return null
 }
 
+/** Closes the Leaflet popup then runs the parent handler (e.g. scroll listing into view). */
+function ShowInListingButton({
+  listing,
+  onShowInListing,
+}: {
+  listing: ExploreMapListing
+  onShowInListing: (listing: ExploreMapListing) => void
+}) {
+  const map = useMap()
+  return (
+    <Button
+      fullWidth
+      size="small"
+      variant="outlined"
+      color="primary"
+      sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
+      onClick={() => {
+        map.closePopup()
+        onShowInListing(listing)
+      }}
+    >
+      Show in listing below
+    </Button>
+  )
+}
+
 /** Pans to the selected listing when the user picks a card or marker. */
 function FlyToSelected({
   selectedId,
@@ -73,6 +109,80 @@ function FlyToSelected({
   return null
 }
 
+function VehicleMarker({
+  listing,
+  icon,
+  onSelect,
+  markerRegistry,
+  children,
+}: {
+  listing: ExploreMapListing
+  icon: L.DivIcon
+  onSelect: (id: string) => void
+  markerRegistry: MutableRefObject<Map<string, L.Marker>>
+  children: ReactNode
+}) {
+  const markerRef = useRef<L.Marker | null>(null)
+  useLayoutEffect(() => {
+    const reg = markerRegistry.current
+    const m = markerRef.current
+    if (!m) return
+    reg.set(listing.id, m)
+    return () => {
+      reg.delete(listing.id)
+    }
+    // markerRegistry ref is stable for the map instance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing.id])
+  return (
+    <Marker
+      ref={markerRef}
+      position={[listing.latitude, listing.longitude]}
+      icon={icon}
+      eventHandlers={{
+        click: () => onSelect(listing.id),
+      }}
+    >
+      {children}
+    </Marker>
+  )
+}
+
+/** After “View on map” from the listing strip: open the marker popup once fly-to settles (or fallback timer). */
+function OpenListingPopupOnMapFocus({
+  selectedId,
+  mapFocusNonce,
+  markerRegistry,
+}: {
+  selectedId: string | null
+  mapFocusNonce: number
+  markerRegistry: MutableRefObject<Map<string, L.Marker>>
+}) {
+  const map = useMap()
+  const selectedIdRef = useRef(selectedId)
+  selectedIdRef.current = selectedId
+
+  useEffect(() => {
+    if (mapFocusNonce === 0) return
+    const id = selectedIdRef.current
+    if (!id) return
+    const reg = markerRegistry.current
+    const open = () => {
+      reg.get(id)?.openPopup()
+    }
+    map.once('moveend', open)
+    const t1 = window.setTimeout(open, 80)
+    const t2 = window.setTimeout(open, 560)
+    return () => {
+      map.off('moveend', open)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- markerRegistry ref is stable; run only on mapFocusNonce
+  }, [map, mapFocusNonce])
+  return null
+}
+
 /**
  * Leaflet map: Carto Voyager basemap, Rentara pins, credit below the canvas, styled popups.
  * Lazy-loaded by map surfaces (`MapPreview`, `/map`) to defer Leaflet until needed.
@@ -83,9 +193,13 @@ export default function ExploreRentalsMapInner({
   onSelect,
   userLocation,
   onViewDetails,
+  onShowInListing,
+  mapFocusNonce = 0,
   scrollWheelZoom = true,
   enableFlyTo = true,
 }: ExploreRentalsMapInnerProps) {
+  const markerRegistry = useRef<Map<string, L.Marker>>(new Map())
+
   useEffect(() => {
     ensureLeafletDefaultIcons()
   }, [])
@@ -127,16 +241,23 @@ export default function ExploreRentalsMapInner({
             />
           )}
           {listings.map((listing) => (
-            <Marker
+            <VehicleMarker
               key={listing.id}
-              position={[listing.latitude, listing.longitude]}
+              listing={listing}
               icon={icons.get(listing.id) ?? getRentaraVehiclePinIcon(listing.vehicle.vehicleType, false)}
-              eventHandlers={{
-                click: () => onSelect(listing.id),
-              }}
+              onSelect={onSelect}
+              markerRegistry={markerRegistry}
             >
-              <Popup className="rentara-explore-popup">
-                <Box sx={{ minWidth: { xs: 200, sm: 220 }, p: 0.5 }}>
+              <Popup
+                className="rentara-explore-popup"
+                autoPan
+                keepInView
+                autoPanPaddingTopLeft={[24, 120]}
+                autoPanPaddingBottomRight={[28, 88]}
+                minWidth={264}
+                maxWidth={320}
+              >
+                <Box sx={{ width: '100%', maxWidth: 300, p: 0.5, boxSizing: 'border-box' }}>
                   <Box
                     component="img"
                     src={listing.vehicle.thumbnailUrl}
@@ -151,7 +272,7 @@ export default function ExploreRentalsMapInner({
                       bgcolor: 'grey.100',
                     }}
                   />
-                  <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.3 }}>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.3, pr: 2.5 }}>
                     {listing.vehicle.displayName}
                   </Typography>
                   <Typography variant="body2" color="primary" fontWeight={700} sx={{ mt: 0.5 }}>
@@ -164,19 +285,35 @@ export default function ExploreRentalsMapInner({
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, lineHeight: 1.35 }}>
                     {listing.vehicle.locationName}
                   </Typography>
-                  <Button
-                    fullWidth
-                    size="small"
-                    variant="contained"
-                    sx={{ mt: 1.25, bgcolor: PRIMARY, '&:hover': { bgcolor: '#1647b8' }, borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
-                    onClick={() => onViewDetails(listing)}
-                  >
-                    View details
-                  </Button>
+                  <Stack spacing={1} sx={{ mt: 1.25, width: '100%' }}>
+                    <Button
+                      fullWidth
+                      size="small"
+                      variant="contained"
+                      sx={{
+                        bgcolor: PRIMARY,
+                        '&:hover': { bgcolor: '#1647b8' },
+                        borderRadius: 1.5,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                      onClick={() => onViewDetails(listing)}
+                    >
+                      View details
+                    </Button>
+                    {onShowInListing ? (
+                      <ShowInListingButton listing={listing} onShowInListing={onShowInListing} />
+                    ) : null}
+                  </Stack>
                 </Box>
               </Popup>
-            </Marker>
+            </VehicleMarker>
           ))}
+          <OpenListingPopupOnMapFocus
+            selectedId={selectedId}
+            mapFocusNonce={mapFocusNonce}
+            markerRegistry={markerRegistry}
+          />
         </MapContainer>
       </Box>
       <MapAttributionNote />

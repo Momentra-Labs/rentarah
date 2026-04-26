@@ -1,10 +1,14 @@
 import FilterAlt from '@mui/icons-material/FilterAlt'
 import { Badge, Box, Container, Fab, Grid, Pagination, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
-import dayjs from 'dayjs'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { DEFAULT_SEARCH_LOCATION } from '../constants/geo'
+import {
+  formatSearchDateTimeParam,
+  parseSearchDateTimeParam,
+  withDefaultDropoffTime,
+} from '../utils/dateUtils'
 import CarCard from '../components/common/CarCard'
 import BrowseCarSearch from '../components/browse/BrowseCarSearch'
 import EmptyState from '../components/common/EmptyState'
@@ -92,8 +96,10 @@ export default function SearchPage() {
     const types = q.get('types')
     const vt = q.get('vt')
     if (loc) setLocation(loc)
-    if (pu && dr) setDates(dayjs(pu), dayjs(dr))
-    else if (pu) setDates(dayjs(pu), dayjs(pu).add(3, 'day'))
+    const puParsed = parseSearchDateTimeParam(pu, 'pickup')
+    const drParsed = parseSearchDateTimeParam(dr, 'dropoff')
+    if (puParsed && drParsed) setDates(puParsed, drParsed)
+    else if (puParsed) setDates(puParsed, withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day')))
     if (types) setFilter({ types: types.split(',').filter(Boolean) })
     if (vt && isValidVehicleType(vt)) setFilter({ vehicleType: vt })
     else setFilter({ vehicleType: 'all' })
@@ -102,8 +108,8 @@ export default function SearchPage() {
   useEffect(() => {
     const params = new URLSearchParams()
     params.set('location', location)
-    if (pickup?.isValid()) params.set('pickup', pickup.format('YYYY-MM-DD'))
-    if (dropoff?.isValid()) params.set('dropoff', dropoff.format('YYYY-MM-DD'))
+    if (pickup?.isValid()) params.set('pickup', formatSearchDateTimeParam(pickup))
+    if (dropoff?.isValid()) params.set('dropoff', formatSearchDateTimeParam(dropoff))
     if (filters.types.length) params.set('types', filters.types.join(','))
     if (filters.vehicleType !== 'all') params.set('vt', filters.vehicleType)
     setSearchParams(params, { replace: true })

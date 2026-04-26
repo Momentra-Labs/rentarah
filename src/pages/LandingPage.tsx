@@ -1,3 +1,4 @@
+import AccessTime from '@mui/icons-material/AccessTime'
 import AirportShuttle from '@mui/icons-material/AirportShuttle'
 import ArrowForward from '@mui/icons-material/ArrowForward'
 import Bolt from '@mui/icons-material/Bolt'
@@ -18,6 +19,7 @@ import {
   Button,
   Chip,
   Container,
+  Divider,
   Grid,
   Link,
   Paper,
@@ -46,6 +48,7 @@ import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
 import type { Car } from '../types'
+import { formatSearchDateTimeParam, withDefaultDropoffTime, withDefaultPickupTime } from '../utils/dateUtils'
 
 const LOCATIONS = [
   'Makati',
@@ -106,8 +109,8 @@ export default function LandingPage() {
   useOfferGeoPrompt('landing')
 
   const [loc, setLoc] = useState('Makati')
-  const [pickup, setPickup] = useState<Dayjs | null>(() => dayjs().add(1, 'day'))
-  const [dropoff, setDropoff] = useState<Dayjs | null>(() => dayjs().add(4, 'day'))
+  const [pickup, setPickup] = useState<Dayjs | null>(() => withDefaultPickupTime(dayjs().add(1, 'day')))
+  const [dropoff, setDropoff] = useState<Dayjs | null>(() => withDefaultDropoffTime(dayjs().add(4, 'day')))
 
   const motorcycleListings = useMemo(() => cars.filter((c) => c.vehicleType === 'motorcycle'), [cars])
 
@@ -142,8 +145,8 @@ export default function LandingPage() {
     setFilter({ types: [], vehicleType: 'all' })
     const params = new URLSearchParams()
     params.set('location', loc)
-    if (pickup?.isValid()) params.set('pickup', pickup.format('YYYY-MM-DD'))
-    if (dropoff?.isValid()) params.set('dropoff', dropoff.format('YYYY-MM-DD'))
+    if (pickup?.isValid()) params.set('pickup', formatSearchDateTimeParam(pickup))
+    if (dropoff?.isValid()) params.set('dropoff', formatSearchDateTimeParam(dropoff))
     navigate(`/search?${params.toString()}`)
   }
 
@@ -372,7 +375,7 @@ export default function LandingPage() {
                   elevation={0}
                   sx={{
                     height: '100%',
-                    p: { xs: 2, sm: 3 },
+                    p: { xs: 2.25, sm: 3.25 },
                     borderRadius: { xs: 2.5, md: 3 },
                     border: '1px solid',
                     borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
@@ -386,7 +389,7 @@ export default function LandingPage() {
                     },
                   }}
                 >
-                  <Stack spacing={{ xs: 2, sm: 2.5 }}>
+                  <Stack spacing={{ xs: 2.25, sm: 2.75 }}>
                     <Box>
                       <Typography
                         variant="overline"
@@ -397,41 +400,118 @@ export default function LandingPage() {
                       </Typography>
                       <Typography
                         variant="h6"
-                        sx={{ mt: 0.5, fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}
+                        component="h2"
+                        sx={{ mt: 0.5, fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.15rem', sm: '1.35rem' }, lineHeight: 1.25 }}
                       >
                         Where & when?
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                        Add dates to see cars and bikes that match your schedule.
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.55, fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
+                        Choose an area, then set pick-up and return <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>date and time</Box> so listings match your plan.
                       </Typography>
                     </Box>
 
-                    <Autocomplete
-                      options={LOCATIONS}
-                      value={loc}
-                      onChange={(_, v) => setLoc(v ?? 'Makati')}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Pick-up area"
-                          placeholder="Choose area"
-                          inputProps={{ ...params.inputProps, 'aria-label': 'Pick-up area' }}
-                        />
-                      )}
-                    />
+                    <Stack spacing={1.25}>
+                      <Typography
+                        variant="overline"
+                        sx={{
+                          fontWeight: 800,
+                          letterSpacing: '0.14em',
+                          fontSize: '0.65rem',
+                          color: 'text.secondary',
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        Location
+                      </Typography>
+                      <Autocomplete
+                        options={LOCATIONS}
+                        value={loc}
+                        onChange={(_, v) => setLoc(v ?? 'Makati')}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            bgcolor: alpha(theme.palette.grey[50], 0.9),
+                            transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+                            '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                            '&.Mui-focused': {
+                              bgcolor: 'background.paper',
+                              boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.14)}`,
+                            },
+                          },
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Pick-up area"
+                            placeholder="e.g. Makati, Cebu City"
+                            inputProps={{ ...params.inputProps, 'aria-label': 'Pick-up area' }}
+                          />
+                        )}
+                      />
+                    </Stack>
 
-                    <DateRangePicker
-                      pickup={pickup}
-                      dropoff={dropoff}
-                      onChange={({ pickup: p, dropoff: d }) => {
-                        setPickup(p)
-                        setDropoff(d)
-                      }}
-                      minDate={dayjs()}
-                      spacing={1.5}
-                      pickupLabel="Pick-up date"
-                      dropoffLabel="Return date"
-                    />
+                    <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.85) }} />
+
+                    <Stack spacing={1.25}>
+                      <Typography
+                        variant="overline"
+                        sx={{
+                          fontWeight: 800,
+                          letterSpacing: '0.14em',
+                          fontSize: '0.65rem',
+                          color: 'text.secondary',
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        Schedule
+                      </Typography>
+                      <DateRangePicker
+                        pickup={pickup}
+                        dropoff={dropoff}
+                        onChange={({ pickup: p, dropoff: d }) => {
+                          setPickup(p)
+                          setDropoff(d)
+                        }}
+                        minDate={dayjs()}
+                        spacing={2}
+                        stacked
+                        showPolicyCaption={false}
+                        pickupLabel="Pick-up"
+                        dropoffLabel="Return"
+                        slotProps={{
+                          textField: {
+                            sx: {
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: alpha(theme.palette.grey[50], 0.9),
+                                transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                                '&.Mui-focused': {
+                                  bgcolor: 'background.paper',
+                                  boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.14)}`,
+                                },
+                              },
+                            },
+                          },
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: 1.25,
+                          alignItems: 'flex-start',
+                          p: 1.5,
+                          borderRadius: 2,
+                          bgcolor: alpha(theme.palette.primary.main, 0.045),
+                          border: '1px solid',
+                          borderColor: alpha(theme.palette.primary.main, 0.14),
+                        }}
+                      >
+                        <AccessTime sx={{ fontSize: 20, color: 'primary.main', mt: 0.2, flexShrink: 0, opacity: 0.95 }} />
+                        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.55, fontSize: '0.75rem' }}>
+                          Times help hosts coordinate hand-offs. Your rate still uses <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>calendar days</Box> between pick-up and return dates.
+                        </Typography>
+                      </Box>
+                    </Stack>
 
                     <Button
                       variant="contained"

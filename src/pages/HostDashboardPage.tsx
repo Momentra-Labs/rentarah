@@ -41,6 +41,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
+import { formatBookingStoredDate } from '../utils/dateUtils'
 import { formatPeso } from '../utils/formatCurrency'
 import { containerGutters, dashboardSectionTabsSx, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 
@@ -361,7 +362,7 @@ export default function HostDashboardPage() {
                     {b.renterName}
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 0.5 }}>
-                    {b.pickup} → {b.dropoff}
+                    {formatBookingStoredDate(b.pickup)} → {formatBookingStoredDate(b.dropoff)}
                   </Typography>
                   <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
                     {formatPeso(b.total)}

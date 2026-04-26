@@ -42,6 +42,7 @@ import RentaraMap from '../components/map/RentaraMap'
 import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 import { getCarPickupLatLng } from '../utils/mapPickupLocation'
 import { vehicleModelSearchPath } from '../utils/vehicleBrowsePaths'
+import { formatTripDateTime, withDefaultDropoffTime, withDefaultPickupTime } from '../utils/dateUtils'
 
 /** Match Browse search dates when opening from listings; else fallback window. */
 function initialTripFromSearchStore(): { pickup: Dayjs; dropoff: Dayjs } {
@@ -50,10 +51,13 @@ function initialTripFromSearchStore(): { pickup: Dayjs; dropoff: Dayjs } {
     if (d?.isValid() && d.isAfter(p, 'day')) {
       return { pickup: p, dropoff: d }
     }
-    return { pickup: p, dropoff: p.add(3, 'day') }
+    return { pickup: p, dropoff: withDefaultDropoffTime(p.startOf('day').add(3, 'day')) }
   }
   const t = dayjs()
-  return { pickup: t.add(1, 'day'), dropoff: t.add(4, 'day') }
+  return {
+    pickup: withDefaultPickupTime(t.add(1, 'day')),
+    dropoff: withDefaultDropoffTime(t.add(4, 'day')),
+  }
 }
 
 export default function CarDetailPage() {
@@ -296,8 +300,14 @@ export default function CarDetailPage() {
                   size="small"
                   variant="outlined"
                   color="primary"
-                  label={`${pickup.format('MMM D')} – ${dropoff.format('MMM D, YYYY')}`}
-                  sx={{ mt: 1, fontWeight: 600, '& .MuiChip-label': { px: 0.5 } }}
+                  label={`${formatTripDateTime(pickup)} → ${formatTripDateTime(dropoff)}`}
+                  sx={{
+                    mt: 1,
+                    fontWeight: 600,
+                    height: 'auto',
+                    alignSelf: 'stretch',
+                    '& .MuiChip-label': { px: 0.75, py: 0.75, whiteSpace: 'normal', lineHeight: 1.35 },
+                  }}
                 />
               )}
               <Typography variant="h3" color="primary.main" sx={{ mt: 0.5, fontWeight: 800 }}>
@@ -317,6 +327,8 @@ export default function CarDetailPage() {
                     if (p?.isValid() && d?.isValid()) setSearchDates(p, d)
                   }}
                   minDate={dayjs()}
+                  pickupLabel="Pick-up date & time"
+                  dropoffLabel="Return date & time"
                 />
               </Box>
               {conflict && (

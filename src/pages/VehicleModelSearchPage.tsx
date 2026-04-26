@@ -14,7 +14,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import dayjs from 'dayjs'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -32,6 +31,10 @@ import { useSearchStore } from '../store/useSearchStore'
 import type { SearchFilters, VehicleType } from '../types'
 import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
+import {
+  parseSearchDateTimeParam,
+  withDefaultDropoffTime,
+} from '../utils/dateUtils'
 import { isValidVehicleType } from '../utils/vehicleUtils'
 
 const PAGE_SIZE = 6
@@ -109,8 +112,10 @@ export default function VehicleModelSearchPage() {
     const pu = q.get('pickup')
     const dr = q.get('dropoff')
     if (loc) setLocation(loc)
-    if (pu && dr) setDates(dayjs(pu), dayjs(dr))
-    else if (pu) setDates(dayjs(pu), dayjs(pu).add(3, 'day'))
+    const puParsed = parseSearchDateTimeParam(pu, 'pickup')
+    const drParsed = parseSearchDateTimeParam(dr, 'dropoff')
+    if (puParsed && drParsed) setDates(puParsed, drParsed)
+    else if (puParsed) setDates(puParsed, withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day')))
   }, [routeLocation.search, setLocation, setDates])
 
   const totalCount = hits.length
