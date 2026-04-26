@@ -5,6 +5,7 @@ import L from 'leaflet'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap, ZoomControl } from 'react-leaflet'
 
+import { PHILIPPINES_MAP_MIN_ZOOM, PHILIPPINES_MAX_BOUNDS_CORNERS } from '../../constants/geo'
 import { RENTARA_MAP_TILE_URL } from '../../constants/rentaraMapStyle'
 import { getHostPickupMapIcon, getRenterUserLocationMapIcon } from '../../utils/pickupRouteMapIcons'
 import MapAttributionNote from './MapAttributionNote'
@@ -14,6 +15,7 @@ import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
 import { fetchOsrmDrivingRoute } from '../../utils/osrmRoute'
 
 const MANILA_CENTER: L.LatLngTuple = [14.5995, 120.9842]
+const PH_BOUNDS = L.latLngBounds(PHILIPPINES_MAX_BOUNDS_CORNERS)
 
 export type HostLocation = LatLng
 
@@ -199,6 +201,9 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
         <MapContainer
           center={MANILA_CENTER}
           zoom={12}
+          minZoom={PHILIPPINES_MAP_MIN_ZOOM}
+          maxBounds={PH_BOUNDS}
+          maxBoundsViscosity={1}
           scrollWheelZoom
           zoomControl={false}
           attributionControl={false}

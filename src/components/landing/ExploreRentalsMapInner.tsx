@@ -1,3 +1,5 @@
+import ChevronLeft from '@mui/icons-material/ChevronLeft'
+import ChevronRight from '@mui/icons-material/ChevronRight'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import L from 'leaflet'
 import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode } from 'react'
@@ -12,8 +14,13 @@ import {
 } from 'react-leaflet'
 
 import MapAttributionNote from '../map/MapAttributionNote'
+import { PHILIPPINES_MAP_MIN_ZOOM, PHILIPPINES_MAX_BOUNDS_CORNERS } from '../../constants/geo'
 import { RENTARA_MAP_PRIMARY, RENTARA_MAP_TILE_URL } from '../../constants/rentaraMapStyle'
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
+import {
+  listingsWithinRadiusKm,
+  NEARBY_LISTINGS_RADIUS_KM,
+} from '../../utils/exploreMapListings'
 import type { LatLng } from '../../utils/distance'
 import { formatPeso } from '../../utils/formatCurrency'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
@@ -21,6 +28,7 @@ import { getRentaraVehiclePinIcon } from '../../utils/mapVehiclePinIcon'
 
 const MANILA_CENTER: L.LatLngTuple = [14.5995, 120.9842]
 const PRIMARY = RENTARA_MAP_PRIMARY
+const PH_BOUNDS = L.latLngBounds(PHILIPPINES_MAX_BOUNDS_CORNERS)
 
 export type ExploreRentalsMapInnerProps = {
   listings: ExploreMapListing[]
@@ -38,6 +46,8 @@ export type ExploreRentalsMapInnerProps = {
    * Omit on previews where that control does not exist.
    */
   mapFocusNonce?: number
+  /** Full map: cycle to previous/next listing within ~NEARBY_LISTINGS_RADIUS_KM. */
+  onNearbyNavigate?: (direction: 'next' | 'prev') => void
   /** Embedded previews: disable wheel zoom so the page scrolls; touch/pinch still pans/zooms on mobile. */
   scrollWheelZoom?: boolean
   /** When false, skip fly-to animation (e.g. compact preview). */
@@ -91,7 +101,10 @@ function ShowInListingButton({
   )
 }
 
-/** Pans to the selected listing when the user picks a card or marker. */
+/**
+ * Frames the selected pin with padding so the marker + popup stay in a comfortable viewport
+ * (better than centering the point alone, which often clips the card).
+ */
 function FlyToSelected({
   selectedId,
   listings,
@@ -104,9 +117,67 @@ function FlyToSelected({
     if (!selectedId) return
     const hit = listings.find((l) => l.id === selectedId)
     if (!hit) return
-    map.flyTo([hit.latitude, hit.longitude], Math.max(map.getZoom(), 14), { duration: 0.45 })
+    const half = 0.019
+    const bounds = L.latLngBounds(
+      [hit.latitude - half, hit.longitude - half],
+      [hit.latitude + half, hit.longitude + half],
+    )
+    map.flyToBounds(bounds, {
+      padding: [100, 100],
+      duration: 0.55,
+      maxZoom: 16,
+    })
   }, [map, selectedId, listings])
   return null
+}
+
+function NearbyVehicleNav({
+  current,
+  listings,
+  onNavigate,
+}: {
+  current: ExploreMapListing
+  listings: ExploreMapListing[]
+  onNavigate: (direction: 'next' | 'prev') => void
+}) {
+  const ring = useMemo(
+    () => listingsWithinRadiusKm(current, listings, NEARBY_LISTINGS_RADIUS_KM),
+    [current, listings],
+  )
+  const idx = ring.findIndex((l) => l.id === current.id)
+  if (ring.length < 2 || idx < 0) return null
+
+  return (
+    <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75, lineHeight: 1.35 }}>
+        {ring.length} vehicles within ~{NEARBY_LISTINGS_RADIUS_KM} km — browse nearby on the map
+      </Typography>
+      <Stack direction="row" spacing={0.75}>
+        <Button
+          fullWidth
+          size="small"
+          variant="outlined"
+          color="primary"
+          startIcon={<ChevronLeft sx={{ fontSize: 18 }} />}
+          onClick={() => onNavigate('prev')}
+          sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600, py: 0.65 }}
+        >
+          Previous
+        </Button>
+        <Button
+          fullWidth
+          size="small"
+          variant="outlined"
+          color="primary"
+          endIcon={<ChevronRight sx={{ fontSize: 18 }} />}
+          onClick={() => onNavigate('next')}
+          sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600, py: 0.65 }}
+        >
+          Next nearby
+        </Button>
+      </Stack>
+    </Box>
+  )
 }
 
 function VehicleMarker({
@@ -195,6 +266,7 @@ export default function ExploreRentalsMapInner({
   onViewDetails,
   onShowInListing,
   mapFocusNonce = 0,
+  onNearbyNavigate,
   scrollWheelZoom = true,
   enableFlyTo = true,
 }: ExploreRentalsMapInnerProps) {
@@ -218,6 +290,9 @@ export default function ExploreRentalsMapInner({
         <MapContainer
           center={MANILA_CENTER}
           zoom={11}
+          minZoom={PHILIPPINES_MAP_MIN_ZOOM}
+          maxBounds={PH_BOUNDS}
+          maxBoundsViscosity={1}
           scrollWheelZoom={scrollWheelZoom}
           zoomControl={false}
           attributionControl={false}
@@ -305,6 +380,13 @@ export default function ExploreRentalsMapInner({
                       <ShowInListingButton listing={listing} onShowInListing={onShowInListing} />
                     ) : null}
                   </Stack>
+                  {onNearbyNavigate ? (
+                    <NearbyVehicleNav
+                      current={listing}
+                      listings={listings}
+                      onNavigate={onNearbyNavigate}
+                    />
+                  ) : null}
                 </Box>
               </Popup>
             </VehicleMarker>

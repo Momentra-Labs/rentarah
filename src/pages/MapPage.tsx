@@ -29,6 +29,8 @@ import { useGeolocationStore } from '../store/useGeolocationStore'
 import {
   applyExploreMapFilters,
   carsToExploreListings,
+  listingsWithinRadiusKm,
+  NEARBY_LISTINGS_RADIUS_KM,
   type ExploreMapFilterMode,
   type ExploreMapListing,
 } from '../utils/exploreMapListings'
@@ -121,6 +123,22 @@ export default function MapPage() {
       setSelectedId(null)
     }
   }, [filtered, selectedId])
+
+  const handleNearbyNavigate = useCallback(
+    (dir: 'next' | 'prev') => {
+      const cur = filtered.find((l) => l.id === selectedId)
+      if (!cur) return
+      const ring = listingsWithinRadiusKm(cur, filtered, NEARBY_LISTINGS_RADIUS_KM)
+      if (ring.length < 2) return
+      const i = ring.findIndex((l) => l.id === selectedId)
+      if (i < 0) return
+      const n = ring.length
+      const j = dir === 'next' ? (i + 1) % n : (i - 1 + n) % n
+      handleMapSelect(ring[j].id)
+      setMapFocusNonce((x) => x + 1)
+    },
+    [filtered, selectedId, handleMapSelect],
+  )
 
   const onViewDetails = (l: ExploreMapListing) => navigate(`/cars/${l.id}`)
 
@@ -285,6 +303,7 @@ export default function MapPage() {
                     onViewDetails={onViewDetails}
                     onShowInListing={handleShowInListing}
                     mapFocusNonce={mapFocusNonce}
+                    onNearbyNavigate={handleNearbyNavigate}
                   />
                 </Box>
               </Suspense>

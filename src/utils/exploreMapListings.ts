@@ -125,3 +125,26 @@ export function applyExploreMapFilters(
   }
   return out
 }
+
+/** Radius for “nearby vehicles” cycling on the explore map (km). */
+export const NEARBY_LISTINGS_RADIUS_KM = 6
+
+/**
+ * All listings within `radiusKm` of `center` (inclusive), sorted by distance ascending (ties by id).
+ * Includes `center` when it appears in `listings` (distance 0).
+ */
+export function listingsWithinRadiusKm(
+  center: ExploreMapListing,
+  listings: ExploreMapListing[],
+  radiusKm: number = NEARBY_LISTINGS_RADIUS_KM,
+): ExploreMapListing[] {
+  const o: LatLng = { lat: center.latitude, lng: center.longitude }
+  return listings
+    .map((l) => ({
+      l,
+      d: haversineKm(o, { lat: l.latitude, lng: l.longitude }),
+    }))
+    .filter((x) => x.d <= radiusKm)
+    .sort((a, b) => (a.d !== b.d ? a.d - b.d : a.l.id.localeCompare(b.l.id)))
+    .map((x) => x.l)
+}
