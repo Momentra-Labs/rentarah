@@ -36,6 +36,15 @@ import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
 import { containerGutters, dashboardSectionTabsSx, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 
+function tabIndexFromNav(nav: string | null): number {
+  if (nav === 'profile') return 0
+  if (nav === 'trips') return 1
+  if (nav === 'past') return 2
+  if (nav === 'saved') return 3
+  if (nav === 'reviews') return 4
+  return 0
+}
+
 export default function DashboardPage() {
   const theme = useTheme()
   const shortTabLabels = useMediaQuery(theme.breakpoints.down('md'))
@@ -51,13 +60,26 @@ export default function DashboardPage() {
   const cars = useCarsStore((s) => s.cars)
   const savedIds = useCarsStore((s) => s.savedCarIds)
 
-  const [tab, setTab] = useState(0)
+  const [tab, setTab] = useState(() =>
+    tabIndexFromNav(typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('nav') : null),
+  )
 
   useEffect(() => {
     const nav = searchParams.get('nav')
-    if (nav === 'trips') setTab(0)
-    if (nav === 'profile') setTab(1)
-  }, [searchParams])
+    if (nav === 'trips' || nav === 'profile' || nav === 'past' || nav === 'saved' || nav === 'reviews') {
+      setTab(tabIndexFromNav(nav))
+      return
+    }
+    setTab(0)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('nav', 'profile')
+        return next
+      },
+      { replace: true },
+    )
+  }, [searchParams, setSearchParams])
 
   const [pf, setPf] = useState({
     firstName: user?.firstName ?? '',
@@ -66,6 +88,17 @@ export default function DashboardPage() {
     phone: user?.phone ?? '',
     licenseNumber: user?.licenseNumber ?? '',
   })
+
+  useEffect(() => {
+    if (tab !== 0 || !user) return
+    setPf({
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
+      email: user.email ?? '',
+      phone: user.phone ?? '',
+      licenseNumber: user.licenseNumber ?? '',
+    })
+  }, [tab, user])
 
   const mine = useMemo(() => bookings.filter((b) => b.userId === user?.id), [bookings, user?.id])
   const upcoming = mine.filter((b) => b.status !== 'cancelled' && !dayjs(b.dropoff).isBefore(dayjs(), 'day'))
@@ -162,13 +195,15 @@ export default function DashboardPage() {
             setSearchParams(
               (prev) => {
                 const n = new URLSearchParams(prev)
-                if (v === 1) {
-                  n.set('nav', 'profile')
-                } else if (v === 0) {
-                  n.set('nav', 'trips')
-                } else {
-                  n.delete('nav')
+                const keys: Record<number, string> = {
+                  0: 'profile',
+                  1: 'trips',
+                  2: 'past',
+                  3: 'saved',
+                  4: 'reviews',
                 }
+                const key = keys[v]
+                if (key) n.set('nav', key)
                 return n
               },
               { replace: true },
@@ -180,18 +215,142 @@ export default function DashboardPage() {
           aria-label="Account sections"
           sx={dashboardSectionTabsSx}
         >
+          <Tab icon={<PersonOutline fontSize="small" />} iconPosition="start" label="Profile" />
           <Tab
             icon={<CalendarMonthOutlined fontSize="small" />}
             iconPosition="start"
             label={shortTabLabels ? 'Upcoming' : 'Upcoming trips'}
           />
-          <Tab icon={<PersonOutline fontSize="small" />} iconPosition="start" label="Profile" />
           <Tab icon={<HistoryOutlined fontSize="small" />} iconPosition="start" label="Past" />
           <Tab icon={<FavoriteBorder fontSize="small" />} iconPosition="start" label="Saved" />
           <Tab icon={<RateReviewOutlined fontSize="small" />} iconPosition="start" label="Reviews" />
         </Tabs>
 
       {tab === 0 && (
+        <Card
+          elevation={0}
+          sx={{
+            ...listRowSurface(theme),
+            maxWidth: 560,
+            width: '100%',
+            mx: 'auto',
+            borderRadius: 3,
+          }}
+        >
+          <CardContent
+            sx={{
+              px: { xs: 2, sm: 3.5 },
+              py: { xs: 2, sm: 3.5 },
+              '&:last-child': { pb: { xs: 2, sm: 3.5 } },
+            }}
+          >
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.02em" sx={{ color: 'text.primary' }}>
+                Profile & contact
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+                Keep your name and contact details up to date for drivers and support.
+              </Typography>
+            </Box>
+            <Stack spacing={2.5} alignItems="stretch" sx={{ width: '100%' }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
+                <TextField
+                  label="First name"
+                  value={pf.firstName}
+                  onChange={(e) => setPf({ ...pf, firstName: e.target.value })}
+                  fullWidth
+                  size="small"
+                  sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+                <TextField
+                  label="Last name"
+                  value={pf.lastName}
+                  onChange={(e) => setPf({ ...pf, lastName: e.target.value })}
+                  fullWidth
+                  size="small"
+                  sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+              </Stack>
+              <TextField
+                label="Email"
+                value={pf.email}
+                disabled
+                fullWidth
+                size="small"
+                helperText="Sign-in address — contact support to change"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
+                <TextField
+                  label="Phone"
+                  value={pf.phone}
+                  onChange={(e) => setPf({ ...pf, phone: e.target.value })}
+                  fullWidth
+                  size="small"
+                  sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+                <TextField
+                  label="License number"
+                  value={pf.licenseNumber}
+                  onChange={(e) => setPf({ ...pf, licenseNumber: e.target.value })}
+                  fullWidth
+                  size="small"
+                  sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                />
+              </Stack>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => {
+                  updateProfile({
+                    firstName: pf.firstName,
+                    lastName: pf.lastName,
+                    phone: pf.phone,
+                    licenseNumber: pf.licenseNumber,
+                  })
+                  useSnackbarStore.getState().showSuccess('Profile updated')
+                }}
+                sx={{
+                  py: 1.25,
+                  borderRadius: 2,
+                  fontWeight: 700,
+                  ...primaryCtaShadow(theme),
+                  alignSelf: { xs: 'stretch', sm: 'flex-start' },
+                  width: { xs: '100%', sm: 'auto' },
+                  minWidth: { sm: 200 },
+                  px: { sm: 3 },
+                }}
+              >
+                Save changes
+              </Button>
+            </Stack>
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Session
+            </Typography>
+            <Button
+              onClick={() => logout()}
+              color="inherit"
+              variant="outlined"
+              fullWidth
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                borderColor: 'divider',
+                py: 1.15,
+                alignSelf: { xs: 'stretch', sm: 'flex-start' },
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: { sm: 200 },
+              }}
+            >
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {tab === 1 && (
         <Stack spacing={2.5}>
           {upcoming.length === 0 && <Typography color="text.secondary">No upcoming trips.</Typography>}
           {upcoming.map((b) => (
@@ -269,98 +428,6 @@ export default function DashboardPage() {
       )}
 
       {tab === 4 && <Typography color="text.secondary">Leave reviews after a trip (coming soon).</Typography>}
-
-      {tab === 1 && (
-        <Card elevation={0} sx={{ ...listRowSurface(theme), maxWidth: 560, borderRadius: 3 }}>
-          <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.02em" sx={{ color: 'text.primary' }}>
-                Profile & contact
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
-                Keep your name and contact details up to date for drivers and support.
-              </Typography>
-            </Box>
-            <Stack spacing={2.5}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="First name"
-                    value={pf.firstName}
-                    onChange={(e) => setPf({ ...pf, firstName: e.target.value })}
-                    fullWidth
-                    size="small"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Last name"
-                    value={pf.lastName}
-                    onChange={(e) => setPf({ ...pf, lastName: e.target.value })}
-                    fullWidth
-                    size="small"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="Email"
-                    value={pf.email}
-                    disabled
-                    fullWidth
-                    size="small"
-                    helperText="Sign-in address — contact support to change"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="Phone"
-                    value={pf.phone}
-                    onChange={(e) => setPf({ ...pf, phone: e.target.value })}
-                    fullWidth
-                    size="small"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="License number"
-                    value={pf.licenseNumber}
-                    onChange={(e) => setPf({ ...pf, licenseNumber: e.target.value })}
-                    fullWidth
-                    size="small"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-              </Grid>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  updateProfile({
-                    firstName: pf.firstName,
-                    lastName: pf.lastName,
-                    phone: pf.phone,
-                    licenseNumber: pf.licenseNumber,
-                  })
-                  useSnackbarStore.getState().showSuccess('Profile updated')
-                }}
-                sx={{ alignSelf: 'flex-start', px: 3, py: 1, borderRadius: 2, fontWeight: 700, ...primaryCtaShadow(theme) }}
-              >
-                Save changes
-              </Button>
-            </Stack>
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Session
-            </Typography>
-            <Button onClick={() => logout()} color="inherit" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, borderColor: 'divider' }}>
-              Sign out
-            </Button>
-          </CardContent>
-        </Card>
-      )}
       </Container>
     </Box>
   )

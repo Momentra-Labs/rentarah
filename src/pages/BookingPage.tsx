@@ -341,7 +341,7 @@ export default function BookingPage() {
                     </CardContent>
                   </Card>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <Button variant="contained" onClick={() => { resetFlow(); navigate('/dashboard') }} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>
+                    <Button variant="contained" onClick={() => { resetFlow(); navigate('/dashboard?nav=trips') }} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>
                       View My Trips
                     </Button>
                     <Button variant="outlined" onClick={() => { resetFlow(); navigate('/search') }}>

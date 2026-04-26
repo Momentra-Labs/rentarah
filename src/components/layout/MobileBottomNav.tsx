@@ -101,7 +101,7 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
               else if (newValue === 1) navigate('/search')
               else if (newValue === 2) navigate('/map')
               else if (newValue === 3) navigate('/messages')
-              else if (newValue === 4) navigate('/dashboard')
+              else if (newValue === 4) navigate('/dashboard?nav=profile')
             } else {
               if (newValue === 0) navigate('/')
               else if (newValue === 1) navigate('/search')

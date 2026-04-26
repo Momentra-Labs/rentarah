@@ -169,7 +169,7 @@ export default function AppNavigationList({ onNavigate, onAuthOpen, onLogout }: 
           key: 'dashboard',
           label: 'Dashboard',
           kind: 'link',
-          to: '/dashboard',
+          to: '/dashboard?nav=profile',
           icon: <EventNoteOutlined fontSize="small" />,
         },
         {

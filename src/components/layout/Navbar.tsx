@@ -342,7 +342,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                   <MenuItem
                     onClick={() => {
                       setAnchor(null)
-                      navigate('/dashboard')
+                      navigate('/dashboard?nav=profile')
                     }}
                   >
                     Dashboard
