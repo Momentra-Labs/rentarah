@@ -32,6 +32,11 @@ export default function MainLayout() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const lightRouteMotion = Boolean(reduceMotion || isMobile)
   const location = useLocation()
+  /** Open conversation on mobile: hide app bar and bottom tabs so the thread is full-screen. */
+  const immersiveMobileMessageThread =
+    isMobile && /^\/messages\/.+/.test(location.pathname)
+  /** Footer is omitted on all messages routes for a cleaner chat layout (list + thread). */
+  const hideFooterOnMessages = location.pathname.startsWith('/messages')
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const user = useAuthStore((s) => s.user)
@@ -146,18 +151,23 @@ export default function MainLayout() {
       </AnimatePresence>
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', alignItems: 'stretch' }}>
         <AppNavSidebar onAuthOpen={handleAuthOpen} onLogout={handleLogout} />
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <Navbar onAuthOpen={handleAuthOpen} />
+        <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {!immersiveMobileMessageThread ? <Navbar onAuthOpen={handleAuthOpen} /> : null}
           <Box
             component="main"
             sx={{
               flex: 1,
               width: '100%',
-              pb: {
-                xs: MOBILE_BOTTOM_NAV_SX_PB,
-                sm: MOBILE_BOTTOM_NAV_SX_PB,
-                md: 'max(12px, env(safe-area-inset-bottom))',
-              },
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              pb: immersiveMobileMessageThread
+                ? 'max(8px, env(safe-area-inset-bottom, 0px))'
+                : {
+                    xs: MOBILE_BOTTOM_NAV_SX_PB,
+                    sm: MOBILE_BOTTOM_NAV_SX_PB,
+                    md: 'max(12px, env(safe-area-inset-bottom))',
+                  },
             }}
           >
             <AnimatePresence mode="wait">
@@ -172,7 +182,13 @@ export default function MainLayout() {
                     ? { duration: 0.12, ease: 'easeOut' as const }
                     : pageMotionTransition
                 }
-                style={{ minHeight: '100%' }}
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: '100%',
+                }}
               >
                 <Outlet />
               </motion.div>
@@ -180,8 +196,8 @@ export default function MainLayout() {
           </Box>
         </Box>
       </Box>
-      <Footer />
-      <MobileBottomNav onAuthOpen={handleAuthOpen} />
+      {!hideFooterOnMessages ? <Footer /> : null}
+      {!immersiveMobileMessageThread ? <MobileBottomNav onAuthOpen={handleAuthOpen} /> : null}
       <AuthDialog
         open={authOpen}
         onClose={handleAuthClose}

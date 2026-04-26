@@ -1,13 +1,6 @@
 import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
-import {
-  Avatar,
-  Box,
-  List,
-  ListItemButton,
-  ListItemAvatar,
-  ListItemText,
-  Typography,
-} from '@mui/material'
+import { Avatar, Box, List, ListItemButton, Typography } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
@@ -43,6 +36,7 @@ export default function ChatConversationList({
           py: 6,
           px: 2,
           textAlign: 'center',
+          bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'action.hover'),
         }}
       >
         <ChatBubbleOutline sx={{ fontSize: 48, color: 'text.disabled', mb: 1.5 }} />
@@ -57,7 +51,13 @@ export default function ChatConversationList({
   }
 
   return (
-    <List disablePadding sx={{ py: 0.5 }}>
+    <List
+      disablePadding
+      sx={{
+        py: 0,
+        bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'action.hover'),
+      }}
+    >
       {threads.map((t) => {
         const other = otherName(t, currentUserId)
         const time = t.lastMessageAt ? dayjs(t.lastMessageAt).fromNow() : ''
@@ -68,35 +68,54 @@ export default function ChatConversationList({
             onClick={() => onSelect(t.id)}
             alignItems="flex-start"
             sx={{
-              borderRadius: 2,
-              mx: 0.5,
-              mb: 0.5,
               py: 1.25,
+              px: 2,
+              gap: 1.5,
+              borderBottom: 1,
+              borderColor: (theme) => alpha(theme.palette.divider, 0.6),
+              borderRadius: 0,
+              '&:hover': {
+                bgcolor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === 'light' ? 0.8 : 1),
+              },
+              '&.Mui-selected': {
+                bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.1 : 0.2),
+                '&:hover': {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.14 : 0.26),
+                },
+              },
             }}
           >
-            <ListItemAvatar>
-              <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: 15 }}>{other.slice(0, 2).toUpperCase()}</Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary={
-                <Typography component="span" fontWeight={700} noWrap display="block" sx={{ pr: 1 }}>
+            <Avatar
+              sx={{
+                bgcolor: 'primary.main',
+                width: 56,
+                height: 56,
+                fontSize: '1rem',
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              {other.slice(0, 2).toUpperCase()}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1 }}>
+                <Typography fontWeight={700} fontSize="0.95rem" noWrap sx={{ flex: 1, minWidth: 0 }}>
                   {other}
                 </Typography>
-              }
-              secondary={
-                <Box component="span" sx={{ display: 'block' }}>
-                  <Typography component="span" variant="body2" color="text.primary" noWrap display="block" fontWeight={500}>
-                    {t.carName}
+                {time ? (
+                  <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0, fontSize: '0.72rem' }}>
+                    {time}
                   </Typography>
-                  <Typography component="span" variant="caption" color="text.secondary" noWrap display="block" sx={{ mt: 0.25 }}>
-                    {t.lastPreview}
-                  </Typography>
+                ) : null}
+              </Box>
+              <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.35, fontSize: '0.8125rem' }}>
+                <Box component="span" fontWeight={600} color="text.primary" sx={{ opacity: 0.85 }}>
+                  {t.carName}
                 </Box>
-              }
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0, alignSelf: 'flex-start', pt: 0.25 }}>
-              {time}
-            </Typography>
+                {' · '}
+                {t.lastPreview}
+              </Typography>
+            </Box>
           </ListItemButton>
         )
       })}

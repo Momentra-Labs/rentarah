@@ -1,5 +1,5 @@
 import Send from '@mui/icons-material/Send'
-import { Avatar, Box, IconButton, Paper, Stack, TextField, Typography } from '@mui/material'
+import { Avatar, Box, IconButton, Stack, TextField, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -62,15 +62,19 @@ export default function ChatThreadPanel({
             borderBottom: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',
+            boxShadow: (theme) =>
+              theme.palette.mode === 'light' ? '0 1px 0 rgba(0, 0, 0, 0.06)' : '0 1px 0 rgba(255,255,255,0.06)',
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40, fontSize: 14 }}>{title.slice(0, 2).toUpperCase()}</Avatar>
+            <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: '0.9rem', fontWeight: 700 }}>
+              {title.slice(0, 2).toUpperCase()}
+            </Avatar>
             <Box sx={{ minWidth: 0 }}>
-              <Typography fontWeight={800} noWrap>
+              <Typography fontWeight={800} fontSize="1rem" noWrap>
                 {title}
               </Typography>
-              <Typography variant="body2" color="text.secondary" noWrap>
+              <Typography variant="body2" color="text.secondary" noWrap sx={{ fontSize: '0.8125rem' }}>
                 {thread.carName} · ref {thread.bookingId.slice(0, 8)}…
               </Typography>
             </Box>
@@ -85,7 +89,7 @@ export default function ChatThreadPanel({
           overflow: 'auto',
           px: 2,
           py: 2,
-          bgcolor: (theme) => (theme.palette.mode === 'light' ? 'grey.50' : 'background.default'),
+          bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'background.default'),
         }}
       >
         {sorted.map((m) => {
@@ -96,29 +100,30 @@ export default function ChatThreadPanel({
               sx={{
                 display: 'flex',
                 justifyContent: mine ? 'flex-end' : 'flex-start',
-                mb: 1.5,
+                mb: 1.25,
               }}
             >
-              <Paper
-                elevation={0}
+              <Box
                 sx={{
-                  maxWidth: 'min(100%, 320px)',
+                  maxWidth: 'min(100%, 75%)',
                   px: 1.75,
-                  py: 1.25,
-                  borderRadius: 2.5,
+                  py: 1,
+                  borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   bgcolor: mine ? 'primary.main' : 'background.paper',
                   color: mine ? 'primary.contrastText' : 'text.primary',
-                  border: mine ? 'none' : 1,
-                  borderColor: 'divider',
+                  boxShadow: mine
+                    ? '0 1px 0.5px rgba(0, 0, 0, 0.1)'
+                    : (theme) =>
+                        theme.palette.mode === 'light' ? '0 1px 0.5px rgba(0, 0, 0, 0.13)' : '0 1px 2px rgba(0,0,0,0.25)',
                 }}
               >
                 <Typography
                   variant="body2"
                   sx={{
                     lineHeight: 1.45,
+                    fontSize: '0.9375rem',
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    /* theme body2/caption set explicit grays that override Paper color on sent bubbles */
                     ...(mine ? { color: 'common.white' } : {}),
                   }}
                 >
@@ -128,9 +133,9 @@ export default function ChatThreadPanel({
                   variant="caption"
                   sx={{
                     display: 'block',
-                    mt: 0.75,
+                    mt: 0.5,
                     textAlign: 'right',
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     ...(mine
                       ? {
                           color: (theme) => alpha(theme.palette.common.white, 0.88),
@@ -143,7 +148,7 @@ export default function ChatThreadPanel({
                 >
                   {dayjs(m.createdAt).format('MMM D, h:mm a')}
                 </Typography>
-              </Paper>
+              </Box>
             </Box>
           )
         })}
@@ -151,8 +156,8 @@ export default function ChatThreadPanel({
 
       <Box
         sx={{
-          p: 2,
-          pt: 1.5,
+          px: 1.5,
+          py: 1.25,
           borderTop: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
@@ -163,7 +168,7 @@ export default function ChatThreadPanel({
             fullWidth
             multiline
             maxRows={4}
-            placeholder="Type a message…"
+            placeholder="Message…"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -174,17 +179,34 @@ export default function ChatThreadPanel({
             }}
             size="small"
             sx={{
-              '& .MuiOutlinedInput-root': { borderRadius: 2.5 },
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '24px',
+                pl: 2,
+                pr: 1,
+                py: 0.75,
+                bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'action.hover'),
+                '& fieldset': { borderColor: 'transparent' },
+                '&:hover fieldset': { borderColor: 'transparent' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: '1px' },
+              },
             }}
           />
           <IconButton
-            color="primary"
             onClick={handleSend}
             disabled={!draft.trim()}
             aria-label="Send message"
-            sx={{ alignSelf: 'center' }}
+            sx={{
+              flexShrink: 0,
+              width: 40,
+              height: 40,
+              mb: 0.25,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              '&:hover': { bgcolor: 'primary.dark' },
+              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+            }}
           >
-            <Send />
+            <Send sx={{ fontSize: 20 }} />
           </IconButton>
         </Stack>
       </Box>
