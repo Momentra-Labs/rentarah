@@ -6,10 +6,16 @@
   "scripts": {
     "install:all": "npm install && npm install --prefix backend",
     "setup": "npm run install:all",
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "vite --mode development",
+    "dev:staging": "vite --mode staging",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:backend:staging": "npm run dev:staging --prefix backend",
+    "build": "tsc --noEmit && vite build --mode production",
+    "build:staging": "tsc --noEmit && vite build --mode staging",
+    "build:production": "tsc --noEmit && vite build --mode production",
     "build:backend": "npm run build --prefix backend",
     "build:all": "npm run build && npm run build:backend",
+    "build:all:staging": "npm run build:staging && npm run build:backend",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

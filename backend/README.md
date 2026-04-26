@@ -58,13 +58,22 @@ Other useful commands:
 
 Default port is **5000** (override with `PORT` in `.env`).
 
+`APP_ENV` selects optional `backend/.env.${APP_ENV}` after loading `.env` / `.env.local`. See [docs/ENVIRONMENTS.md](../docs/ENVIRONMENTS.md).
+
 ```bash
 # development (watch)
 npm run dev
 
+# staging (watch, loads .env.staging when used with APP_ENV=staging)
+npm run dev:staging
+
 # production build
 npm run build
 npm start
+
+# compiled process with explicit env (local smoke tests)
+npm run start:staging
+npm run start:production
 ```
 
 ## Verify the API

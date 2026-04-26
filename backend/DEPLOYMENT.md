@@ -29,7 +29,8 @@ Copy from `.env.example` and set real values on the server (never commit `.env`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | **Yes** | PostgreSQL URL, e.g. `postgresql://USER:PASSWORD@HOST:5432/DBNAME?schema=public`. Use SSL query params if your provider requires them. |
+| `APP_ENV` | Recommended | `staging` or `production` (drives which `backend/.env.*` file is loaded locally; set explicitly on the host). See [docs/ENVIRONMENTS.md](../docs/ENVIRONMENTS.md). |
+| `DATABASE_URL` | **Yes** | PostgreSQL URL, e.g. `postgresql://USER:PASSWORD@HOST:5432/DBNAME?schema=public`. Use SSL query params if your provider requires them. Use a **separate database** per environment. |
 | `NODE_ENV` | Recommended | Set to `production` so less verbose logging and stricter error responses. |
 | `PORT` | Optional | Defaults to **5000**. Many hosts inject `PORT` automatically; your process must listen on `process.env.PORT`. |
 | `CORS_ORIGIN` | **Yes in production** | Comma-separated list of allowed browser origins (your frontend URL(s)), e.g. `https://yourname.github.io,https://www.yourdomain.com`. **Do not** rely on wide-open CORS in production. |
@@ -37,6 +38,7 @@ Copy from `.env.example` and set real values on the server (never commit `.env`)
 Example production `.env` (values are illustrative):
 
 ```env
+APP_ENV=production
 NODE_ENV=production
 PORT=5000
 DATABASE_URL="postgresql://user:pass@db.example.com:5432/rentara?schema=public&sslmode=require"
@@ -124,6 +126,7 @@ The exact clicks differ by provider; the **configuration surface** is always: **
 
 ## Security checklist before go-live
 
+- [ ] `APP_ENV=production` (or `staging` on a staging host)
 - [ ] `NODE_ENV=production`
 - [ ] Strong, unique `DATABASE_URL` credentials; DB not exposed publicly without firewall rules
 - [ ] `CORS_ORIGIN` restricted to real frontend origins
@@ -135,5 +138,6 @@ The exact clicks differ by provider; the **configuration surface** is always: **
 
 ## Related
 
+- Staging vs production env files and scripts: [docs/ENVIRONMENTS.md](../docs/ENVIRONMENTS.md)
 - Local setup and dev migrations: [README.md](./README.md)
 - Example env keys: [.env.example](./.env.example)

@@ -6,8 +6,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:staging": "cross-env APP_ENV=staging tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:staging": "cross-env NODE_ENV=production APP_ENV=staging node dist/server.js",
+    "start:production": "cross-env NODE_ENV=production APP_ENV=production node dist/server.js",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
@@ -26,6 +29,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.5",
+    "cross-env": "^7.0.3",
     "prisma": "^6.19.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
