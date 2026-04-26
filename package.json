@@ -4,8 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "install:all": "npm install && npm install --prefix backend",
+    "setup": "npm run install:all",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:backend": "npm run build --prefix backend",
+    "build:all": "npm run build && npm run build:backend",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

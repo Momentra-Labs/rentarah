@@ -2,6 +2,8 @@
 
 Backend service for the Rentara marketplace. It lives in `/backend` and is independent from the Vite frontend.
 
+**Monorepo:** from the repo root, use **`npm run setup`** (install root + backend) and **`npm run build:all`** (build both). See the [root README](../README.md).
+
 ## Stack
 
 - **Node.js** (18+), **TypeScript**, **Express**
