@@ -1,0 +1,21 @@
+// Prisma schema — source of truth for DB models.
+// Migrations: from /backend run `npm run db:migrate` (like `php artisan migrate`).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  /// Application stores bcrypt (or similar) hashes only — never plain text.
+  password  String
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
