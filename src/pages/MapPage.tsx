@@ -347,9 +347,9 @@ export default function MapPage() {
       ? {
           flex: '0 0 auto',
           width: '100%',
-          height: { xs: 'clamp(280px, 48dvh, 440px)', sm: 'min(52dvh, 520px)' },
-          minHeight: 280,
-          maxHeight: { xs: '48dvh', sm: 520 },
+          height: { xs: 'clamp(300px, 54dvh, 480px)', sm: 'min(58dvh, 560px)' },
+          minHeight: { xs: 300, sm: 320 },
+          maxHeight: { xs: '54dvh', sm: 560 },
         }
       : {
           height: { sm: '56dvh', md: 'calc(100dvh - 280px)' },
