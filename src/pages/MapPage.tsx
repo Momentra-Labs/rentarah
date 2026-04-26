@@ -1,12 +1,17 @@
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
+import ExpandMore from '@mui/icons-material/ExpandMore'
+import InfoOutlined from '@mui/icons-material/InfoOutlined'
 import MyLocation from '@mui/icons-material/MyLocation'
 import SearchOutlined from '@mui/icons-material/SearchOutlined'
 import TwoWheeler from '@mui/icons-material/TwoWheeler'
 import {
   Box,
   Button,
+  Collapse,
   Container,
+  IconButton,
   InputAdornment,
+  Paper,
   Skeleton,
   Slider,
   Stack,
@@ -16,7 +21,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -47,6 +53,8 @@ function formatPesoShort(n: number): string {
  * Swap `useCarsStore` for an API hook when backend is ready.
  */
 export default function MapPage() {
+  const theme = useTheme()
+  const isCompactLayout = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const navigate = useNavigate()
   const location = useLocation()
   const cars = useCarsStore((s) => s.cars)
@@ -60,6 +68,7 @@ export default function MapPage() {
   const [listingScrollRequest, setListingScrollRequest] = useState(0)
   /** Bumped when the user chooses “View on map” on a strip card so the marker popup opens after fly-to. */
   const [mapFocusNonce, setMapFocusNonce] = useState(0)
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false)
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
@@ -105,6 +114,18 @@ export default function MapPage() {
   useEffect(() => {
     setPriceRange([priceExtent[0], priceExtent[1]])
   }, [priceExtent])
+
+  useEffect(() => {
+    if (!isCompactLayout) setMoreFiltersOpen(false)
+  }, [isCompactLayout])
+
+  const filtersDirty = useMemo(
+    () =>
+      Boolean(locationQuery.trim()) ||
+      priceRange[0] > priceExtent[0] ||
+      priceRange[1] < priceExtent[1],
+    [locationQuery, priceRange, priceExtent],
+  )
 
   const allListings = useMemo(() => carsToExploreListings(cars), [cars])
 
@@ -172,148 +193,281 @@ export default function MapPage() {
     </Box>
   )
 
-  return (
-    <Box sx={{ bgcolor: 'background.default', pb: { xs: 3, md: 4 } }}>
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 2, md: 3 } }}>
-        <PageHeader
-          overline="Explore"
-          title="Rental map"
-          subtitle="Filter by vehicle type, price, and area. Your location (when shared) powers Nearby and helps center the map."
-          dense
-        />
-
-        <Stack spacing={2} sx={{ mb: 2 }}>
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={filterMode}
-            onChange={handleFilter}
-            aria-label="Filter map by vehicle type"
-            sx={{ flexWrap: 'wrap' }}
-          >
-            <ToggleButton value="all">All</ToggleButton>
-            <ToggleButton value="cars">
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <DirectionsCar fontSize="small" />
-                <Box component="span">Cars</Box>
-              </Stack>
-            </ToggleButton>
-            <ToggleButton value="motorcycles">
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                <TwoWheeler fontSize="small" />
-                <Box component="span">Motorcycles</Box>
-              </Stack>
-            </ToggleButton>
-            <Tooltip
-              title={
-                nearbyDisabled
-                  ? 'Share your location from the header pin to filter by distance'
-                  : 'Within about 12 km of your position'
-              }
-            >
-              <span>
-                <ToggleButton value="nearby" disabled={nearbyDisabled}>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <MyLocation fontSize="small" />
-                    <Box component="span">Nearby</Box>
-                  </Stack>
-                </ToggleButton>
-              </span>
-            </Tooltip>
-          </ToggleButtonGroup>
-
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-            <TextField
-              size="small"
-              placeholder="Search by area (e.g. Cebu City, Davao, Makati)"
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              sx={{ flex: { md: 1 }, minWidth: { md: 240 } }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchOutlined fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              inputProps={{ 'aria-label': 'Filter listings by location name' }}
-            />
-            <Box sx={{ flex: { md: 2 }, minWidth: 0, px: { xs: 0, md: 1 } }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                Price per day: {formatPesoShort(priceRange[0])} – {formatPesoShort(priceRange[1])}
-              </Typography>
-              <Slider
-                size="small"
-                value={priceRange}
-                min={priceExtent[0]}
-                max={priceExtent[1]}
-                step={100}
-                onChange={(_, v) => setPriceRange(v as [number, number])}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(v) => formatPesoShort(v)}
-                disableSwap
-              />
-            </Box>
-            <Button variant="outlined" size="small" onClick={() => setPriceRange([priceExtent[0], priceExtent[1]])}>
-              Reset price
-            </Button>
-          </Stack>
+  const typeToggle = (
+    <ToggleButtonGroup
+      exclusive
+      size="small"
+      value={filterMode}
+      onChange={handleFilter}
+      aria-label="Filter map by vehicle type"
+      sx={{
+        flexWrap: 'nowrap',
+        width: '100%',
+        '& .MuiToggleButtonGroup-grouped': {
+          flex: isCompactLayout ? '0 0 auto' : '0 1 auto',
+          minWidth: 0,
+          px: { xs: 0.75, sm: 1.25 },
+          typography: 'caption',
+        },
+        ...(isCompactLayout
+          ? {
+              display: 'flex',
+              overflowX: 'auto',
+              pb: 0.25,
+              scrollbarWidth: 'thin',
+              '&::-webkit-scrollbar': { height: 4 },
+            }
+          : { flexWrap: 'wrap' }),
+      }}
+    >
+      <ToggleButton value="all">All</ToggleButton>
+      <ToggleButton value="cars">
+        <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
+          <DirectionsCar sx={{ fontSize: 18 }} />
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            Cars
+          </Box>
         </Stack>
+      </ToggleButton>
+      <ToggleButton value="motorcycles">
+        <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
+          <TwoWheeler sx={{ fontSize: 18 }} />
+          <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+            Moto
+          </Box>
+        </Stack>
+      </ToggleButton>
+      <Tooltip
+        title={
+          nearbyDisabled
+            ? 'Share your location from the header pin to filter by distance'
+            : 'Within about 12 km of your position'
+        }
+      >
+        <span>
+          <ToggleButton value="nearby" disabled={nearbyDisabled}>
+            <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
+              <MyLocation sx={{ fontSize: 18 }} />
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                Nearby
+              </Box>
+            </Stack>
+          </ToggleButton>
+        </span>
+      </Tooltip>
+    </ToggleButtonGroup>
+  )
 
-        <Box
-          id="explore-map-canvas"
-          sx={{
-            height: { xs: '52dvh', sm: '56dvh', md: 'calc(100dvh - 280px)' },
-            minHeight: 340,
-            maxHeight: 720,
-            borderRadius: 3,
-            overflow: 'hidden',
-            border: '1px solid',
-            borderColor: 'divider',
-            boxShadow: `0 8px 32px ${alpha('#000', 0.08)}`,
-            bgcolor: 'grey.50',
-            scrollMarginTop: { xs: 72, md: 88 },
+  const locationPriceBlock = (
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+      <TextField
+        size="small"
+        placeholder="Area (Cebu, Davao, Makati…)"
+        value={locationQuery}
+        onChange={(e) => setLocationQuery(e.target.value)}
+        sx={{ flex: { md: 1 }, minWidth: { md: 240 } }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchOutlined fontSize="small" color="action" />
+            </InputAdornment>
+          ),
+        }}
+        inputProps={{ 'aria-label': 'Filter listings by location name' }}
+      />
+      <Box sx={{ flex: { md: 2 }, minWidth: 0, px: { xs: 0, md: 1 } }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          Price per day: {formatPesoShort(priceRange[0])} – {formatPesoShort(priceRange[1])}
+        </Typography>
+        <Slider
+          size="small"
+          value={priceRange}
+          min={priceExtent[0]}
+          max={priceExtent[1]}
+          step={100}
+          onChange={(_, v) => setPriceRange(v as [number, number])}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(v) => formatPesoShort(v)}
+          disableSwap
+        />
+      </Box>
+      <Button variant="outlined" size="small" onClick={() => setPriceRange([priceExtent[0], priceExtent[1]])}>
+        Reset price
+      </Button>
+    </Stack>
+  )
+
+  const mapBody =
+    cars.length === 0 ? (
+      <Skeleton variant="rounded" height="100%" sx={{ borderRadius: 0 }} />
+    ) : filtered.length === 0 ? (
+      <Box sx={{ py: 6, textAlign: 'center', px: 2 }}>
+        <Typography color="text.secondary">No listings match these filters.</Typography>
+        <Button
+          sx={{ mt: 1 }}
+          onClick={() => {
+            setFilterMode('all')
+            setLocationQuery('')
+            setPriceRange([priceExtent[0], priceExtent[1]])
           }}
         >
-          {cars.length === 0 ? (
-            <Skeleton variant="rounded" height="100%" sx={{ borderRadius: 0 }} />
-          ) : filtered.length === 0 ? (
-            <Box sx={{ py: 6, textAlign: 'center', px: 2 }}>
-              <Typography color="text.secondary">No listings match these filters.</Typography>
-              <Button
-                sx={{ mt: 1 }}
-                onClick={() => {
-                  setFilterMode('all')
-                  setLocationQuery('')
-                  setPriceRange([priceExtent[0], priceExtent[1]])
-                }}
-              >
-                Clear filters
-              </Button>
-            </Box>
-          ) : (
-            <ExploreMapErrorBoundary fallback={mapFallback}>
-              <Suspense fallback={mapSuspense}>
-                <Box sx={{ height: '100%' }}>
-                  <ExploreRentalsMapLazy
-                    listings={filtered}
-                    selectedId={selectedId}
-                    onSelect={handleMapSelect}
-                    userLocation={userLocation}
-                    onViewDetails={onViewDetails}
-                    onShowInListing={handleShowInListing}
-                    mapFocusNonce={mapFocusNonce}
-                    onNearbyNavigate={handleNearbyNavigate}
-                  />
-                </Box>
-              </Suspense>
-            </ExploreMapErrorBoundary>
-          )}
+          Clear filters
+        </Button>
+      </Box>
+    ) : (
+      <ExploreMapErrorBoundary fallback={mapFallback}>
+        <Suspense fallback={mapSuspense}>
+          <Box sx={{ height: '100%' }}>
+            <ExploreRentalsMapLazy
+              listings={filtered}
+              selectedId={selectedId}
+              onSelect={handleMapSelect}
+              userLocation={userLocation}
+              onViewDetails={onViewDetails}
+              onShowInListing={handleShowInListing}
+              mapFocusNonce={mapFocusNonce}
+              onNearbyNavigate={handleNearbyNavigate}
+            />
+          </Box>
+        </Suspense>
+      </ExploreMapErrorBoundary>
+    )
+
+  const mapChromeSx = {
+    position: 'relative' as const,
+    overflow: 'hidden',
+    border: '1px solid',
+    borderColor: 'divider',
+    boxShadow: `0 8px 32px ${alpha('#000', 0.08)}`,
+    bgcolor: 'grey.50',
+    scrollMarginTop: { xs: 72, md: 88 },
+    borderRadius: { xs: 2, md: 3 },
+    ...(isCompactLayout
+      ? {
+          flex: 1,
+          minHeight: { xs: 'min(520px, calc(100dvh - 200px))', sm: 420 },
+          maxHeight: { xs: 'none', sm: 'none' },
+        }
+      : {
+          height: { sm: '56dvh', md: 'calc(100dvh - 280px)' },
+          minHeight: 340,
+          maxHeight: 720,
+        }),
+  }
+
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.default',
+        pb: { xs: 2, md: 4 },
+      }}
+    >
+      <Container
+        maxWidth="lg"
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          px: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 1, md: 3 },
+        }}
+      >
+        {isCompactLayout ? null : (
+          <PageHeader
+            overline="Explore"
+            title="Rental map"
+            subtitle="Filter by vehicle type, price, and area. Your location (when shared) powers Nearby and helps center the map."
+            dense
+          />
+        )}
+
+        {isCompactLayout ? null : (
+          <Stack spacing={2} sx={{ mb: 2 }}>
+            {typeToggle}
+            {locationPriceBlock}
+          </Stack>
+        )}
+
+        <Box id="explore-map-canvas" sx={mapChromeSx}>
+          {isCompactLayout ? (
+            <Paper
+              elevation={4}
+              sx={{
+                position: 'absolute',
+                top: 10,
+                left: 10,
+                right: 52,
+                zIndex: 1100,
+                borderRadius: 2,
+                px: 1.25,
+                py: 1,
+                pointerEvents: 'auto',
+                bgcolor: (t) => alpha(t.palette.background.paper, 0.94),
+                backdropFilter: 'blur(10px)',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Stack spacing={1}>
+                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, flex: 1, minWidth: 0 }} noWrap>
+                    Rental map
+                  </Typography>
+                  <Tooltip title="Filter by type, price, and area. Share your location for Nearby and map centering.">
+                    <IconButton size="small" aria-label="About this map" sx={{ flexShrink: 0 }}>
+                      <InfoOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+                {typeToggle}
+                <Button
+                  size="small"
+                  color={filtersDirty ? 'primary' : 'inherit'}
+                  onClick={() => setMoreFiltersOpen((o) => !o)}
+                  endIcon={
+                    <ExpandMore
+                      sx={{
+                        transition: theme.transitions.create('transform'),
+                        transform: moreFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                      }}
+                    />
+                  }
+                  sx={{
+                    alignSelf: 'flex-start',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    typography: 'caption',
+                    py: 0.25,
+                    minHeight: 32,
+                  }}
+                >
+                  {'Area & price'}
+                  {filtersDirty ? ' · active' : ''}
+                </Button>
+                <Collapse in={moreFiltersOpen}>{locationPriceBlock}</Collapse>
+              </Stack>
+            </Paper>
+          ) : null}
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 400,
+              '& .leaflet-container': { borderRadius: 0 },
+            }}
+          >
+            {mapBody}
+          </Box>
         </Box>
 
         <Box
           id="explore-map-listing-strip"
-          sx={{ mt: 3, scrollMarginTop: { xs: 72, md: 88 } }}
+          sx={{ mt: { xs: 2, md: 3 }, px: { xs: 0.5, sm: 0 }, scrollMarginTop: { xs: 72, md: 88 } }}
         >
           <ExploreMapListingStrip
             listings={filtered}
