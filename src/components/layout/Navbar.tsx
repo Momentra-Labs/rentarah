@@ -232,7 +232,18 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                   aria-label="Open account menu"
                   sx={{ ml: 0 }}
                 >
-                  <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36, fontSize: 14 }}>{user.avatar}</Avatar>
+                  <Avatar
+                    sx={{
+                      bgcolor: 'primary.main',
+                      width: 40,
+                      height: 40,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      boxShadow: (t) => `0 0 0 2px ${t.palette.background.paper}, 0 0 0 3px ${alpha(t.palette.primary.main, 0.4)}`,
+                    }}
+                  >
+                    {user.avatar}
+                  </Avatar>
                 </IconButton>
                 <Menu
                   anchorEl={anchor}
@@ -245,7 +256,64 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                   }}
                   disableScrollLock
                   disableRestoreFocus
+                  PaperProps={{
+                    elevation: 0,
+                    sx: {
+                      minWidth: 288,
+                      maxWidth: 320,
+                      borderRadius: 2.5,
+                      overflow: 'hidden',
+                      border: 1,
+                      borderColor: 'divider',
+                      boxShadow: (t) => `0 4px 24px ${alpha(t.palette.common.black, 0.1)}`,
+                    },
+                  }}
                 >
+                  <Box
+                    sx={{
+                      px: 2,
+                      pt: 2,
+                      pb: 1.5,
+                      background: (t) =>
+                        `linear-gradient(165deg, ${alpha(t.palette.primary.main, 0.07)} 0%, ${alpha(t.palette.background.paper, 1)} 100%)`,
+                      borderBottom: 1,
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Avatar
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          fontSize: 16,
+                          fontWeight: 700,
+                          bgcolor: 'primary.main',
+                        }}
+                      >
+                        {user.avatar}
+                      </Avatar>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="subtitle2" fontWeight={800} noWrap letterSpacing="-0.02em">
+                          {user.firstName} {user.lastName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap display="block" title={user.email}>
+                          {user.email}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Button
+                      fullWidth
+                      size="small"
+                      component={RouterLink}
+                      to="/dashboard?nav=profile"
+                      onClick={() => setAnchor(null)}
+                      sx={{ mt: 1.5, textTransform: 'none', fontWeight: 600, borderRadius: 1.5, borderColor: 'divider' }}
+                      variant="outlined"
+                      color="inherit"
+                    >
+                      View profile
+                    </Button>
+                  </Box>
                   <MenuItem
                     onClick={() => {
                       setAnchor(null)

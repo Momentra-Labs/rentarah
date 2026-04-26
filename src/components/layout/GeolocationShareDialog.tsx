@@ -19,11 +19,13 @@ export default function GeolocationShareDialog() {
   const closeGeoDialog = useGeolocationStore((s) => s.closeGeoDialog)
   const userLocation = useGeolocationStore((s) => s.userLocation)
   const status = useGeolocationStore((s) => s.status)
+  const lastFetchFailure = useGeolocationStore((s) => s.lastFetchFailure)
   const requestLocation = useGeolocationStore((s) => s.requestLocation)
   const clearLocation = useGeolocationStore((s) => s.clearLocation)
 
   const pending = status === 'pending'
   const denied = status === 'denied'
+  const needFixOnly = lastFetchFailure === 'no_fix'
   const unsupported = status === 'unsupported'
   const ready = status === 'ready' && Boolean(userLocation)
 
@@ -74,7 +76,14 @@ export default function GeolocationShareDialog() {
               Location was blocked. Check your browser site settings for this page, then try again.
             </Alert>
           )}
-          {ready && (
+          {!denied && needFixOnly && (
+            <Alert severity="warning">
+              {ready
+                ? "We couldn’t refresh your position (timeout or weak signal). Your last location is still in use. Try again in a few seconds or move to an area with a better signal."
+                : "We couldn’t get a position right now (timeout or weak signal) even if access is allowed. Try again, or on desktop ensure system location is on, then use Share my location again."}
+            </Alert>
+          )}
+          {ready && !needFixOnly && (
             <Alert severity="success">
               Location is on. You can update your position or turn it off below.
             </Alert>

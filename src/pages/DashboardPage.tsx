@@ -1,3 +1,9 @@
+import CalendarMonthOutlined from '@mui/icons-material/CalendarMonthOutlined'
+import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline'
+import FavoriteBorder from '@mui/icons-material/FavoriteBorder'
+import HistoryOutlined from '@mui/icons-material/HistoryOutlined'
+import PersonOutline from '@mui/icons-material/PersonOutline'
+import RateReviewOutlined from '@mui/icons-material/RateReviewOutlined'
 import {
   Avatar,
   Box,
@@ -16,6 +22,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
@@ -27,7 +34,7 @@ import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
-import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
+import { containerGutters, dashboardSectionTabsSx, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 
 export default function DashboardPage() {
   const theme = useTheme()
@@ -47,9 +54,9 @@ export default function DashboardPage() {
   const [tab, setTab] = useState(0)
 
   useEffect(() => {
-    if (searchParams.get('nav') === 'trips') {
-      setTab(0)
-    }
+    const nav = searchParams.get('nav')
+    if (nav === 'trips') setTab(0)
+    if (nav === 'profile') setTab(1)
   }, [searchParams])
 
   const [pf, setPf] = useState({
@@ -70,59 +77,119 @@ export default function DashboardPage() {
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 }, ...containerGutters }}>
         <PageHeader overline="Your account" title="Dashboard" subtitle="Trips, saved cars, reviews, and profile settings." dense />
 
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3, mt: -1 }}>
-          <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56, fontWeight: 700 }}>{user?.avatar}</Avatar>
-          <Box>
-            <Typography variant="h6" fontWeight={800} letterSpacing="-0.02em">
-              {user?.firstName} {user?.lastName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {user?.email}
-            </Typography>
-            <Chip label="Verified" color="success" size="small" sx={{ mt: 0.75, fontWeight: 600 }} />
-          </Box>
-        </Stack>
+        <Card
+          elevation={0}
+          sx={{
+            mb: 3,
+            mt: -0.5,
+            borderRadius: 3,
+            border: 1,
+            borderColor: 'divider',
+            overflow: 'hidden',
+            background: (t) =>
+              t.palette.mode === 'light'
+                ? `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.06)} 0%, ${alpha(t.palette.background.paper, 1)} 45%, ${alpha(t.palette.primary.light, 0.12)} 100%)`
+                : `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.14)} 0%, ${t.palette.background.paper} 55%)`,
+            boxShadow: (t) => `0 1px 0 ${alpha(t.palette.common.black, 0.04)}, 0 12px 40px -12px ${alpha(t.palette.primary.main, 0.12)}`,
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ sm: 'center' }}>
+              <Box sx={{ position: 'relative', alignSelf: { xs: 'center', sm: 'flex-start' } }}>
+                <Avatar
+                  sx={{
+                    width: 72,
+                    height: 72,
+                    fontSize: 22,
+                    fontWeight: 700,
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    boxShadow: (t) => `0 0 0 3px ${t.palette.background.paper}, 0 0 0 5px ${alpha(t.palette.primary.main, 0.35)}`,
+                  }}
+                >
+                  {user?.avatar}
+                </Avatar>
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+                <Typography
+                  component="h2"
+                  variant="h5"
+                  sx={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.2, color: 'text.primary' }}
+                >
+                  {user?.firstName} {user?.lastName}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.5, fontWeight: 500, wordBreak: 'break-word' }}
+                >
+                  {user?.email}
+                </Typography>
+                <Stack
+                  direction="row"
+                  flexWrap="wrap"
+                  alignItems="center"
+                  justifyContent={{ xs: 'center', sm: 'flex-start' }}
+                  useFlexGap
+                  sx={{ mt: 1.25, gap: 1 }}
+                >
+                  <Chip
+                    size="small"
+                    icon={<CheckCircleOutline sx={{ '&&': { fontSize: 16 } }} />}
+                    label="Identity verified"
+                    color="success"
+                    variant="outlined"
+                    sx={{ fontWeight: 600, borderRadius: 2, bgcolor: (t) => alpha(t.palette.success.main, 0.06) }}
+                  />
+                  {user?.isHost && (
+                    <Chip size="small" label="Host" color="primary" variant="outlined" sx={{ fontWeight: 600, borderRadius: 2 }} />
+                  )}
+                  {user?.createdAt && (
+                    <Typography variant="caption" color="text.secondary" sx={{ width: { xs: '100%', sm: 'auto' }, textAlign: { xs: 'center', sm: 'left' } }}>
+                      Member since {dayjs(user.createdAt).format('MMM YYYY')}
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
 
         <Tabs
           value={tab}
           onChange={(_, v) => {
             setTab(v)
-            if (v >= 2) {
-              setSearchParams(
-                (prev) => {
-                  const n = new URLSearchParams(prev)
+            setSearchParams(
+              (prev) => {
+                const n = new URLSearchParams(prev)
+                if (v === 1) {
+                  n.set('nav', 'profile')
+                } else if (v === 0) {
+                  n.set('nav', 'trips')
+                } else {
                   n.delete('nav')
-                  return n
-                },
-                { replace: true },
-              )
-            }
+                }
+                return n
+              },
+              { replace: true },
+            )
           }}
           variant="scrollable"
           scrollButtons="auto"
-          allowScrollButtonsMobile
+          allowScrollButtonsMobile={false}
           aria-label="Account sections"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            mb: 3,
-            minHeight: 48,
-            '& .MuiTab-root': {
-              minWidth: 0,
-              minHeight: 48,
-              px: { xs: 1, sm: 1.5 },
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-            },
-          }}
+          sx={dashboardSectionTabsSx}
         >
-        <Tab label={shortTabLabels ? 'Upcoming' : 'Upcoming trips'} />
-        <Tab label="Past" />
-        <Tab label="Saved" />
-        <Tab label="Reviews" />
-        <Tab label="Profile" />
-      </Tabs>
+          <Tab
+            icon={<CalendarMonthOutlined fontSize="small" />}
+            iconPosition="start"
+            label={shortTabLabels ? 'Upcoming' : 'Upcoming trips'}
+          />
+          <Tab icon={<PersonOutline fontSize="small" />} iconPosition="start" label="Profile" />
+          <Tab icon={<HistoryOutlined fontSize="small" />} iconPosition="start" label="Past" />
+          <Tab icon={<FavoriteBorder fontSize="small" />} iconPosition="start" label="Saved" />
+          <Tab icon={<RateReviewOutlined fontSize="small" />} iconPosition="start" label="Reviews" />
+        </Tabs>
 
       {tab === 0 && (
         <Stack spacing={2.5}>
@@ -166,7 +233,7 @@ export default function DashboardPage() {
         </Stack>
       )}
 
-      {tab === 1 && (
+      {tab === 2 && (
         <Stack spacing={2.5}>
           {past.length === 0 && <Typography color="text.secondary">No past rentals yet.</Typography>}
           {past.map((b) => (
@@ -189,7 +256,7 @@ export default function DashboardPage() {
         </Stack>
       )}
 
-      {tab === 2 && (
+      {tab === 3 && (
         <Grid container spacing={{ xs: 2.5, md: 3 }}>
           {savedCars.map((car) => (
             <Grid item xs={12} md={6} key={car.id}>
@@ -201,35 +268,98 @@ export default function DashboardPage() {
         </Grid>
       )}
 
-      {tab === 3 && <Typography color="text.secondary">Leave reviews after a trip (coming soon).</Typography>}
+      {tab === 4 && <Typography color="text.secondary">Leave reviews after a trip (coming soon).</Typography>}
 
-      {tab === 4 && (
-        <Stack spacing={2} maxWidth={480} sx={{ pt: 0.5 }}>
-          <TextField label="First name" value={pf.firstName} onChange={(e) => setPf({ ...pf, firstName: e.target.value })} fullWidth />
-          <TextField label="Last name" value={pf.lastName} onChange={(e) => setPf({ ...pf, lastName: e.target.value })} fullWidth />
-          <TextField label="Email" value={pf.email} disabled fullWidth />
-          <TextField label="Phone" value={pf.phone} onChange={(e) => setPf({ ...pf, phone: e.target.value })} fullWidth />
-          <TextField label="License" value={pf.licenseNumber} onChange={(e) => setPf({ ...pf, licenseNumber: e.target.value })} fullWidth />
-          <Button
-            variant="contained"
-            onClick={() => {
-              updateProfile({
-                firstName: pf.firstName,
-                lastName: pf.lastName,
-                phone: pf.phone,
-                licenseNumber: pf.licenseNumber,
-              })
-              useSnackbarStore.getState().showSuccess('Profile updated')
-            }}
-            sx={{ borderRadius: 2, alignSelf: 'flex-start', ...primaryCtaShadow(theme) }}
-          >
-            Save changes
-          </Button>
-          <Divider />
-          <Button onClick={() => logout()} color="inherit" sx={{ alignSelf: 'flex-start' }}>
-            Sign out
-          </Button>
-        </Stack>
+      {tab === 1 && (
+        <Card elevation={0} sx={{ ...listRowSurface(theme), maxWidth: 560, borderRadius: 3 }}>
+          <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.02em" sx={{ color: 'text.primary' }}>
+                Profile & contact
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+                Keep your name and contact details up to date for drivers and support.
+              </Typography>
+            </Box>
+            <Stack spacing={2.5}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="First name"
+                    value={pf.firstName}
+                    onChange={(e) => setPf({ ...pf, firstName: e.target.value })}
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Last name"
+                    value={pf.lastName}
+                    onChange={(e) => setPf({ ...pf, lastName: e.target.value })}
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Email"
+                    value={pf.email}
+                    disabled
+                    fullWidth
+                    size="small"
+                    helperText="Sign-in address — contact support to change"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Phone"
+                    value={pf.phone}
+                    onChange={(e) => setPf({ ...pf, phone: e.target.value })}
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="License number"
+                    value={pf.licenseNumber}
+                    onChange={(e) => setPf({ ...pf, licenseNumber: e.target.value })}
+                    fullWidth
+                    size="small"
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                  />
+                </Grid>
+              </Grid>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  updateProfile({
+                    firstName: pf.firstName,
+                    lastName: pf.lastName,
+                    phone: pf.phone,
+                    licenseNumber: pf.licenseNumber,
+                  })
+                  useSnackbarStore.getState().showSuccess('Profile updated')
+                }}
+                sx={{ alignSelf: 'flex-start', px: 3, py: 1, borderRadius: 2, fontWeight: 700, ...primaryCtaShadow(theme) }}
+              >
+                Save changes
+              </Button>
+            </Stack>
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Session
+            </Typography>
+            <Button onClick={() => logout()} color="inherit" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, borderColor: 'divider' }}>
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
       )}
       </Container>
     </Box>

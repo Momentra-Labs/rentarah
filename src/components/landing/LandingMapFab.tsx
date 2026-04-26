@@ -3,6 +3,8 @@ import { Fab } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
+import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../layout/MobileBottomNav'
+
 /**
  * Persistent thumb-friendly entry to the full map while on the home page.
  */
@@ -17,10 +19,7 @@ export default function LandingMapFab() {
       sx={{
         position: 'fixed',
         right: { xs: 16, sm: 24 },
-        bottom: {
-          xs: `max(16px, calc(72px + env(safe-area-inset-bottom, 0px) + 8px))`,
-          sm: 24,
-        },
+        bottom: { xs: MOBILE_TAB_BAR_FAB_BOTTOM, sm: 24 },
         zIndex: (t) => t.zIndex.speedDial,
         px: 2,
         fontWeight: 700,

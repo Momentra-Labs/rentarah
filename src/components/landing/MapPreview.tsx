@@ -20,7 +20,7 @@ export type MapPreviewProps = {
   cars: Car[]
 }
 
-const PREVIEW_HEIGHT = { xs: 300, sm: 340, md: 380 }
+const PREVIEW_HEIGHT = { xs: 260, sm: 320, md: 380 }
 /** Cap markers so Leaflet stays smooth on large mock catalogs. */
 const PREVIEW_MARKER_CAP = 72
 const PREVIEW_FALLBACK_CAP = 36
@@ -66,6 +66,7 @@ export default function MapPreview({ cars }: MapPreviewProps) {
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'grey.100',
+        borderRadius: { xs: 0, sm: 1 },
       }}
     >
       <Stack alignItems="center" spacing={1}>
@@ -104,10 +105,14 @@ export default function MapPreview({ cars }: MapPreviewProps) {
         }}
       >
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.02em', color: '#111827' }}>
+          <Typography
+            variant="h6"
+            fontWeight={800}
+            sx={{ letterSpacing: '-0.02em', color: '#111827', fontSize: { xs: '1rem', sm: '1.25rem' } }}
+          >
             See rentals near you
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, maxWidth: 480 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25, maxWidth: 480, fontSize: { xs: '0.8rem', sm: '0.875rem' }, lineHeight: 1.45 }}>
             Tap pins for prices and pickup areas — full map with filters opens in one tap.
           </Typography>
         </Box>
@@ -118,13 +123,16 @@ export default function MapPreview({ cars }: MapPreviewProps) {
           size="large"
           sx={{
             flexShrink: 0,
+            width: { xs: '100%', sm: 'auto' },
+            minHeight: { xs: 48, sm: 42 },
             bgcolor: '#1A56DB',
             '&:hover': { bgcolor: '#1647b8' },
-            borderRadius: 2,
-            py: 1.1,
+            borderRadius: { xs: 2.5, sm: 2 },
+            py: { xs: 1.15, sm: 1.1 },
             px: 2.5,
             textTransform: 'none',
             fontWeight: 700,
+            fontSize: { xs: '0.9rem', sm: '0.9375rem' },
             boxShadow: `0 4px 16px ${alpha('#1A56DB', 0.35)}`,
           }}
         >
@@ -142,21 +150,25 @@ export default function MapPreview({ cars }: MapPreviewProps) {
       component="section"
       aria-label="Map preview of rental locations"
       sx={{
-        pt: { xs: 1, md: 2 },
-        pb: { xs: 5, md: 6 },
+        pt: { xs: 0.5, md: 2 },
+        pb: { xs: 4, md: 6 },
         bgcolor: 'background.default',
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 0, sm: 3 } }}>
         <Paper
           elevation={0}
           sx={{
             position: 'relative',
-            borderRadius: 3,
+            borderRadius: { xs: 0, sm: 3 },
             overflow: 'hidden',
-            border: '1px solid',
+            border: { xs: 'none', sm: '1px solid' },
             borderColor: 'divider',
-            boxShadow: `0 10px 40px ${alpha('#000', 0.07)}, 0 2px 10px ${alpha('#000', 0.04)}`,
+            mx: { xs: 0, sm: 0 },
+            boxShadow: {
+              xs: 'none',
+              sm: `0 10px 40px ${alpha('#000', 0.07)}, 0 2px 10px ${alpha('#000', 0.04)}`,
+            },
           }}
         >
           {cars.length === 0 ? (

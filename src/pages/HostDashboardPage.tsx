@@ -42,7 +42,7 @@ import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
-import { containerGutters, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
+import { containerGutters, dashboardSectionTabsSx, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
 
 export default function HostDashboardPage() {
   const theme = useTheme()
@@ -163,38 +163,25 @@ export default function HostDashboardPage() {
           onChange={(_, v) => setTab(v)}
           variant="scrollable"
           scrollButtons="auto"
-          allowScrollButtonsMobile
+          allowScrollButtonsMobile={false}
           aria-label="Host dashboard sections"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            mb: 3,
-            minHeight: 48,
-            '& .MuiTab-root': {
-              minWidth: 0,
-              minHeight: 48,
-              px: { xs: 1, sm: 1.5 },
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: '0.8rem',
-            },
-          }}
+          sx={dashboardSectionTabsSx}
         >
           <Tab
             icon={<DirectionsCar fontSize="small" />}
             iconPosition="start"
             label={shortTabLabels ? 'Listings' : 'My listings'}
           />
+          <Tab
+            icon={<Settings fontSize="small" />}
+            iconPosition="start"
+            label={shortTabLabels ? 'Settings' : 'Listing settings'}
+          />
           <Tab icon={<MonetizationOn fontSize="small" />} iconPosition="start" label="Earnings" />
           <Tab
             icon={<EventAvailable fontSize="small" />}
             iconPosition="start"
             label={shortTabLabels ? 'Bookings' : 'Booking requests'}
-          />
-          <Tab
-            icon={<Settings fontSize="small" />}
-            iconPosition="start"
-            label={shortTabLabels ? 'Settings' : 'Listing settings'}
           />
         </Tabs>
 
@@ -324,7 +311,7 @@ export default function HostDashboardPage() {
         </Grid>
       )}
 
-      {tab === 1 && (
+      {tab === 2 && (
         <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
           <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
             <EarningsCard title="Total earned" value={earningsMock.total} icon="money" />
@@ -354,7 +341,7 @@ export default function HostDashboardPage() {
         </Grid>
       )}
 
-      {tab === 2 && (
+      {tab === 3 && (
         <Stack spacing={2}>
           {hostBookings.length === 0 && <Typography color="text.secondary">No bookings for your vehicles yet.</Typography>}
           {hostBookings.map((b) => (
@@ -428,7 +415,7 @@ export default function HostDashboardPage() {
         </Stack>
       )}
 
-      {tab === 3 && (
+      {tab === 1 && (
         <Paper elevation={0} sx={{ p: 3, ...softInteractiveSurface(theme, false) }}>
           <Typography variant="body1" color="text.secondary">
             Listing policies, instant book, and guest requirements would live here — mock only for MVP.

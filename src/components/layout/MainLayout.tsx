@@ -173,7 +173,7 @@ export default function MainLayout() {
           </Box>
         </Box>
       </Box>
-      <Footer onAuthOpen={handleAuthOpen} />
+      <Footer />
       <MobileBottomNav onAuthOpen={handleAuthOpen} />
       <AuthDialog
         open={authOpen}

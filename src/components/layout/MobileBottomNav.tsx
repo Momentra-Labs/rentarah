@@ -12,11 +12,17 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 
-export const MOBILE_BOTTOM_NAV_SX_PB =
-  'max(12px, calc(72px + env(safe-area-inset-bottom, 0px)))'
+/**
+ * Vertical space the fixed bar occupies from the bottom of the viewport, including the
+ * raised Map button (see BottomNavigationAction below). 72px was too small in practice; the
+ * bubble can extend well above the 68px row, so this stays conservative.
+ */
+export const MOBILE_TAB_BAR_INSET_PX = 128
+
+export const MOBILE_BOTTOM_NAV_SX_PB = `max(12px, calc(${MOBILE_TAB_BAR_INSET_PX}px + env(safe-area-inset-bottom, 0px)))`
 
 /** Fixed `bottom` for FABs on screens where the mobile tab bar is shown (below `md`). */
-export const MOBILE_TAB_BAR_FAB_BOTTOM = `max(24px, calc(72px + env(safe-area-inset-bottom, 0px) + 16px))`
+export const MOBILE_TAB_BAR_FAB_BOTTOM = `max(24px, calc(${MOBILE_TAB_BAR_INSET_PX}px + env(safe-area-inset-bottom, 0px) + 16px))`
 
 type MobileBottomNavProps = {
   onAuthOpen?: () => void
@@ -109,19 +115,20 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: 54,
-                  height: 54,
+                  width: 50,
+                  height: 50,
                   borderRadius: '50%',
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
                   boxShadow: 3,
-                  mt: -2.75,
+                  /** Less lift than -2.75 so the bubble encroaches less on scrollable content. */
+                  mt: -2,
                   mb: 0.25,
-                  border: 3,
+                  border: 2,
                   borderColor: 'background.paper',
                 }}
               >
-                <MapOutlined sx={{ fontSize: 28 }} />
+                <MapOutlined sx={{ fontSize: 26 }} />
               </Box>
             }
             sx={(t) => ({

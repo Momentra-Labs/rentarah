@@ -69,3 +69,41 @@ export const primaryCtaShadow = (theme: Theme) => ({
     boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
   },
 })
+
+/**
+ * MUI `Tabs` for renter + host dashboards: underline, scrollable.
+ * Stays within the same horizontal padding as {@link containerGutters} so tabs line up with PageHeader and cards.
+ * Collapses disabled scroll arrows; slightly tighter tab padding on small screens.
+ */
+export const dashboardSectionTabsSx: SxProps<Theme> = {
+  borderBottom: 1,
+  borderColor: 'divider',
+  mb: 3,
+  minHeight: 48,
+  '& .MuiTabs-flexContainer': {
+    alignItems: 'center',
+  },
+  '& .MuiTabs-scrollButtons': {
+    flexShrink: 0,
+  },
+  '& .MuiTabs-scrollButtons.Mui-disabled': {
+    width: 0,
+    minWidth: 0,
+    maxWidth: 0,
+    flexBasis: 0,
+    padding: 0,
+    margin: 0,
+    opacity: 0,
+    overflow: 'hidden',
+    pointerEvents: 'none',
+  },
+  '& .MuiTab-root': {
+    minWidth: 0,
+    minHeight: 48,
+    flexShrink: 0,
+    px: { xs: 0.75, sm: 1.5 },
+    textTransform: 'none',
+    fontWeight: 600,
+    fontSize: { xs: '0.75rem', sm: '0.8rem' },
+  },
+}
