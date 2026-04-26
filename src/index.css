@@ -55,6 +55,16 @@ body {
   background: #e7ece4;
   font-family: inherit;
   border-radius: inherit;
+  /* Contain panes; page chrome uses overflow hidden so popups must fit via autoPan + scroll inside card */
+  overflow: hidden;
+}
+
+/*
+ * Slightly above .leaflet-control (500) and tiles; stay below MUI AppBar (1100) so we don’t
+ * cover the listing strip / page when the map wrapper is overflow: hidden.
+ */
+.rentara-leaflet-surface .leaflet-popup-pane {
+  z-index: 650;
 }
 
 /* Slight clarity boost (Voyager is already colorful; we avoid “dead” desaturation) */
@@ -128,6 +138,16 @@ body {
   overflow: visible;
 }
 
+/* Scroll the body only so the Leaflet × stays visible above long cards on small screens */
+@media (max-width: 899.95px) {
+  .leaflet-container .rentara-explore-popup .leaflet-popup-content {
+    max-height: min(40dvh, 300px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 .rentara-leaflet-surface .leaflet-popup-tip {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -145,6 +165,12 @@ body {
   color: #94a3b8;
   border-radius: 8px;
   transition: background 0.12s ease, color 0.12s ease;
+  z-index: 2;
+}
+
+.leaflet-container .rentara-explore-popup .leaflet-popup-close-button {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
 }
 
 .rentara-leaflet-surface .leaflet-popup-close-button:hover {
@@ -155,6 +181,10 @@ body {
 .leaflet-container .rentara-explore-popup .leaflet-popup-content,
 .leaflet-container .rentara-map-popup .leaflet-popup-content {
   margin: 10px 12px 10px 10px;
+}
+
+.leaflet-container .rentara-explore-popup .leaflet-popup-content {
+  margin: 6px 8px 6px 6px;
 }
 
 .leaflet-container .rentara-explore-popup .leaflet-popup-content p,

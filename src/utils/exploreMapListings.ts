@@ -126,7 +126,10 @@ export function applyExploreMapFilters(
   return out
 }
 
-/** Radius for “nearby vehicles” cycling on the explore map (km). */
+/**
+ * Radius for strict geographic “nearby” helpers (e.g. future tight-radius UX). Map prev/next
+ * uses {@link listingsSortedByDistanceFrom} so metro / country-wide pins still cycle sensibly.
+ */
 export const NEARBY_LISTINGS_RADIUS_KM = 6
 
 /**
@@ -145,6 +148,24 @@ export function listingsWithinRadiusKm(
       d: haversineKm(o, { lat: l.latitude, lng: l.longitude }),
     }))
     .filter((x) => x.d <= radiusKm)
+    .sort((a, b) => (a.d !== b.d ? a.d - b.d : a.l.id.localeCompare(b.l.id)))
+    .map((x) => x.l)
+}
+
+/**
+ * Every listing on the current map (same filtered set), ordered by distance from `center`.
+ * Used for Previous / Next so users can step through all visible pins, not only those within a few km.
+ */
+export function listingsSortedByDistanceFrom(
+  center: ExploreMapListing,
+  listings: ExploreMapListing[],
+): ExploreMapListing[] {
+  const o: LatLng = { lat: center.latitude, lng: center.longitude }
+  return [...listings]
+    .map((l) => ({
+      l,
+      d: haversineKm(o, { lat: l.latitude, lng: l.longitude }),
+    }))
     .sort((a, b) => (a.d !== b.d ? a.d - b.d : a.l.id.localeCompare(b.l.id)))
     .map((x) => x.l)
 }

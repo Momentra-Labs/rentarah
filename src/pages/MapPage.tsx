@@ -35,8 +35,7 @@ import { useGeolocationStore } from '../store/useGeolocationStore'
 import {
   applyExploreMapFilters,
   carsToExploreListings,
-  listingsWithinRadiusKm,
-  NEARBY_LISTINGS_RADIUS_KM,
+  listingsSortedByDistanceFrom,
   type ExploreMapFilterMode,
   type ExploreMapListing,
 } from '../utils/exploreMapListings'
@@ -149,7 +148,7 @@ export default function MapPage() {
     (dir: 'next' | 'prev') => {
       const cur = filtered.find((l) => l.id === selectedId)
       if (!cur) return
-      const ring = listingsWithinRadiusKm(cur, filtered, NEARBY_LISTINGS_RADIUS_KM)
+      const ring = listingsSortedByDistanceFrom(cur, filtered)
       if (ring.length < 2) return
       const i = ring.findIndex((l) => l.id === selectedId)
       if (i < 0) return
@@ -335,6 +334,8 @@ export default function MapPage() {
 
   const mapChromeSx = {
     position: 'relative' as const,
+    zIndex: 0,
+    /** Keep tiles + popups inside this box so they don’t paint over filters / listing strip (visible overflow broke page stacking). */
     overflow: 'hidden',
     border: '1px solid',
     borderColor: 'divider',
@@ -344,9 +345,11 @@ export default function MapPage() {
     borderRadius: { xs: 2, md: 3 },
     ...(isCompactLayout
       ? {
-          flex: 1,
-          minHeight: { xs: 'min(520px, calc(100dvh - 200px))', sm: 420 },
-          maxHeight: { xs: 'none', sm: 'none' },
+          flex: '0 0 auto',
+          width: '100%',
+          height: { xs: 'clamp(280px, 48dvh, 440px)', sm: 'min(52dvh, 520px)' },
+          minHeight: 280,
+          maxHeight: { xs: '48dvh', sm: 520 },
         }
       : {
           height: { sm: '56dvh', md: 'calc(100dvh - 280px)' },
@@ -354,6 +357,62 @@ export default function MapPage() {
           maxHeight: 720,
         }),
   }
+
+  const compactFiltersPanel = (
+    <Paper
+      elevation={0}
+      sx={{
+        flexShrink: 0,
+        mb: 1,
+        borderRadius: 2,
+        px: 1.25,
+        py: 1,
+        bgcolor: (t) => alpha(t.palette.background.paper, 0.98),
+        border: '1px solid',
+        borderColor: 'divider',
+        boxShadow: `0 2px 12px ${alpha('#000', 0.06)}`,
+      }}
+    >
+      <Stack spacing={1}>
+        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, flex: 1, minWidth: 0 }} noWrap>
+            Rental map
+          </Typography>
+          <Tooltip title="Filter by type, price, and area. Share your location for Nearby and map centering.">
+            <IconButton size="small" aria-label="About this map" sx={{ flexShrink: 0 }}>
+              <InfoOutlined fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        {typeToggle}
+        <Button
+          size="small"
+          color={filtersDirty ? 'primary' : 'inherit'}
+          onClick={() => setMoreFiltersOpen((o) => !o)}
+          endIcon={
+            <ExpandMore
+              sx={{
+                transition: theme.transitions.create('transform'),
+                transform: moreFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            />
+          }
+          sx={{
+            alignSelf: 'flex-start',
+            textTransform: 'none',
+            fontWeight: 600,
+            typography: 'caption',
+            py: 0.25,
+            minHeight: 32,
+          }}
+        >
+          {'Area & price'}
+          {filtersDirty ? ' · active' : ''}
+        </Button>
+        <Collapse in={moreFiltersOpen}>{locationPriceBlock}</Collapse>
+      </Stack>
+    </Paper>
+  )
 
   return (
     <Box
@@ -393,71 +452,14 @@ export default function MapPage() {
           </Stack>
         )}
 
+        {isCompactLayout ? compactFiltersPanel : null}
+
         <Box id="explore-map-canvas" sx={mapChromeSx}>
-          {isCompactLayout ? (
-            <Paper
-              elevation={4}
-              sx={{
-                position: 'absolute',
-                top: 10,
-                left: 10,
-                right: 52,
-                zIndex: 1100,
-                borderRadius: 2,
-                px: 1.25,
-                py: 1,
-                pointerEvents: 'auto',
-                bgcolor: (t) => alpha(t.palette.background.paper, 0.94),
-                backdropFilter: 'blur(10px)',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Stack spacing={1}>
-                <Stack direction="row" alignItems="center" spacing={0.5} sx={{ minWidth: 0 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, flex: 1, minWidth: 0 }} noWrap>
-                    Rental map
-                  </Typography>
-                  <Tooltip title="Filter by type, price, and area. Share your location for Nearby and map centering.">
-                    <IconButton size="small" aria-label="About this map" sx={{ flexShrink: 0 }}>
-                      <InfoOutlined fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-                {typeToggle}
-                <Button
-                  size="small"
-                  color={filtersDirty ? 'primary' : 'inherit'}
-                  onClick={() => setMoreFiltersOpen((o) => !o)}
-                  endIcon={
-                    <ExpandMore
-                      sx={{
-                        transition: theme.transitions.create('transform'),
-                        transform: moreFiltersOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      }}
-                    />
-                  }
-                  sx={{
-                    alignSelf: 'flex-start',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    typography: 'caption',
-                    py: 0.25,
-                    minHeight: 32,
-                  }}
-                >
-                  {'Area & price'}
-                  {filtersDirty ? ' · active' : ''}
-                </Button>
-                <Collapse in={moreFiltersOpen}>{locationPriceBlock}</Collapse>
-              </Stack>
-            </Paper>
-          ) : null}
           <Box
             sx={{
               position: 'absolute',
               inset: 0,
-              zIndex: 400,
+              zIndex: 0,
               '& .leaflet-container': { borderRadius: 0 },
             }}
           >
@@ -467,7 +469,13 @@ export default function MapPage() {
 
         <Box
           id="explore-map-listing-strip"
-          sx={{ mt: { xs: 2, md: 3 }, px: { xs: 0.5, sm: 0 }, scrollMarginTop: { xs: 72, md: 88 } }}
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            mt: { xs: 2, md: 3 },
+            px: { xs: 0.5, sm: 0 },
+            scrollMarginTop: { xs: 72, md: 88 },
+          }}
         >
           <ExploreMapListingStrip
             listings={filtered}
