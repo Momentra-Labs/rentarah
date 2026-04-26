@@ -106,7 +106,14 @@ export default function MainLayout() {
   }, [navigate])
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: { xs: '100dvh', sm: '100vh' },
+        bgcolor: 'background.default',
+      }}
+    >
       <AnimatePresence>
         {showLoadingScreen ? (
           <motion.div

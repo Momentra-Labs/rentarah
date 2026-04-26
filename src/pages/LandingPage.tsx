@@ -166,8 +166,8 @@ export default function LandingPage() {
           position: 'relative',
           overflow: 'hidden',
           background: `linear-gradient(165deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${theme.palette.background.default} 42%, ${alpha(theme.palette.grey[50], 1)} 100%)`,
-          pt: { xs: 2.5, md: 8 },
-          pb: { xs: 4, md: 9 },
+          pt: { xs: 2, md: 8 },
+          pb: { xs: 3, md: 9 },
         }}
       >
         <HeroAmbientBackground />
@@ -222,7 +222,8 @@ export default function LandingPage() {
                     bikes, book in minutes and ride with confidence.
                   </Typography>
 
-                  <Stack spacing={1.5} sx={{ pt: 0.5 }}>
+                  <Stack spacing={{ xs: 1.25, sm: 1.5 }} sx={{ pt: 0.5 }}>
+                    {/* Mobile: one primary CTA + plan + text link (tab bar = Map; no duplicate map buttons). */}
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ alignItems: { sm: 'stretch' } }}>
                       <Button
                         component={RouterLink}
@@ -237,6 +238,7 @@ export default function LandingPage() {
                           borderRadius: { xs: 2.5, sm: 2 },
                           fontSize: { xs: '0.9375rem', sm: '1rem' },
                           fontWeight: 700,
+                          width: { xs: '100%', sm: 'auto' },
                           boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.35)}`,
                           '&:hover': {
                             boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
@@ -245,14 +247,19 @@ export default function LandingPage() {
                       >
                         Browse vehicles
                       </Button>
-                      <MapCTAButton variant="hero" to="/map" />
+                      {!isMobile ? <MapCTAButton variant="hero" to="/map" /> : null}
                     </Stack>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={{ xs: 1, sm: 1.5 }}
+                      alignItems={{ xs: 'stretch', sm: 'center' }}
+                    >
                       <Button
                         href="#trip-search"
                         variant="outlined"
                         color="primary"
                         size="large"
+                        fullWidth={isMobile}
                         sx={{
                           py: { xs: 1.15, sm: 1.35 },
                           px: { xs: 2, sm: 2.5 },
@@ -277,8 +284,10 @@ export default function LandingPage() {
                         }
                         sx={{
                           cursor: 'pointer',
-                          textAlign: { xs: 'left', sm: 'center' },
+                          textAlign: { xs: 'center', sm: 'center' },
+                          alignSelf: { xs: 'center', sm: 'auto' },
                           fontWeight: 600,
+                          fontSize: { xs: '0.8125rem', sm: '0.875rem' },
                           border: 'none',
                           background: 'none',
                           fontFamily: 'inherit',
@@ -287,23 +296,20 @@ export default function LandingPage() {
                           '&:hover': { color: 'primary.dark' },
                         }}
                       >
-                        See map preview on this page
+                        {isMobile ? 'Preview map on this page' : 'See map preview on this page'}
                       </Link>
                     </Stack>
                   </Stack>
 
                   <Stack
                     direction="row"
-                    flexWrap={{ xs: 'nowrap', sm: 'wrap' }}
+                    flexWrap="wrap"
                     useFlexGap
                     spacing={1.25}
                     sx={{
                       pt: 1,
-                      overflowX: { xs: 'auto', sm: 'visible' },
-                      mx: { xs: -0.5, sm: 0 },
-                      px: { xs: 0.5, sm: 0 },
-                      pb: { xs: 0.25, sm: 0 },
-                      WebkitOverflowScrolling: 'touch',
+                      justifyContent: { xs: 'space-between', sm: 'flex-start' },
+                      gap: { xs: 1, sm: 1.25 },
                     }}
                   >
                     {[
@@ -315,10 +321,11 @@ export default function LandingPage() {
                         key={s.k}
                         elevation={0}
                         sx={{
-                          flexShrink: 0,
-                          minWidth: { xs: 104, sm: 'auto' },
-                          px: { xs: 1.5, sm: 2 },
-                          py: { xs: 1, sm: 1.25 },
+                          flex: { xs: '1 1 calc(33.333% - 8px)', sm: '0 0 auto' },
+                          minWidth: { xs: 0, sm: 104 },
+                          maxWidth: { xs: 'none', sm: 'none' },
+                          px: { xs: 1, sm: 2 },
+                          py: { xs: 0.85, sm: 1.25 },
                           borderRadius: { xs: 2, sm: 2 },
                           border: '1px solid',
                           borderColor: 'divider',

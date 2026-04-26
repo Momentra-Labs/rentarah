@@ -5,7 +5,7 @@ import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
-import { MOBILE_TAB_BAR_INSET_PX } from './MobileBottomNav'
+import { MOBILE_FOOTER_ADDITIONAL_CLEAR_PX, MOBILE_TAB_BAR_INSET_PX } from './MobileBottomNav'
 
 const FOOTER_LINKS = [
   { label: 'Home', to: '/' },
@@ -95,7 +95,11 @@ function MobileFooterStrip() {
     <Box
       component="section"
       aria-label="Site footer"
-      sx={{ display: { xs: 'block', md: 'none' } }}
+      sx={{
+        display: { xs: 'block', md: 'none' },
+        /* Extra room above the outer footer `pb` so the legal line clears the tab bar. */
+        pb: { xs: 2, md: 0 },
+      }}
     >
       <Stack spacing={1.5}>
         <Stack
@@ -188,11 +192,14 @@ function MobileFooterStrip() {
           variant="caption"
           sx={{
             m: 0,
+            pt: 0.25,
             color: 'text.disabled',
             fontSize: '0.65rem',
             fontWeight: 500,
             lineHeight: 1.4,
             letterSpacing: '0.01em',
+            /* Keeps the last line out of the fixed nav’s hit area if padding collapses. */
+            scrollMarginBottom: { xs: 4, md: 0 },
           }}
         >
           © {year} Rentara · Demo · PHP
@@ -211,17 +218,24 @@ export default function Footer() {
   return (
     <Box
       component="footer"
+      id="app-site-footer"
       sx={{
         mt: 'auto',
+        flexShrink: 0,
         position: 'relative',
-        overflow: 'hidden',
+        /* xs: do not clip — fixed tab bar paints above; hidden could interact badly in flex. */
+        overflow: { xs: 'visible', md: 'hidden' },
+        scrollMarginBottom: {
+          xs: `max(8px, calc(12px + ${MOBILE_TAB_BAR_INSET_PX + MOBILE_FOOTER_ADDITIONAL_CLEAR_PX}px + env(safe-area-inset-bottom, 0px)))`,
+          md: 0,
+        },
         borderTop: '1px solid',
         borderColor: 'divider',
         bgcolor: (t) => alpha(t.palette.grey[50], 0.98),
         pt: { xs: 2, md: 5 },
         pb: {
           xs: (t) =>
-            `calc(${t.spacing(2)} + ${MOBILE_TAB_BAR_INSET_PX}px + env(safe-area-inset-bottom, 0px))`,
+            `calc(${t.spacing(2)} + ${MOBILE_TAB_BAR_INSET_PX + MOBILE_FOOTER_ADDITIONAL_CLEAR_PX}px + env(safe-area-inset-bottom, 0px))`,
           md: 5,
         },
         backgroundImage: {
