@@ -7,6 +7,7 @@ import type { ReactNode, SyntheticEvent } from 'react'
 
 import { formatPeso } from '../../utils/formatCurrency'
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
+import { popupCtaGestureBlockers } from '../../utils/exploreMapPopupGestures'
 
 const SWIPE_DRAG_THRESHOLD = 64
 
@@ -210,6 +211,7 @@ export function ExploreMapVehiclePopupCompactHorizontal({
             <Button
               fullWidth
               size="small"
+              type="button"
               variant="contained"
               sx={{
                 flex: 1,
@@ -224,7 +226,11 @@ export function ExploreMapVehiclePopupCompactHorizontal({
                 fontSize: 11.5,
                 lineHeight: 1,
               }}
-              onClick={onViewDetails}
+              {...popupCtaGestureBlockers()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onViewDetails()
+              }}
             >
               Details
             </Button>

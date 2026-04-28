@@ -21,5 +21,5 @@ export function exploreMapVehicleGlyphSvg(bucket: 'car' | 'two_wheeler', px: num
 /** Rounded chip used inside price pills so car vs motorcycle is obvious before tap. */
 export function exploreMapGlyphChipHtml(bucket: 'car' | 'two_wheeler'): string {
   const bg = bucket === 'car' ? 'rgba(26,86,219,0.1)' : 'rgba(109,40,217,0.12)'
-  return `<span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:9px;background:${bg}">${exploreMapVehicleGlyphSvg(bucket, 14)}</span>`
+  return `<span class="rentara-price-tag-glyph-wrap" style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:9px;background:${bg}">${exploreMapVehicleGlyphSvg(bucket, 14)}</span>`
 }

@@ -170,8 +170,8 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ height: { xs: 300, sm: 360 }, bgcolor: 'grey.100' }} />
-        <Box sx={{ height: 64, borderTop: 1, borderColor: 'divider', bgcolor: 'grey.50' }} />
+        <Box sx={{ height: { xs: 300, sm: 360 }, bgcolor: '#eef4f0' }} />
+        <Box sx={{ height: 64, borderTop: 1, borderColor: 'divider', bgcolor: '#f5f8f6' }} />
       </Box>
     )
   }

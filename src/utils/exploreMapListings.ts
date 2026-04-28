@@ -28,6 +28,67 @@ export type ExploreMapListing = {
 
 export type ExploreMapFilterMode = 'all' | 'cars' | 'motorcycles' | 'nearby'
 
+function exploreListingPickupHubKey(listing: ExploreMapListing): string {
+  const c = resolveCityHallCoords(listing.vehicle.locationName)
+  return `${c.lat.toFixed(6)},${c.lng.toFixed(6)}`
+}
+
+/** ~Earth meters per degree latitude (middle lat OK for PH ~10–17°). */
+const METERS_PER_DEG_LAT = 111_320
+const GOLDEN_ANGLE_SPREAD_RAD = Math.PI * (3 - Math.sqrt(5))
+
+function offsetMetersToLatLng(
+  latitude: number,
+  eastMeters: number,
+  northMeters: number,
+): { dLat: number; dLng: number } {
+  const cosLat = Math.cos((latitude * Math.PI) / 180)
+  const clampedCos = Math.max(0.15, Math.abs(cosLat))
+  return {
+    dLat: northMeters / METERS_PER_DEG_LAT,
+    dLng: eastMeters / (METERS_PER_DEG_LAT * clampedCos),
+  }
+}
+
+/**
+ * Multiple listings at the same pickup hub used to stack identical ₱ pills (micro-jitter is ~1 m;
+ * badges are ~50–100 px). Place pins on a golden-angle spiral in meters around the hub center.
+ */
+function spreadExploreListingsByPickupHub(listings: ExploreMapListing[]): ExploreMapListing[] {
+  const buckets = new Map<string, ExploreMapListing[]>()
+  for (const l of listings) {
+    const k = exploreListingPickupHubKey(l)
+    const arr = buckets.get(k) ?? []
+    arr.push(l)
+    buckets.set(k, arr)
+  }
+
+  const out: ExploreMapListing[] = []
+  for (const group of buckets.values()) {
+    if (group.length === 1) {
+      out.push(group[0]!)
+      continue
+    }
+    const sorted = [...group].sort((a, b) => a.id.localeCompare(b.id))
+    const hub = resolveCityHallCoords(sorted[0]!.vehicle.locationName)
+    const n = sorted.length
+    for (let i = 0; i < n; i++) {
+      const listing = sorted[i]!
+      const spiralM = 14 + 11 * Math.sqrt(i + 1)
+      const theta = i * GOLDEN_ANGLE_SPREAD_RAD
+      const eastM = spiralM * Math.cos(theta)
+      const northM = spiralM * Math.sin(theta)
+      const { dLat, dLng } = offsetMetersToLatLng(hub.lat, eastM, northM)
+      out.push({
+        ...listing,
+        latitude: hub.lat + dLat,
+        longitude: hub.lng + dLng,
+      })
+    }
+  }
+  return out
+}
+
 /** Slight jitter so many listings sharing one city hall stay individually tappable. */
 function displayJitter(id: string, lat: number, lng: number): { lat: number; lng: number } {
   let h = 0
@@ -42,7 +103,7 @@ function displayJitter(id: string, lat: number, lng: number): { lat: number; lng
 
 /** Build map pins from catalog `Car` rows (or swap for `fetch` + mapper). */
 export function carsToExploreListings(cars: Car[]): ExploreMapListing[] {
-  return cars.map((car) => {
+  const base = cars.map((car) => {
     const { lat, lng } = getCarPickupLatLng(car)
     const j = displayJitter(car.id, lat, lng)
     return {
@@ -61,6 +122,7 @@ export function carsToExploreListings(cars: Car[]): ExploreMapListing[] {
       _source: car,
     }
   })
+  return spreadExploreListingsByPickupHub(base)
 }
 
 const NEARBY_MAX_KM = 12
@@ -153,6 +215,18 @@ export function listingsInSamePickupCitySorted(
 ): ExploreMapListing[] {
   const inCity = listings.filter((l) => samePickupCityHall(center, l))
   return listingsSortedByDistanceFrom(center, inCity)
+}
+
+/** Stable key for resolved pickup hub — used for marker metadata and same-city grouping helpers. */
+export function pickupHubKeyForExploreListing(listing: ExploreMapListing): string {
+  return exploreListingPickupHubKey(listing)
+}
+
+/** Truncated pickup line for marker metadata (same source as listing card location). */
+export function shortPickupCityLineForCluster(locationName: string): string {
+  const t = locationName.trim()
+  if (!t) return 'this area'
+  return t.length > 36 ? `${t.slice(0, 33)}…` : t
 }
 
 /**

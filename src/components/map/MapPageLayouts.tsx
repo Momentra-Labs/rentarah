@@ -59,7 +59,8 @@ export function DesktopMapLayout({ sidebar, children }: { sidebar: ReactNode; ch
         alignItems: 'stretch',
         alignSelf: 'stretch',
         overflow: 'hidden',
-        bgcolor: 'grey.50',
+        /* Warm neutral — pairs with Voyager map column (less cold than grey.50) */
+        bgcolor: '#f6f9f7',
       }}
     >
       <MapLayoutResizePulse />

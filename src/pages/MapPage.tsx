@@ -36,7 +36,8 @@ import ExploreMapFallbackList from '../components/map/ExploreMapFallbackList'
 import { MapPageResponsiveSplit } from '../components/map/MapPageLayouts'
 import { useCarsStore } from '../store/useCarsStore'
 import { useGeolocationStore } from '../store/useGeolocationStore'
-import { EXPLORE_MAP_CLUSTER_TUNING } from '../utils/exploreMapClusterDefaults'
+
+
 import {
   applyExploreMapFilters,
   carsToExploreListings,
@@ -45,7 +46,7 @@ import {
   type ExploreMapListing,
 } from '../utils/exploreMapListings'
 
-/** Same Leaflet surface as landing `MapPreview` — one chunk; map tuning {@link EXPLORE_MAP_CLUSTER_TUNING}. */
+/** Same Leaflet surface as landing `MapPreview` — one chunk. */
 const ExploreRentalsMapLazy = lazy(() => import('../components/landing/ExploreRentalsMapInner'))
 
 function formatPesoShort(n: number): string {
@@ -603,7 +604,6 @@ export default function MapPage() {
         <Suspense fallback={mapSuspense}>
           <Box sx={{ height: '100%' }}>
             <ExploreRentalsMapLazy
-              {...EXPLORE_MAP_CLUSTER_TUNING}
               listings={filtered}
               selectedId={selectedId}
               onSelect={handleMapSelect}
@@ -647,7 +647,7 @@ export default function MapPage() {
     border: { xs: 'none', md: '1px solid' },
     borderColor: 'divider',
     boxShadow: { xs: 'none', md: `0 12px 40px ${alpha('#000', 0.07)}` },
-    bgcolor: { xs: 'grey.50', md: 'common.white' },
+    bgcolor: { xs: '#f6f9f7', md: '#fafcfb' },
     scrollMarginTop: { xs: 72, md: 88 },
     borderRadius: 0,
   }
@@ -775,6 +775,7 @@ export default function MapPage() {
                   orientation="vertical"
                   listScrollMode="outer"
                   onListingHover={setHoveredListingId}
+                  hoveredListingId={hoveredListingId}
                   headerExtra={
                     <Chip
                       size="small"
@@ -914,7 +915,7 @@ export default function MapPage() {
                 }}
               >
                 <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
-                  Prices on pins · tap a pin for details
+                  ₱/day price tags · larger circles group nearby rentals; tap to zoom
                 </Typography>
               </Box>
             ) : null}
@@ -943,7 +944,7 @@ export default function MapPage() {
                 }}
               >
                 <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
-                  Prices on pins · tap a pin for details
+                  ₱/day price tags · larger circles group nearby rentals; tap to zoom
                 </Typography>
               </Box>
             ) : null}
@@ -1180,6 +1181,7 @@ export default function MapPage() {
                   orientation="vertical"
                   title=""
                   onListingHover={setHoveredListingId}
+                  hoveredListingId={hoveredListingId}
                 />
               </Box>
             </SwipeableDrawer>

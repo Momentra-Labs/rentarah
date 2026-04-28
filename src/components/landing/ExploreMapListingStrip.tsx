@@ -53,6 +53,8 @@ export type ExploreMapListingStripProps = {
   headerExtra?: ReactNode
   /** Desktop /map: drive map marker hover emphasis from listing cards. */
   onListingHover?: (listingId: string | null) => void
+  /** When set (e.g. from `onListingHover`), that card stacks above neighbours in horizontal/vertical strips. */
+  hoveredListingId?: string | null
   /** Desktop /map sidebar: `'outer'` lets the **column** scroll (filters + listings); `'inner'` keeps listing cards in their own scrollbar. */
   listScrollMode?: 'inner' | 'outer'
 }
@@ -73,6 +75,7 @@ export default function ExploreMapListingStrip({
   orientation = 'horizontal',
   headerExtra,
   onListingHover,
+  hoveredListingId = null,
   listScrollMode = 'inner',
 }: ExploreMapListingStripProps) {
   const theme = useTheme()
@@ -162,6 +165,7 @@ export default function ExploreMapListingStrip({
 
   const cards = listings.map((l) => {
     const selected = selectedId === l.id
+    const stripHovered = hoveredListingId === l.id
     return (
       <Card
         key={l.id}
@@ -172,6 +176,9 @@ export default function ExploreMapListingStrip({
         onMouseLeave={() => onListingHover?.(null)}
         sx={{
           flex: '0 0 auto',
+          position: 'relative',
+          /** Stacked carousel / vertical list — hovered card overlaps siblings. */
+          zIndex: stripHovered ? 5 : selected ? 2 : 1,
           width: orientation === 'vertical' ? '100%' : { xs: 'min(280px, 82vw)', sm: 248 },
           maxWidth: orientation === 'vertical' ? '100%' : undefined,
           scrollSnapAlign: orientation === 'vertical' ? ('start' as const) : 'start',
@@ -180,9 +187,11 @@ export default function ExploreMapListingStrip({
           borderColor: selected ? 'primary.main' : 'divider',
           bgcolor: selected ? (t) => alpha(t.palette.primary.main, 0.06) : 'background.paper',
           transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
-          boxShadow: selected
-            ? (t) => `0 4px 18px ${alpha(t.palette.primary.main, 0.18)}`
-            : `0 1px 4px ${alpha('#000', 0.06)}`,
+          boxShadow: stripHovered
+            ? (t) => `0 10px 32px ${alpha(t.palette.common.black, 0.14)}`
+            : selected
+              ? (t) => `0 4px 18px ${alpha(t.palette.primary.main, 0.18)}`
+              : `0 1px 4px ${alpha('#000', 0.06)}`,
           cursor: 'pointer',
           display: 'flex',
           flexDirection: 'column',

@@ -25,15 +25,23 @@ import { PHILIPPINES_MAP_MIN_ZOOM, PHILIPPINES_MAX_BOUNDS_CORNERS } from '../../
 import { RENTARA_MAP_PRIMARY, RENTARA_MAP_TILE_URL } from '../../constants/rentaraMapStyle'
 import {
   listingsInSamePickupCitySorted,
+  pickupHubKeyForExploreListing,
+  shortPickupCityLineForCluster,
   type ExploreMapListing,
 } from '../../utils/exploreMapListings'
 import type { LatLng } from '../../utils/distance'
 import { formatPeso } from '../../utils/formatCurrency'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
-import { createRentaraExploreClusterIcon } from '../../utils/mapExploreClusterIcon'
+import {
+  createRentaraDensityClusterIcon,
+  RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM,
+  RENTARA_CLUSTER_MAX_RADIUS_PX,
+} from '../../utils/mapExploreClusterIcon'
 import { getExploreMapPriceBadgeIcon } from '../../utils/mapExplorePriceBadge'
 import { getRentaraVehiclePinIcon } from '../../utils/mapVehiclePinIcon'
 import { isTwoWheeler } from '../../utils/vehicleUtils'
+
+import { popupCtaGestureBlockers } from '../../utils/exploreMapPopupGestures'
 
 import { ExploreMapPopupCityPrevNextRow, ExploreMapPopupSwipeRail, ExploreMapVehiclePopupCompactHorizontal } from './exploreMapVehiclePopup'
 
@@ -117,16 +125,8 @@ export type ExploreRentalsMapInnerProps = {
   enableFlyTo?: boolean
   /** `price` — marketplace-style ₱/day pills; `vehicle` — compact type icons (e.g. landing preview). */
   markerStyle?: 'vehicle' | 'price'
-  /** When `true`, group nearby markers via leaflet.markercluster (see `exploreMapClusterDefaults`; default off on product maps). */
-  enableClustering?: boolean
   /** Bump to fit all markers in view again (desktop “Fit to results”). */
   fitBoundsRequestId?: number
-  /** Passed to markercluster `chunkDelay` — slightly higher reduces main-thread spikes on large screens. */
-  clusterChunkDelay?: number
-  /** When false, turns off cluster / spiderfy animations (snappier on desktop). */
-  clusterAnimations?: boolean
-  /** `maxClusterRadius` for Leaflet.markercluster (px). */
-  clusterRadius?: number
   /**
    * Desktop split view: re-apply `maxBounds` after resize and snap the view if it drifts outside
    * the Philippines (wide aspect ratios can escape briefly after `invalidateSize`).
@@ -137,7 +137,7 @@ export type ExploreRentalsMapInnerProps = {
    * `compact` = mobile: first auto view whole PH (`fitBounds`); OOB pins clamp to PH box for fit (legacy).
    */
   mapSurface?: 'compact' | 'wide'
-  /** Desktop listing strip hover: sync marker emphasis + stacking. */
+  /** Desktop listing strip hover: emphasize marker z-order/icons and preview its Leaflet popup. */
   hoveredListingId?: string | null
   /**
    * Mobile `/map`: compact popup + pan pin into lower viewport band. Previews omit (default false).
@@ -340,7 +340,7 @@ function MapBoundsController({
     return () => {
       cancelled = true
     }
-  }, [map, listings, boundsKey, fitBoundsRequestId, mapSurface])
+  }, [map, listings, boundsKey, fitBoundsRequestId, mapSurface, userLocation])
 
   return null
 }
@@ -378,7 +378,9 @@ function ShowInListingButton({
       size="small"
       variant="outlined"
       color="primary"
+      type="button"
       sx={{ borderRadius: 1.25, textTransform: 'none', fontWeight: 600, py: 0.55, fontSize: 12 }}
+      {...popupCtaGestureBlockers()}
       onClick={() => {
         map.closePopup()
         onShowInListing(listing)
@@ -665,6 +667,7 @@ function MapVehicleLeafletPopupContent({
         <Button
           fullWidth
           size="small"
+          type="button"
           variant="contained"
           sx={{
             bgcolor: PRIMARY,
@@ -675,7 +678,11 @@ function MapVehicleLeafletPopupContent({
             py: 0.4,
             fontSize: 12,
           }}
-          onClick={() => onViewDetails(listing)}
+          {...popupCtaGestureBlockers()}
+          onClick={(e) => {
+            e.stopPropagation()
+            onViewDetails(listing)
+          }}
         >
           View details
         </Button>
@@ -732,14 +739,14 @@ function VehicleMarker({
   icon,
   onSelect,
   markerRegistry,
-  zIndexOffset = 0,
+  restingZIndex,
   children,
 }: {
   listing: ExploreMapListing
   icon: L.DivIcon
   onSelect: (id: string) => void
   markerRegistry: MutableRefObject<Map<string, L.Marker>>
-  zIndexOffset?: number
+  restingZIndex: number
   children: ReactNode
 }) {
   const markerRef = useRef<L.Marker | null>(null)
@@ -755,21 +762,84 @@ function VehicleMarker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listing.id])
   const exploreVehicleBucket = isTwoWheeler(listing.vehicle) ? 'two_wheeler' : 'car'
+
+  useEffect(() => {
+    markerRef.current?.setZIndexOffset(restingZIndex)
+  }, [listing.id, restingZIndex])
+
   return (
     <Marker
       ref={markerRef}
       position={[listing.latitude, listing.longitude]}
       icon={icon}
-      zIndexOffset={zIndexOffset}
+      zIndexOffset={restingZIndex}
       exploreVehicleBucket={exploreVehicleBucket}
       explorePricePerDay={listing.vehicle.pricePerDay}
+      explorePickupHubKey={pickupHubKeyForExploreListing(listing)}
+      explorePickupAreaLabel={shortPickupCityLineForCluster(listing.vehicle.locationName)}
       eventHandlers={{
         click: () => onSelect(listing.id),
+        mouseover: () =>
+          markerRef.current?.setZIndexOffset(Math.max(restingZIndex, 920)),
+        mouseout: () => markerRef.current?.setZIndexOffset(restingZIndex),
       }}
     >
       {children}
     </Marker>
   )
+}
+
+/**
+ * Listing strip hover: open that pin’s Leaflet popup so vehicle details preview while the pin may be clustered.
+ * When hover clears, restore the selected pin’s popup (or close if none).
+ */
+function SyncExplorePopupFromStripHover({
+  hoveredListingId,
+  selectedId,
+  markerRegistry,
+}: {
+  hoveredListingId: string | null
+  selectedId: string | null
+  markerRegistry: MutableRefObject<Map<string, L.Marker>>
+}) {
+  const map = useMap()
+  const hadStripHoverRef = useRef(false)
+
+  useEffect(() => {
+    const reg = markerRegistry.current
+
+    if (hoveredListingId) {
+      hadStripHoverRef.current = true
+      const id = hoveredListingId
+      const open = () => {
+        reg.get(id)?.openPopup()
+      }
+      open()
+      const t1 = window.setTimeout(open, 120)
+      const t2 = window.setTimeout(open, 420)
+      return () => {
+        window.clearTimeout(t1)
+        window.clearTimeout(t2)
+      }
+    }
+
+    const hadHover = hadStripHoverRef.current
+    hadStripHoverRef.current = false
+    if (!hadHover) return
+
+    const restore = () => {
+      if (selectedId) reg.get(selectedId)?.openPopup()
+      else map.closePopup()
+    }
+    restore()
+    const tr1 = window.setTimeout(restore, 0)
+    const tr2 = window.setTimeout(restore, 160)
+    return () => {
+      window.clearTimeout(tr1)
+      window.clearTimeout(tr2)
+    }
+  }, [hoveredListingId, selectedId, map, markerRegistry])
+  return null
 }
 
 /** After “View on map” from the listing strip: open the marker popup once fly-to settles (or fallback timer). */
@@ -809,7 +879,7 @@ function OpenListingPopupOnMapFocus({
 }
 
 /**
- * Leaflet map: Carto Voyager basemap, Rentara pins, credit below the canvas, styled popups.
+ * Leaflet map: Carto Voyager basemap, Rentara price tags + density clusters; styled popups.
  * Lazy-loaded by map surfaces (`MapPreview`, `/map`) to defer Leaflet until needed.
  */
 export default function ExploreRentalsMapInner({
@@ -824,11 +894,7 @@ export default function ExploreRentalsMapInner({
   scrollWheelZoom = true,
   enableFlyTo = true,
   markerStyle = 'price',
-  enableClustering = false,
   fitBoundsRequestId = 0,
-  clusterChunkDelay = 50,
-  clusterAnimations = true,
-  clusterRadius = 52,
   strictPhilippinesBounds = false,
   mapSurface = 'compact',
   hoveredListingId = null,
@@ -925,6 +991,11 @@ export default function ExploreRentalsMapInner({
             selectedId={selectedId}
             markerRegistry={markerRegistry}
           />
+          <SyncExplorePopupFromStripHover
+            hoveredListingId={hoveredListingId}
+            selectedId={selectedId}
+            markerRegistry={markerRegistry}
+          />
           {isUserInsidePhilippines(userLocation) && userLocation ? (
             <CircleMarker
               center={[userLocation.lat, userLocation.lng]}
@@ -937,66 +1008,28 @@ export default function ExploreRentalsMapInner({
               }}
             />
           ) : null}
-          {enableClustering ? (
-            <MarkerClusterGroup
-              chunkedLoading
-              chunkDelay={clusterChunkDelay}
-              spiderfyOnMaxZoom
-              showCoverageOnHover={false}
-              maxClusterRadius={clusterRadius}
-              animate={clusterAnimations}
-              animateAddingMarkers={clusterAnimations}
-              iconCreateFunction={createRentaraExploreClusterIcon}
-            >
-              {listings.map((listing) => (
-                <VehicleMarker
-                  key={listing.id}
-                  listing={listing}
-                  zIndexOffset={
-                    selectedId === listing.id ? 1100 : hoveredListingId === listing.id ? 650 : 0
-                  }
-                  icon={
-                    icons.get(listing.id) ??
-                    (markerStyle === 'price'
-                      ? getExploreMapPriceBadgeIcon(
-                          listing.vehicle.pricePerDay,
-                          selectedId === listing.id,
-                          isTwoWheeler(listing.vehicle) ? 'two_wheeler' : 'car',
-                          hoveredListingId === listing.id,
-                        )
-                      : getRentaraVehiclePinIcon(listing.vehicle.vehicleType, selectedId === listing.id))
-                  }
-                  onSelect={onSelect}
-                  markerRegistry={markerRegistry}
-                >
-                  <Popup
-                    className="rentara-explore-popup"
-                    offset={[0, compactVehiclePopup ? 4 : 8]}
-                    autoPan
-                    keepInView={false}
-                    autoPanPaddingTopLeft={[20, 72]}
-                    autoPanPaddingBottomRight={compactVehiclePopup ? [28, 120] : [28, 160]}
-                    minWidth={compactVehiclePopup ? 272 : 216}
-                    maxWidth={compactVehiclePopup ? 312 : 268}
-                  >
-                    <MapVehicleLeafletPopupContent
-                      listing={listing}
-                      listings={listings}
-                      compactVehiclePopup={compactVehiclePopup}
-                      onViewDetails={onViewDetails}
-                      onShowInListing={onShowInListing}
-                      onNearbyNavigate={onNearbyNavigate}
-                    />
-                  </Popup>
-                </VehicleMarker>
-              ))}
-            </MarkerClusterGroup>
-          ) : (
-            listings.map((listing) => (
+          {/*
+           * spiderfyOnMaxZoom + disableClusteringAtZoom: both tweak `this._maxZoom` (~15 vs map maxZoom).
+           * With spiderfy ON, most cluster clicks spiderfy instead of zoomToBounds — feels like “lost auto-zoom”.
+           * Prefer zoom-first; overlap at identical coords resolves once zoomed toward disableClusteringAtZoom pins.
+           */}
+          <MarkerClusterGroup
+            chunkedLoading
+            chunkDelay={48}
+            spiderfyOnMaxZoom={false}
+            zoomToBoundsOnClick
+            showCoverageOnHover={false}
+            maxClusterRadius={RENTARA_CLUSTER_MAX_RADIUS_PX}
+            disableClusteringAtZoom={RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM}
+            animate
+            animateAddingMarkers
+            iconCreateFunction={createRentaraDensityClusterIcon}
+          >
+            {listings.map((listing) => (
               <VehicleMarker
                 key={listing.id}
                 listing={listing}
-                zIndexOffset={
+                restingZIndex={
                   selectedId === listing.id ? 1100 : hoveredListingId === listing.id ? 650 : 0
                 }
                 icon={
@@ -1014,7 +1047,12 @@ export default function ExploreRentalsMapInner({
                 markerRegistry={markerRegistry}
               >
                 <Popup
-                  className="rentara-explore-popup"
+                  closeOnClick={false}
+                  className={
+                    hoveredListingId === listing.id
+                      ? 'rentara-explore-popup rentara-explore-popup-hover-front'
+                      : 'rentara-explore-popup'
+                  }
                   offset={[0, compactVehiclePopup ? 4 : 8]}
                   autoPan
                   keepInView={false}
@@ -1033,8 +1071,8 @@ export default function ExploreRentalsMapInner({
                   />
                 </Popup>
               </VehicleMarker>
-            ))
-          )}
+            ))}
+          </MarkerClusterGroup>
           <OpenListingPopupOnMapFocus
             selectedId={selectedId}
             mapFocusNonce={mapFocusNonce}

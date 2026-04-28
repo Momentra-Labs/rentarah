@@ -1,76 +1,141 @@
 import L from 'leaflet'
 
-import { RENTARA_MAP_PRIMARY } from '../constants/rentaraMapStyle'
-import { formatExplorePriceDayShort } from './mapExplorePriceBadge'
-import { exploreMapVehicleGlyphSvg } from './mapExploreMarkerGlyph'
+/** Show individual price-tag pins once map zoom reaches this level (Leaflet.markercluster caps internal grid at `− 1`). */
+export const RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM = 16
 
-const PRIMARY = RENTARA_MAP_PRIMARY
+/** Tighter clustering: markers must sit closer in screen space to merge (typ. 40–50). */
+export const RENTARA_CLUSTER_MAX_RADIUS_PX = 45
 
-type ClusterLike = {
-  getChildCount: () => number
-  getAllChildMarkers: () => L.Marker[]
+/** Macro vs micro cluster styling: fewer than this many markers ⇒ micro style. */
+export const RENTARA_CLUSTER_MICRO_STYLE_BELOW_N = 5
+
+/**
+ * leaflet.markercluster `iconCreateFunction(cluster)` receives a MarkerClusterGroup-compatible cluster.
+ */
+export interface RentaraClusterLike {
+  getChildCount(): number
+}
+
+/** Light sky → deep Renta blue — macro clusters (density). */
+export function densityBlueGradient(childCount: number): { fill: string; stroke: string } {
+  const t = Math.min(1, Math.log1p(childCount) / Math.log1p(80))
+  const r = Math.round(147 + (26 - 147) * t)
+  const g = Math.round(197 + (86 - 197) * t)
+  const b = Math.round(253 + (219 - 253) * t)
+  const fill = `rgb(${r}, ${g}, ${b})`
+  const stroke = `rgba(15, 23, 42, ${0.2 + t * 0.25})`
+  return { fill, stroke }
+}
+
+function microClusterDims(n: number): {
+  fill: string
+  stroke: string
+  w: number
+  h: number
+  numFs: number
+  capFs: number
+} {
+  return {
+    fill: '#0d9488',
+    stroke: 'rgba(13,148,136,0.95)',
+    w: Math.max(40, Math.min(52, 30 + String(n).length * 12)),
+    h: 38,
+    numFs: n >= 100 ? 12 : 13,
+    capFs: 7,
+  }
+}
+
+function macroClusterDims(n: number): {
+  fill: string
+  stroke: string
+  w: number
+  h: number
+  numFs: number
+  capFs: number
+} {
+  const { fill, stroke } = densityBlueGradient(n)
+  const digits = String(n).length
+  const w = Math.min(76, Math.max(52, 38 + digits * 10))
+  const h = 46
+  const numFs = n >= 100 ? 14 : n >= 10 ? 15 : 16
+  return { fill, stroke, w, h, numFs, capFs: digits >= 3 ? 7 : 8 }
 }
 
 /**
- * Cluster marker: count + car / motorcycle cue (Airbnb-style “you know what’s grouped”).
- * Reads `exploreVehicleBucket` from child markers (set on explore map markers).
+ * Cluster “mini card”: count + caption so clusters read as “grouped rentals”, not opaque dots.
  */
-export function createRentaraExploreClusterIcon(cluster: ClusterLike): L.DivIcon {
-  const count = cluster.getChildCount()
-  const markers = cluster.getAllChildMarkers()
-  let cars = 0
-  let twoWheelers = 0
-  const prices: number[] = []
-  for (const m of markers) {
-    const b = m.options.exploreVehicleBucket
-    if (b === 'two_wheeler') twoWheelers += 1
-    else cars += 1
-    const p = m.options.explorePricePerDay
-    if (typeof p === 'number' && !Number.isNaN(p)) prices.push(p)
-  }
-  const minPrice = prices.length > 0 ? Math.min(...prices) : null
+export function createRentaraDensityClusterIcon(cluster: RentaraClusterLike): L.DivIcon {
+  const n = cluster.getChildCount()
+  const micro = n < RENTARA_CLUSTER_MICRO_STYLE_BELOW_N
+  const d = micro ? microClusterDims(n) : macroClusterDims(n)
+  const { fill, stroke, w, h, numFs, capFs } = d
 
-  const mixed = cars > 0 && twoWheelers > 0
-  const onlyCars = cars > 0 && twoWheelers === 0
-  const only2w = twoWheelers > 0 && cars === 0
+  const captionMicro = 'Nearby'
+  const captionMacro = 'Rentals'
+  const caption = micro ? captionMicro : captionMacro
 
-  let label: string
-  if (onlyCars) label = count === 1 ? 'car' : 'cars'
-  else if (only2w) label = count === 1 ? 'motorcycle' : 'motorcycles'
-  else label = 'vehicles'
+  const pluralN = `${n}`
+  const aria = `${
+    n === 1
+      ? 'One rental grouped in this circle'
+      : `${pluralN} rentals grouped together in this circle`
+  }. Tap the cluster or zoom in to browse individual ₱ pins.`
+  const hoverTitle =
+    n === 1
+      ? `1 rental clustered here · Tap circle to zoom in on this area`
+      : `${pluralN} rentals clustered in this circle · Tap to zoom in closer`
 
-  const title = minPrice != null ? `${count} ${label} · from ${formatExplorePriceDayShort(minPrice)}/day` : `${count} ${label}`
+  const microClass = micro ? 'rentara-cluster-icon--micro' : 'rentara-cluster-icon--macro'
+  const borderW = micro ? 1.5 : 2
+  const shadow = micro
+    ? '0 2px 8px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.35)'
+    : '0 2px 12px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.35)'
 
-  let iconsHtml: string
-  if (onlyCars) {
-    iconsHtml = `<div style="display:flex;align-items:center">${exploreMapVehicleGlyphSvg('car', 16)}</div>`
-  } else if (only2w) {
-    iconsHtml = `<div style="display:flex;align-items:center">${exploreMapVehicleGlyphSvg('two_wheeler', 16)}</div>`
-  } else {
-    iconsHtml = `<div style="display:flex;align-items:center">
-      <span style="display:flex;margin-right:-7px;z-index:1">${exploreMapVehicleGlyphSvg('car', 14)}</span>
-      <span style="display:flex;z-index:2">${exploreMapVehicleGlyphSvg('two_wheeler', 14)}</span>
-    </div>`
-  }
-
-  const w = mixed ? 92 : minPrice != null ? 90 : 80
-  const h = minPrice != null ? 52 : 48
-  const subline = minPrice != null
-    ? `<span style="font-size:10px;font-weight:700;line-height:1.25;text-align:center;color:#64748b;max-width:200px;padding:0 4px"><span style="color:${PRIMARY}">From ${formatExplorePriceDayShort(minPrice)}</span><span style="font-weight:650">/day</span><span style="color:#cbd5e1"> · </span><span style="text-transform:uppercase;letter-spacing:0.04em;font-size:9px">${label}</span></span>`
-    : `<span style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;line-height:1">${label}</span>`
-
-  const html = `<div title="${title.replace(/"/g, '&quot;')}" style="box-sizing:border-box;min-width:${w}px;padding:8px 10px 7px;border-radius:16px;background:#fff;border:2px solid ${PRIMARY};box-shadow:0 2px 14px rgba(15,23,42,0.2);display:flex;flex-direction:column;align-items:center;gap:4px;font-family:system-ui,-apple-system,sans-serif">
-  <div style="display:flex;align-items:center;gap:7px;line-height:1">
-    ${iconsHtml}
-    <span style="font-weight:800;font-size:15px;color:#0f172a">${count}</span>
-  </div>
-  ${subline}
-</div>`
+  const html = `
+<div class="rentara-cluster-icon ${microClass}"
+  aria-label="${aria.replace(/"/g, '&quot;')}"
+  title="${hoverTitle.replace(/"/g, '&quot;')}"
+  style="
+  box-sizing:border-box;
+  width:${w}px;
+  min-height:${h}px;
+  border-radius:${Math.round(Math.min(w, h) / 2)}px;
+  background:${fill};
+  border:${borderW}px solid ${stroke};
+  box-shadow:${shadow};
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  padding:6px ${micro ? '7px' : '9px'};
+  cursor:pointer;
+  font-family:system-ui,-apple-system,sans-serif;
+  font-weight:800;
+  line-height:1;
+  color:#fff;
+">
+  <span class="rentara-cluster-count" style="
+    font-size:${numFs}px;
+    letter-spacing:-0.02em;
+    text-shadow:0 1px 2px rgba(0,0,0,${micro ? '0.2' : '0.22'});
+  ">${n}</span>
+  <span class="rentara-cluster-caption" style="
+    font-size:${capFs}px;
+    font-weight:700;
+    letter-spacing:${micro ? '0.1em' : '0.12em'};
+    text-transform:uppercase;
+    opacity:0.95;
+    white-space:nowrap;
+    margin-top:${micro ? '-1px' : '0'};
+    text-shadow:0 1px 1px rgba(0,0,0,0.15);
+  ">${caption}</span>
+</div>`.trim()
 
   return L.divIcon({
-    className: 'rentara-map-cluster rentara-map-cluster-rich',
+    className: 'rentara-cluster-marker rentara-cluster-marker--pill',
     html,
     iconSize: [w, h],
-    iconAnchor: [w / 2, h / 2],
+    iconAnchor: [Math.round(w / 2), Math.round(h / 2)],
   })
 }
