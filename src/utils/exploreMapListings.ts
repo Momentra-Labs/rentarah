@@ -19,6 +19,8 @@ export type ExploreMapListing = {
     thumbnailUrl: string
     locationName: string
     vehicleType: Car['vehicleType']
+    /** Body segment (e.g. SUV, Sedan) — mirrors {@link Car.type} for placeholders & filters. */
+    bodySegment: string
     rating: number
     reviewCount: number
     /** Same host can list many vehicles — use for host-fleet map grouping. */
@@ -136,6 +138,7 @@ export function carsToExploreListings(cars: Car[]): ExploreMapListing[] {
         thumbnailUrl: car.images[0] ?? '',
         locationName: car.location,
         vehicleType: car.vehicleType,
+        bodySegment: car.type,
         rating: car.rating,
         reviewCount: car.reviewCount,
         hostId: car.hostId,

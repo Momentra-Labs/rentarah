@@ -8,6 +8,7 @@ import type { ReactNode, SyntheticEvent } from 'react'
 import { formatPeso } from '../../utils/formatCurrency'
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
 import { popupCtaGestureBlockers } from '../../utils/exploreMapPopupGestures'
+import VehicleHeroImage from '../media/VehicleHeroImage'
 
 const SWIPE_DRAG_THRESHOLD = 64
 
@@ -149,30 +150,30 @@ export function ExploreMapPopupCityPrevNextRow({
 export function ExploreMapVehiclePopupCompactHorizontal({
   listing,
   listingPrimaryHex,
+  primaryCtaLabel = 'Details',
   onViewDetails,
   footerSlotAfterButtons,
 }: {
   listing: ExploreMapListing
   listingPrimaryHex: string
+  /** Pin popup primary action label — “View details” when the listings sheet is open on mobile. */
+  primaryCtaLabel?: string
   onViewDetails: () => void
   footerSlotAfterButtons?: ReactNode
 }) {
   return (
     <Box sx={{ py: 0.25, pr: 0.25, pl: 0.15, boxSizing: 'border-box', width: '100%', maxWidth: 300 }}>
       <Stack direction="row" spacing={1} alignItems="stretch" sx={{ alignItems: 'center' }}>
-        <Box
-          component="img"
+        <VehicleHeroImage
           src={listing.vehicle.thumbnailUrl}
-          alt=""
-          loading="lazy"
-          decoding="async"
+          vehicleType={listing.vehicle.vehicleType}
+          bodySegment={listing.vehicle.bodySegment}
           sx={{
             width: 52,
             height: 52,
             minWidth: 52,
             borderRadius: 1.25,
             objectFit: 'cover',
-            display: 'block',
             bgcolor: 'grey.100',
           }}
         />
@@ -232,7 +233,7 @@ export function ExploreMapVehiclePopupCompactHorizontal({
                 onViewDetails()
               }}
             >
-              Details
+              {primaryCtaLabel}
             </Button>
             {footerSlotAfterButtons ?? null}
           </Stack>

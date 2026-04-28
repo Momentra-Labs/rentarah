@@ -22,7 +22,7 @@ export const RENTARA_CLUSTER_CLICK_EXTRA_ZOOM_LEVELS = 1
  * Pixel radius used by DistanceGrid: larger ⇒ nearby pins merge into a cluster sooner (more
  * clustering). Default in leaflet.markercluster is 80 — we stayed below that for readability.
  */
-export const RENTARA_CLUSTER_MAX_RADIUS_PX = 68
+export const RENTARA_CLUSTER_MAX_RADIUS_PX = 76
 
 /** Macro vs micro cluster styling: fewer than this many markers ⇒ micro style. */
 export const RENTARA_CLUSTER_MICRO_STYLE_BELOW_N = 5

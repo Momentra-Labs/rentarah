@@ -46,6 +46,7 @@ import { openExploreMarkerPopup, openExploreMarkerPopupForId } from '../../utils
 import { popupCtaGestureBlockers } from '../../utils/exploreMapPopupGestures'
 
 import { ExploreMapPopupCityPrevNextRow, ExploreMapPopupSwipeRail, ExploreMapVehiclePopupCompactHorizontal } from './exploreMapVehiclePopup'
+import VehicleHeroImage from '../media/VehicleHeroImage'
 
 const MANILA_CENTER: L.LatLngTuple = [14.5995, 120.9842]
 const PRIMARY = RENTARA_MAP_PRIMARY
@@ -144,7 +145,12 @@ export type ExploreRentalsMapInnerProps = {
   /**
    * Mobile `/map`: compact popup + pan pin into lower viewport band. Previews omit (default false).
    */
-  compactVehiclePopup?: boolean
+              compactVehiclePopup?: boolean
+  /**
+   * Mobile `/map`: when the listings bottom sheet is open, hide redundant “Show in list” on the pin
+   * popup and use “View details” as the single primary CTA there (strip cards omit their own CTAs).
+   */
+  listingsDrawerOpen?: boolean
 }
 
 /**
@@ -612,6 +618,7 @@ function MapVehicleLeafletPopupContent({
   listing,
   listings,
   compactVehiclePopup,
+  listingsDrawerOpen,
   onViewDetails,
   onShowInListing,
   onNearbyNavigate,
@@ -619,6 +626,7 @@ function MapVehicleLeafletPopupContent({
   listing: ExploreMapListing
   listings: ExploreMapListing[]
   compactVehiclePopup: boolean
+  listingsDrawerOpen?: boolean
   onViewDetails: (l: ExploreMapListing) => void
   onShowInListing?: (l: ExploreMapListing) => void
   onNearbyNavigate?: (direction: 'next' | 'prev') => void
@@ -630,18 +638,16 @@ function MapVehicleLeafletPopupContent({
   const canNext = canSwipe && ring.length >= 2
 
   const showIn =
-    onShowInListing ? (
+    onShowInListing && !listingsDrawerOpen ? (
       <ShowInListingButton listing={listing} onShowInListing={onShowInListing} />
     ) : null
 
   const legacyVertical = (
     <Box sx={{ width: '100%', maxWidth: 252, py: 0.25, px: 0.35, boxSizing: 'border-box' }}>
-      <Box
-        component="img"
+      <VehicleHeroImage
         src={listing.vehicle.thumbnailUrl}
-        alt=""
-        loading="lazy"
-        decoding="async"
+        vehicleType={listing.vehicle.vehicleType}
+        bodySegment={listing.vehicle.bodySegment}
         sx={{
           width: '100%',
           height: { xs: 56, sm: 64 },
@@ -697,6 +703,7 @@ function MapVehicleLeafletPopupContent({
     <ExploreMapVehiclePopupCompactHorizontal
       listing={listing}
       listingPrimaryHex={PRIMARY}
+      primaryCtaLabel={listingsDrawerOpen ? 'View details' : 'Details'}
       onViewDetails={() => onViewDetails(listing)}
       footerSlotAfterButtons={showIn}
     />
@@ -901,6 +908,7 @@ export default function ExploreRentalsMapInner({
   mapSurface = 'compact',
   hoveredListingId = null,
   compactVehiclePopup = false,
+  listingsDrawerOpen = false,
 }: ExploreRentalsMapInnerProps) {
   const markerRegistry = useRef<Map<string, L.Marker>>(new Map())
 
@@ -1012,15 +1020,13 @@ export default function ExploreRentalsMapInner({
             />
           ) : null}
           {/*
-           * spiderfyOnMaxZoom + disableClusteringAtZoom: both tweak `this._maxZoom` (~15 vs map maxZoom).
-           * With spiderfy ON, most cluster clicks spiderfy instead of zoomToBounds — feels like “lost auto-zoom”.
-           * Prefer zoom-first. Tight “last-hop” cluster clicks only step +1 in leaflet.markercluster;
-           * `installExploreMarkerClusterZoomBoundsBoost` adds one extra zoom near street level so ₱ badges separate.
+           * Cluster nearby pins visually; spiderfy opens overlapping markers at max zoom.
+           * Tight-cluster zoom boosts live in {@link ../../utils/mapExploreClusterZoomPatch}.
            */}
           <MarkerClusterGroup
             chunkedLoading
             chunkDelay={48}
-            spiderfyOnMaxZoom={false}
+            spiderfyOnMaxZoom
             zoomToBoundsOnClick
             showCoverageOnHover={false}
             maxClusterRadius={RENTARA_CLUSTER_MAX_RADIUS_PX}
@@ -1069,6 +1075,7 @@ export default function ExploreRentalsMapInner({
                     listing={listing}
                     listings={listings}
                     compactVehiclePopup={compactVehiclePopup}
+                    listingsDrawerOpen={listingsDrawerOpen}
                     onViewDetails={onViewDetails}
                     onShowInListing={onShowInListing}
                     onNearbyNavigate={onNearbyNavigate}

@@ -3,10 +3,11 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  CardMedia,
   Stack,
   Typography,
 } from '@mui/material'
+
+import VehicleHeroImage from '../media/VehicleHeroImage'
 
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
 import { formatPeso } from '../../utils/formatCurrency'
@@ -37,12 +38,24 @@ export default function ExploreMapFallbackList({
               onClick={() => onNavigate(l.id)}
               sx={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch' }}
             >
-              <CardMedia
-                component="img"
-                sx={{ width: 100, minHeight: 80, objectFit: 'cover' }}
-                image={l.vehicle.thumbnailUrl}
-                alt=""
-              />
+              <Box
+                sx={{
+                  width: 100,
+                  flexShrink: 0,
+                  alignSelf: 'stretch',
+                  minHeight: 80,
+                  bgcolor: 'grey.100',
+                  overflow: 'hidden',
+                  borderRadius: '8px 0 0 8px',
+                }}
+              >
+                <VehicleHeroImage
+                  src={l.vehicle.thumbnailUrl}
+                  vehicleType={l.vehicle.vehicleType}
+                  bodySegment={l.vehicle.bodySegment}
+                  sx={{ width: '100%', height: '100%', minHeight: 80, objectFit: 'cover', display: 'block' }}
+                />
+              </Box>
               <CardContent sx={{ py: 1.5, flex: 1 }}>
                 <Typography variant="subtitle2" fontWeight={700}>
                   {l.vehicle.displayName}

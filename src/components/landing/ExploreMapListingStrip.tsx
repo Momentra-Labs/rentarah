@@ -18,10 +18,12 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { SxProps, Theme } from '@mui/material/styles'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
 import { formatPeso } from '../../utils/formatCurrency'
+import VehicleHeroImage from '../media/VehicleHeroImage'
+import { ExploreMapPopupCityPrevNextRow } from './exploreMapVehiclePopup'
 
 const SCROLL_EDGE_EPS = 6
 
@@ -57,6 +59,15 @@ export type ExploreMapListingStripProps = {
   hoveredListingId?: string | null
   /** Desktop /map sidebar: `'outer'` lets the **column** scroll (filters + listings); `'inner'` keeps listing cards in their own scrollbar. */
   listScrollMode?: 'inner' | 'outer'
+  /**
+   * Vertical layout only (`orientation="vertical"`). `'scroll'` = full scrolling list (default).
+   * `'pager'` = one listing card + prev/next (e.g. mobile map bottom sheet).
+   */
+  verticalBrowseMode?: 'scroll' | 'pager'
+  /** Tighter card chrome (image + copy + CTAs) — e.g. mobile map bottom sheet to keep map visible. */
+  cardDensity?: 'default' | 'compact'
+  /** When false, listing cards omit View details / On map (e.g. mobile map + open listings sheet — CTAs live on the pin popup). */
+  showListingCardActions?: boolean
 }
 
 /**
@@ -77,6 +88,9 @@ export default function ExploreMapListingStrip({
   onListingHover,
   hoveredListingId = null,
   listScrollMode = 'inner',
+  verticalBrowseMode = 'scroll',
+  cardDensity = 'default',
+  showListingCardActions = true,
 }: ExploreMapListingStripProps) {
   const theme = useTheme()
   const isCompact = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
@@ -99,6 +113,26 @@ export default function ExploreMapListingStrip({
 
   const listingsScrollOuterParent =
     listScrollMode === 'outer' && orientation === 'vertical' && layout === 'panel'
+
+  const useVerticalPager =
+    orientation === 'vertical' && verticalBrowseMode === 'pager' && !listingsScrollOuterParent
+
+  const compactCard = cardDensity === 'compact'
+
+  const compactPagerChrome = useVerticalPager && layout === 'minimal'
+
+  /** Phones / narrow viewports: drop the hero image so the map sheet stays text-first and shorter. */
+  const showListingHeroImage = !isCompact
+
+  /** Mobile map sheet: minimize vertical footprint so ₱ pins / markers stay visible. */
+  const sheetExtraDense = compactPagerChrome && isCompact
+
+  const pagerIdx = useMemo(() => {
+    if (!listings.length) return 0
+    if (!selectedId) return 0
+    const i = listings.findIndex((l) => l.id === selectedId)
+    return i >= 0 ? i : 0
+  }, [listings, selectedId])
 
   useEffect(() => {
     if (!autoScrollToSelected || !selectedId || !scrollRef.current) return
@@ -182,7 +216,7 @@ export default function ExploreMapListingStrip({
           width: orientation === 'vertical' ? '100%' : { xs: 'min(280px, 82vw)', sm: 248 },
           maxWidth: orientation === 'vertical' ? '100%' : undefined,
           scrollSnapAlign: orientation === 'vertical' ? ('start' as const) : 'start',
-          borderRadius: 2.5,
+          borderRadius: sheetExtraDense ? 1.5 : compactCard ? 2 : 2.5,
           border: '1px solid',
           borderColor: selected ? 'primary.main' : 'divider',
           bgcolor: selected ? (t) => alpha(t.palette.primary.main, 0.06) : 'background.paper',
@@ -213,59 +247,73 @@ export default function ExploreMapListingStrip({
         aria-pressed={selected}
         aria-label={`${l.vehicle.displayName}, ${l.vehicle.locationName}`}
       >
+        {showListingHeroImage ? (
         <Box
           sx={{
             position: 'relative',
             width: '100%',
-            aspectRatio: '16 / 10',
+            aspectRatio: compactCard ? ('2.2 / 1' as const) : ('16 / 10' as const),
+            maxHeight: compactCard ? { xs: 104, sm: 112 } : undefined,
             flexShrink: 0,
             bgcolor: 'grey.100',
             overflow: 'hidden',
-            borderRadius: '8px',
+            borderRadius: compactCard ? '6px' : '8px',
           }}
         >
-          <Box
-            component="img"
+          <VehicleHeroImage
             src={l.vehicle.thumbnailUrl}
-            alt=""
-            loading="lazy"
+            vehicleType={l.vehicle.vehicleType}
+            bodySegment={l.vehicle.bodySegment}
             sx={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              display: 'block',
-              borderRadius: '8px',
+              borderRadius: compactCard ? '6px' : '8px',
             }}
           />
         </Box>
+        ) : null}
         <CardContent
           sx={{
-            p: 1.5,
-            pt: 1.25,
-            flex: 1,
-            minHeight: 0,
+            p: sheetExtraDense ? 0.625 : compactCard ? 1 : 1.5,
+            pt:
+              sheetExtraDense
+                ? 0.7
+                : isCompact
+                  ? compactCard
+                    ? 1
+                    : 1.25
+                  : compactCard
+                    ? 0.875
+                    : 1.25,
+            /** In vertical pager mode the card sits in a flex shell; omit flex-grow so the card hugs content (no hollow band under CTAs). */
+            ...(useVerticalPager
+              ? { flex: 'none', flexGrow: 0, minHeight: 0 }
+              : { flex: 1, minHeight: 0, flexGrow: 1 }),
             display: 'flex',
             flexDirection: 'column',
-            gap: 0.75,
-            flexGrow: 1,
+            gap: sheetExtraDense ? 0.28 : compactCard ? 0.4 : 0.75,
             boxSizing: 'border-box',
-            '&:last-child': { pb: 1.5 },
+            '&:last-child': {
+              pb: sheetExtraDense ? 0.65 : compactCard ? (useVerticalPager ? 0.875 : 1) : 1.5,
+            },
           }}
         >
           <Stack
             direction="row"
             alignItems="flex-start"
-            spacing={0.5}
-            sx={{ minHeight: { xs: 0, sm: 40 } }}
+            spacing={0.35}
+            sx={{ minHeight: compactCard ? 0 : { xs: 0, sm: 40 } }}
           >
-            <LocationOnOutlined sx={{ fontSize: 16, color: 'text.secondary', mt: 0.15, flexShrink: 0 }} />
+            <LocationOnOutlined sx={{ fontSize: sheetExtraDense ? 12 : compactCard ? 14 : 16, color: 'text.secondary', mt: 0.1, flexShrink: 0 }} />
             <Typography
               variant="caption"
               color="text.secondary"
               sx={{
-                lineHeight: 1.35,
+                fontSize: sheetExtraDense ? '0.64rem' : compactCard ? '0.7rem' : undefined,
+                lineHeight: sheetExtraDense ? 1.2 : 1.35,
                 display: '-webkit-box',
-                WebkitLineClamp: 2,
+                WebkitLineClamp: compactCard ? 1 : 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
               }}
@@ -277,36 +325,81 @@ export default function ExploreMapListingStrip({
             variant="subtitle2"
             fontWeight={700}
             sx={{
-              lineHeight: 1.3,
+              fontSize: sheetExtraDense ? '0.75rem' : compactCard ? '0.8rem' : undefined,
+              lineHeight: sheetExtraDense ? 1.2 : 1.3,
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: sheetExtraDense ? 1 : 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              minHeight: { xs: 0, sm: 40 },
+              minHeight: compactCard ? 0 : { xs: 0, sm: 40 },
             }}
           >
             {l.vehicle.displayName}
           </Typography>
-          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
-            <StarRounded sx={{ fontSize: 16, color: 'warning.main' }} />
-            <Typography variant="caption" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+          <Stack direction="row" alignItems="center" spacing={0.35} sx={{ flexWrap: 'wrap', my: sheetExtraDense ? -0.1 : 0 }}>
+            <StarRounded sx={{ fontSize: sheetExtraDense ? 12 : compactCard ? 14 : 16, color: 'warning.main' }} />
+            <Typography
+              variant="caption"
+              fontWeight={800}
+              sx={{
+                lineHeight: 1.15,
+                fontSize: sheetExtraDense ? '0.625rem' : compactCard ? '0.7rem' : undefined,
+              }}
+            >
               {l.vehicle.rating.toFixed(1)}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                lineHeight: 1.15,
+                fontSize: sheetExtraDense ? '0.625rem' : compactCard ? '0.7rem' : undefined,
+              }}
+            >
               ({l.vehicle.reviewCount} reviews)
             </Typography>
           </Stack>
-          <Typography variant="body2" color="primary" fontWeight={800} sx={{ letterSpacing: '-0.01em' }}>
+          <Typography
+            variant={compactCard ? 'subtitle1' : 'h6'}
+            component="div"
+            color="primary.main"
+            fontWeight={800}
+            sx={{
+              letterSpacing: '-0.02em',
+              lineHeight: sheetExtraDense ? 1.15 : 1.25,
+              fontSize: sheetExtraDense ? '0.875rem' : compactCard ? '1rem' : '1.2rem',
+              mt: sheetExtraDense ? 0 : undefined,
+            }}
+          >
             {formatPeso(l.vehicle.pricePerDay)}
-            <Typography component="span" variant="caption" color="text.secondary" fontWeight={600} sx={{ ml: 0.5 }}>
+            <Typography
+              component="span"
+              variant="body2"
+              color="text.secondary"
+              fontWeight={600}
+              sx={{
+                ml: 0.5,
+                fontSize: sheetExtraDense ? '0.62rem' : compactCard ? '0.76rem' : '0.84rem',
+                letterSpacing: '0',
+              }}
+            >
               / day
             </Typography>
           </Typography>
-          <Stack spacing={1} sx={{ mt: 1.25, width: '100%' }}>
+          {showListingCardActions ? (
+          <Stack
+            direction={compactCard && compactPagerChrome ? 'row' : 'column'}
+            spacing={compactCard ? (compactPagerChrome ? (sheetExtraDense ? 0.65 : 1) : 0.65) : 1}
+            sx={{
+              mt: sheetExtraDense ? 0.38 : compactCard ? 0.65 : 1.25,
+              width: '100%',
+              alignItems: compactCard && compactPagerChrome ? 'stretch' : undefined,
+            }}
+          >
             <Button
-              fullWidth
+              fullWidth={!(compactCard && compactPagerChrome)}
               size="small"
-              variant={isCompact ? 'contained' : 'outlined'}
+              variant="contained"
               color="primary"
               onClick={(e) => {
                 e.stopPropagation()
@@ -315,20 +408,27 @@ export default function ExploreMapListingStrip({
               sx={{
                 textTransform: 'none',
                 fontWeight: 700,
-                borderRadius: 1.5,
-                py: 0.85,
-                boxShadow: 'none',
+                borderRadius: 1.35,
+                py: sheetExtraDense ? 0.34 : compactCard ? 0.5 : 0.85,
+                fontSize: sheetExtraDense ? '0.7rem' : compactCard ? '0.78rem' : undefined,
+                minHeight: sheetExtraDense ? 27 : compactCard ? 32 : undefined,
+                lineHeight: sheetExtraDense ? 1.1 : undefined,
+                boxShadow: (t) => `0 1px 4px ${alpha(t.palette.primary.main, 0.35)}`,
+                ...(compactCard && compactPagerChrome
+                  ? { flex: '1 1 auto', minWidth: 0 }
+                  : {}),
               }}
             >
               View details
             </Button>
             {onViewOnMap ? (
               <Button
-                fullWidth
+                fullWidth={!(compactCard && compactPagerChrome)}
                 size="small"
-                variant="text"
+                variant="outlined"
                 color="primary"
-                startIcon={<MapOutlined sx={{ fontSize: 18 }} />}
+                aria-label="View on map"
+                startIcon={sheetExtraDense ? undefined : <MapOutlined sx={{ fontSize: compactCard ? 15 : 18 }} />}
                 onClick={(e) => {
                   e.stopPropagation()
                   onViewOnMap(l)
@@ -336,14 +436,33 @@ export default function ExploreMapListingStrip({
                 sx={{
                   textTransform: 'none',
                   fontWeight: 700,
-                  borderRadius: 1.5,
-                  py: 0.5,
+                  borderRadius: 1.35,
+                  py: sheetExtraDense ? 0.34 : compactCard ? 0.45 : 0.5,
+                  fontSize: sheetExtraDense ? '0.68rem' : compactCard ? '0.74rem' : undefined,
+                  minHeight: sheetExtraDense ? 27 : compactCard ? 32 : undefined,
+                  px: compactCard && compactPagerChrome ? (sheetExtraDense ? 0.65 : 0.75) : undefined,
+                  whiteSpace: 'nowrap',
+                  borderWidth: '1px',
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.04),
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.35),
+                  color: 'primary.main',
+                  '&:hover': {
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+                    borderColor: 'primary.main',
+                  },
+                  ...(compactCard && compactPagerChrome
+                    ? {
+                        flex: sheetExtraDense ? '0 1 41%' : '0 1 42%',
+                        minWidth: 0,
+                      }
+                    : {}),
                 }}
               >
-                View on map
+                {sheetExtraDense ? 'Map' : 'On map'}
               </Button>
             ) : null}
           </Stack>
+          ) : null}
         </CardContent>
       </Card>
     )
@@ -383,7 +502,79 @@ export default function ExploreMapListingStrip({
 
   const carousel =
     orientation === 'vertical' ? (
-      listingsScrollOuterParent ? (
+      useVerticalPager ? (
+        <Stack
+          spacing={sheetExtraDense ? 0.45 : compactCard ? 0.75 : 1.25}
+          sx={{
+            flex: compactPagerChrome ? '0 1 auto' : 1,
+            minHeight: 0,
+            width: '100%',
+            justifyContent: 'flex-start',
+          }}
+        >
+          <ExploreMapPopupCityPrevNextRow
+            canPrev={pagerIdx > 0}
+            canNext={pagerIdx < listings.length - 1}
+            positionLabel={`${pagerIdx + 1} / ${listings.length}`}
+            onPrev={() => onSelect(listings[pagerIdx - 1]!.id)}
+            onNext={() => onSelect(listings[pagerIdx + 1]!.id)}
+            sx={
+              compactCard
+                ? sheetExtraDense
+                  ? {
+                      '& > div:first-of-type': {
+                        py: 0.16,
+                        px: 0.25,
+                        gap: 0.35,
+                        borderRadius: 1.35,
+                      },
+                      '& .MuiIconButton-root': {
+                        width: 30,
+                        height: 30,
+                        p: 0,
+                        '& svg': { fontSize: 17 },
+                      },
+                      '& .MuiTypography-caption': {
+                        fontSize: '0.64rem',
+                        py: 0,
+                        lineHeight: 1.2,
+                      },
+                      width: '100%',
+                      mt: 0,
+                    }
+                  : {
+                      '& > div:first-of-type': {
+                        py: 0.35,
+                        px: 0.35,
+                        gap: 0.65,
+                        borderRadius: 1.75,
+                      },
+                      '& .MuiIconButton-root': {
+                        width: 38,
+                        height: 38,
+                        '& svg': { fontSize: 22 },
+                      },
+                      '& .MuiTypography-caption': { fontSize: '0.72rem', py: 0 },
+                    }
+                : undefined
+            }
+          />
+          <Box
+            sx={{
+              flex: compactPagerChrome ? '0 0 auto' : 1,
+              minHeight: 0,
+              overflow: compactPagerChrome ? 'visible' : 'hidden',
+              px: layout === 'panel' ? { xs: 1, sm: 1.5 } : 0,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+            }}
+          >
+            {cards[pagerIdx]}
+          </Box>
+        </Stack>
+      ) : listingsScrollOuterParent ? (
         <Box
           ref={scrollRef}
           sx={{
@@ -502,7 +693,17 @@ export default function ExploreMapListingStrip({
       <Box
         sx={
           orientation === 'vertical'
-            ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+            ? compactPagerChrome
+              ? {
+                  flex: '0 1 auto',
+                  width: '100%',
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  alignSelf: 'flex-start',
+                }
+              : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
             : undefined
         }
       >
