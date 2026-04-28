@@ -32,6 +32,7 @@ import {
 import type { LatLng } from '../../utils/distance'
 import { formatPeso } from '../../utils/formatCurrency'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
+import { installExploreMarkerClusterZoomBoundsBoost } from '../../utils/mapExploreClusterZoomPatch'
 import {
   createRentaraDensityClusterIcon,
   RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM,
@@ -41,6 +42,7 @@ import { getExploreMapPriceBadgeIcon } from '../../utils/mapExplorePriceBadge'
 import { getRentaraVehiclePinIcon } from '../../utils/mapVehiclePinIcon'
 import { isTwoWheeler } from '../../utils/vehicleUtils'
 
+import { openExploreMarkerPopup, openExploreMarkerPopupForId } from '../../utils/openExploreMarkerPopup'
 import { popupCtaGestureBlockers } from '../../utils/exploreMapPopupGestures'
 
 import { ExploreMapPopupCityPrevNextRow, ExploreMapPopupSwipeRail, ExploreMapVehiclePopupCompactHorizontal } from './exploreMapVehiclePopup'
@@ -503,7 +505,7 @@ function FlyToSelected({
     const id = selectedId
 
     const refreshPopup = () => {
-      markerRegistry.current.get(id)?.openPopup()
+      openExploreMarkerPopupForId(markerRegistry.current, id)
     }
 
     const runAfterSelect = () => {
@@ -812,7 +814,7 @@ function SyncExplorePopupFromStripHover({
       hadStripHoverRef.current = true
       const id = hoveredListingId
       const open = () => {
-        reg.get(id)?.openPopup()
+        openExploreMarkerPopup(reg.get(id))
       }
       open()
       const t1 = window.setTimeout(open, 120)
@@ -828,7 +830,7 @@ function SyncExplorePopupFromStripHover({
     if (!hadHover) return
 
     const restore = () => {
-      if (selectedId) reg.get(selectedId)?.openPopup()
+      if (selectedId) openExploreMarkerPopup(reg.get(selectedId))
       else map.closePopup()
     }
     restore()
@@ -862,7 +864,7 @@ function OpenListingPopupOnMapFocus({
     if (!id) return
     const reg = markerRegistry.current
     const open = () => {
-      reg.get(id)?.openPopup()
+      openExploreMarkerPopupForId(reg, id)
     }
     const openAfterFrame = () => window.setTimeout(open, 0)
     map.once('moveend', openAfterFrame)
@@ -929,6 +931,7 @@ export default function ExploreRentalsMapInner({
 
   useEffect(() => {
     ensureLeafletDefaultIcons()
+    installExploreMarkerClusterZoomBoundsBoost()
   }, [])
 
   const icons = useMemo(() => {
@@ -1011,7 +1014,8 @@ export default function ExploreRentalsMapInner({
           {/*
            * spiderfyOnMaxZoom + disableClusteringAtZoom: both tweak `this._maxZoom` (~15 vs map maxZoom).
            * With spiderfy ON, most cluster clicks spiderfy instead of zoomToBounds — feels like “lost auto-zoom”.
-           * Prefer zoom-first; overlap at identical coords resolves once zoomed toward disableClusteringAtZoom pins.
+           * Prefer zoom-first. Tight “last-hop” cluster clicks only step +1 in leaflet.markercluster;
+           * `installExploreMarkerClusterZoomBoundsBoost` adds one extra zoom near street level so ₱ badges separate.
            */}
           <MarkerClusterGroup
             chunkedLoading

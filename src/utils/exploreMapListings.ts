@@ -21,12 +21,32 @@ export type ExploreMapListing = {
     vehicleType: Car['vehicleType']
     rating: number
     reviewCount: number
+    /** Same host can list many vehicles — use for host-fleet map grouping. */
+    hostId: string
+    hostName: string
+    /** Group “same model” pins (e.g. multiple Vios) at a hub. */
+    make: string
+    model: string
   }
   /** Client-only: source row for navigation; omit when wiring a real API. */
   _source: Car
 }
 
 export type ExploreMapFilterMode = 'all' | 'cars' | 'motorcycles' | 'nearby'
+
+/**
+ * Map clustering today: Leaflet.markercluster groups markers by **screen distance** only. It does
+ * not know host or vehicle model.
+ *
+ * To cluster “by host fleet” or “by model (e.g. multiple Vios)” in a city:
+ * - **Pre-merge listings** before the map: bucket by `(hostId, pickupHubKey)` and/or
+ *   `(make, model, pickupHubKey)`, then one marker per bucket (count + host or model subtitle) and a
+ *   popup drill-down listing vehicles.
+ * - Optional: enrich the density cluster icon with unique host/model counts via
+ *   `cluster.getAllChildMarkers()` — geography still merges markers; labeling can reflect fleet mix.
+ *
+ * {@link ExploreMapListing.vehicle} exposes `hostId`, `hostName`, `make`, and `model` for these flows.
+ */
 
 function exploreListingPickupHubKey(listing: ExploreMapListing): string {
   const c = resolveCityHallCoords(listing.vehicle.locationName)
@@ -118,6 +138,10 @@ export function carsToExploreListings(cars: Car[]): ExploreMapListing[] {
         vehicleType: car.vehicleType,
         rating: car.rating,
         reviewCount: car.reviewCount,
+        hostId: car.hostId,
+        hostName: car.hostName,
+        make: car.make,
+        model: car.model,
       },
       _source: car,
     }
@@ -207,14 +231,24 @@ function samePickupCityHall(a: ExploreMapListing, b: ExploreMapListing): boolean
 
 /**
  * Listings whose pickup location maps to the same hub as `center` ({@link resolveCityHallCoords}),
- * ordered by distance from `center` for map prev/next.
+ * ordered by distance from that **hub** (not from `center`’s pin). Using the current listing as the
+ * sort origin made the selected row always index 0, so prev/next looped after a few steps instead of
+ * walking 1…N around the city.
  */
 export function listingsInSamePickupCitySorted(
   center: ExploreMapListing,
   listings: ExploreMapListing[],
 ): ExploreMapListing[] {
   const inCity = listings.filter((l) => samePickupCityHall(center, l))
-  return listingsSortedByDistanceFrom(center, inCity)
+  const hub = resolveCityHallCoords(center.vehicle.locationName)
+  const hubPt: LatLng = { lat: hub.lat, lng: hub.lng }
+  return [...inCity]
+    .map((l) => ({
+      l,
+      d: haversineKm(hubPt, { lat: l.latitude, lng: l.longitude }),
+    }))
+    .sort((a, b) => (a.d !== b.d ? a.d - b.d : a.l.id.localeCompare(b.l.id)))
+    .map((x) => x.l)
 }
 
 /** Stable key for resolved pickup hub — used for marker metadata and same-city grouping helpers. */

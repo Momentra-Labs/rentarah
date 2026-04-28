@@ -1,10 +1,28 @@
 import L from 'leaflet'
 
-/** Show individual price-tag pins once map zoom reaches this level (Leaflet.markercluster caps internal grid at `− 1`). */
-export const RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM = 16
+/** Show individual price-tag pins starting at this map zoom (≥). Leaflet.markercluster uses `− 1` for its internal grid ceiling. */
+export const RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM = 17
 
-/** Tighter clustering: markers must sit closer in screen space to merge (typ. 40–50). */
-export const RENTARA_CLUSTER_MAX_RADIUS_PX = 45
+/**
+ * After a cluster click, we may add extra zoom (see `mapExploreClusterZoomPatch`) so stacked ₱
+ * badges separate; stop nudging at this level to match explore “street” framing.
+ */
+export const RENTARA_EXPLORE_STREET_ZOOM_AFTER_CLUSTER = 18
+
+/**
+ * Only apply the post-click zoom nudge once the map was already this far in — avoids stacking
+ * extra zoom on coarse (country‑wide) cluster steps.
+ */
+export const RENTARA_CLUSTER_CLICK_BOOST_MIN_PREV_ZOOM = 12
+
+/** Bonus zoom applied after a tight leaflet.markercluster `zoomToBounds(+1)` step. */
+export const RENTARA_CLUSTER_CLICK_EXTRA_ZOOM_LEVELS = 1
+
+/**
+ * Pixel radius used by DistanceGrid: larger ⇒ nearby pins merge into a cluster sooner (more
+ * clustering). Default in leaflet.markercluster is 80 — we stayed below that for readability.
+ */
+export const RENTARA_CLUSTER_MAX_RADIUS_PX = 68
 
 /** Macro vs micro cluster styling: fewer than this many markers ⇒ micro style. */
 export const RENTARA_CLUSTER_MICRO_STYLE_BELOW_N = 5

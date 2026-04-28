@@ -499,7 +499,13 @@ export default function ExploreMapListingStrip({
 
   if (layout === 'minimal') {
     return (
-      <Box sx={orientation === 'vertical' ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } : undefined}>
+      <Box
+        sx={
+          orientation === 'vertical'
+            ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+            : undefined
+        }
+      >
         {title ? (
           <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5, flexShrink: 0 }}>
             {title}

@@ -928,8 +928,8 @@ export default function MapPage() {
                   left: '50%',
                   transform: 'translateX(-50%)',
                   zIndex: zMap.hint,
-                  px: 2,
-                  py: 0.75,
+                  px: 1,
+                  py: 0.5,
                   borderRadius: 999,
                   bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
                   color: (t) => t.palette.primary.dark,
@@ -938,13 +938,23 @@ export default function MapPage() {
                   backdropFilter: 'saturate(140%) blur(10px)',
                   WebkitBackdropFilter: 'saturate(140%) blur(10px)',
                   pointerEvents: 'none',
-                  maxWidth: 'calc(100% - 24px)',
+                  maxWidth: 'calc(100% - 56px)',
                   textAlign: 'center',
                   boxShadow: (t) => `0 4px 20px ${alpha(t.palette.common.black, 0.06)}`,
                 }}
               >
-                <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
-                  ₱/day price tags · larger circles group nearby rentals; tap to zoom
+                <Typography
+                  component="p"
+                  sx={{
+                    m: 0,
+                    fontSize: '0.65rem',
+                    lineHeight: 1.35,
+                    fontWeight: 700,
+                    letterSpacing: '0.01em',
+                    color: 'inherit',
+                  }}
+                >
+                  ₱ tags & clusters · pinch or tap to zoom
                 </Typography>
               </Box>
             ) : null}
@@ -1113,13 +1123,16 @@ export default function MapPage() {
                 sx: {
                   borderTopLeftRadius: 20,
                   borderTopRightRadius: 20,
-                  maxHeight: 'min(86dvh, 820px)',
+                  /** Both maxHeight and height: sheet must not grow with listing content or the inner strip never scrolls. */
+                  height: 'min(90dvh, 820px)',
+                  maxHeight: 'min(90dvh, 820px)',
                   mx: 0.5,
                   mt: 1,
                   pb: 'max(12px, env(safe-area-inset-bottom, 0px))',
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
+                  minHeight: 0,
                   border: '1px solid',
                   borderColor: 'divider',
                   borderBottom: 'none',
@@ -1160,13 +1173,14 @@ export default function MapPage() {
               <Box
                 id="explore-map-listing-strip"
                 sx={{
-                  flex: 1,
-                  minHeight: 240,
+                  flex: '1 1 0%',
+                  minHeight: 0,
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
                   px: 2,
                   pb: 2,
+                  touchAction: 'pan-y',
                 }}
               >
                 <ExploreMapListingStrip
