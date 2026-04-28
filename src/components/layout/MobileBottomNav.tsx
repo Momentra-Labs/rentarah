@@ -34,6 +34,12 @@ export const MOBILE_FOOTER_ADDITIONAL_CLEAR_PX = 88
 const MOBILE_TAB_BAR_ROW_CLEAR_PX = 72
 export const MOBILE_TAB_BAR_FAB_BOTTOM = `max(20px, calc(${MOBILE_TAB_BAR_ROW_CLEAR_PX}px + env(safe-area-inset-bottom, 0px) + 10px))`
 
+/**
+ * `/map` hides the tab bar on mobile; floating hints only need safe-area + a small margin
+ * (not {@link MOBILE_TAB_BAR_FAB_BOTTOM}, which reserves space for the nav / FAB bubble).
+ */
+export const MAP_PAGE_FLOAT_CLEAR_BOTTOM = `max(12px, calc(10px + env(safe-area-inset-bottom, 0px)))`
+
 type MobileBottomNavProps = {
   onAuthOpen?: () => void
 }

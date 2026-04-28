@@ -199,6 +199,8 @@ export default function MapPreview({ cars }: MapPreviewProps) {
                     onViewDetails={(l) => navigate(`/cars/${l.id}`)}
                     scrollWheelZoom={false}
                     enableFlyTo={false}
+                    markerStyle="vehicle"
+                    enableClustering={false}
                   />
                   {overlayAndCtas}
                 </Box>

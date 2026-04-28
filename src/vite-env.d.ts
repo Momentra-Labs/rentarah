@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+declare module 'react-leaflet-markercluster/styles'
+
 interface ImportMetaEnv {
   readonly VITE_APP_ENV?: 'development' | 'staging' | 'production'
   readonly VITE_API_URL?: string

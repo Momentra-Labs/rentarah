@@ -37,6 +37,10 @@ export default function MainLayout() {
     isMobile && /^\/messages\/.+/.test(location.pathname)
   /** Footer is omitted on all messages routes for a cleaner chat layout (list + thread). */
   const hideFooterOnMessages = location.pathname.startsWith('/messages')
+  /** Map route uses a full-viewport split layout; skipping the marketing footer frees vertical space. */
+  const hideFooterOnMap = location.pathname === '/map'
+  /** Bottom nav is fixed; map should extend edge-to-edge without a dead white strip from main padding. */
+  const immersiveMapMobile = hideFooterOnMap
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const user = useAuthStore((s) => s.user)
@@ -163,11 +167,17 @@ export default function MainLayout() {
               flexDirection: 'column',
               pb: immersiveMobileMessageThread
                 ? 'max(8px, env(safe-area-inset-bottom, 0px))'
-                : {
-                    xs: MOBILE_BOTTOM_NAV_SX_PB,
-                    sm: MOBILE_BOTTOM_NAV_SX_PB,
-                    md: 'max(12px, env(safe-area-inset-bottom))',
-                  },
+                : immersiveMapMobile
+                  ? {
+                      xs: 'env(safe-area-inset-bottom, 0px)',
+                      sm: 'env(safe-area-inset-bottom, 0px)',
+                      md: 'max(12px, env(safe-area-inset-bottom))',
+                    }
+                  : {
+                      xs: MOBILE_BOTTOM_NAV_SX_PB,
+                      sm: MOBILE_BOTTOM_NAV_SX_PB,
+                      md: 'max(12px, env(safe-area-inset-bottom))',
+                    },
             }}
           >
             <AnimatePresence mode="wait">
@@ -196,8 +206,10 @@ export default function MainLayout() {
           </Box>
         </Box>
       </Box>
-      {!hideFooterOnMessages ? <Footer /> : null}
-      {!immersiveMobileMessageThread ? <MobileBottomNav onAuthOpen={handleAuthOpen} /> : null}
+      {!hideFooterOnMessages && !hideFooterOnMap ? <Footer /> : null}
+      {!immersiveMobileMessageThread && !hideFooterOnMap ? (
+        <MobileBottomNav onAuthOpen={handleAuthOpen} />
+      ) : null}
       <AuthDialog
         open={authOpen}
         onClose={handleAuthClose}

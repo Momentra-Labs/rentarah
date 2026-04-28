@@ -2,6 +2,7 @@ import ChevronLeft from '@mui/icons-material/ChevronLeft'
 import ChevronRight from '@mui/icons-material/ChevronRight'
 import MapOutlined from '@mui/icons-material/MapOutlined'
 import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined'
+import StarRounded from '@mui/icons-material/StarRounded'
 import {
   Box,
   Button,
@@ -45,6 +46,8 @@ export type ExploreMapListingStripProps = {
    * `minimal` — title + carousel only (e.g. tight layouts).
    */
   layout?: 'panel' | 'minimal'
+  /** Horizontal strip (default) or scrollable column for sidebar / bottom sheet. */
+  orientation?: 'horizontal' | 'vertical'
 }
 
 /**
@@ -60,6 +63,7 @@ export default function ExploreMapListingStrip({
   autoScrollToSelected = true,
   listingScrollRequest = 0,
   layout = 'panel',
+  orientation = 'horizontal',
 }: ExploreMapListingStripProps) {
   const theme = useTheme()
   const isCompact = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
@@ -70,16 +74,25 @@ export default function ExploreMapListingStrip({
   const updateScrollArrows = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
+    if (orientation === 'vertical') {
+      setCanPrev(false)
+      setCanNext(false)
+      return
+    }
     const { scrollLeft, scrollWidth, clientWidth } = el
     setCanPrev(scrollLeft > SCROLL_EDGE_EPS)
     setCanNext(scrollLeft < scrollWidth - clientWidth - SCROLL_EDGE_EPS)
-  }, [])
+  }, [orientation])
 
   useEffect(() => {
     if (!autoScrollToSelected || !selectedId || !scrollRef.current) return
     const el = scrollRef.current.querySelector(`[data-listing-id="${selectedId}"]`)
-    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [selectedId, autoScrollToSelected, listingScrollRequest])
+    el?.scrollIntoView({
+      behavior: 'smooth',
+      inline: orientation === 'vertical' ? 'nearest' : 'center',
+      block: orientation === 'vertical' ? 'nearest' : 'nearest',
+    })
+  }, [selectedId, autoScrollToSelected, listingScrollRequest, orientation])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -97,7 +110,7 @@ export default function ExploreMapListingStrip({
 
   const scrollByStep = (dir: -1 | 1) => {
     const el = scrollRef.current
-    if (!el) return
+    if (!el || orientation === 'vertical') return
     const card = el.querySelector<HTMLElement>('[data-listing-id]')
     if (!card) return
     const styles = getComputedStyle(el)
@@ -144,8 +157,9 @@ export default function ExploreMapListingStrip({
         onClick={() => onSelect(l.id)}
         sx={{
           flex: '0 0 auto',
-          width: { xs: 'min(280px, 82vw)', sm: 248 },
-          scrollSnapAlign: 'start',
+          width: orientation === 'vertical' ? '100%' : { xs: 'min(280px, 82vw)', sm: 248 },
+          maxWidth: orientation === 'vertical' ? '100%' : undefined,
+          scrollSnapAlign: orientation === 'vertical' ? ('start' as const) : 'start',
           borderRadius: 2.5,
           border: '1px solid',
           borderColor: selected ? 'primary.main' : 'divider',
@@ -247,6 +261,15 @@ export default function ExploreMapListingStrip({
           >
             {l.vehicle.displayName}
           </Typography>
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexWrap: 'wrap' }}>
+            <StarRounded sx={{ fontSize: 16, color: 'warning.main' }} />
+            <Typography variant="caption" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+              {l.vehicle.rating.toFixed(1)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+              ({l.vehicle.reviewCount} reviews)
+            </Typography>
+          </Stack>
           <Typography variant="body2" color="primary" fontWeight={800} sx={{ letterSpacing: '-0.01em' }}>
             {formatPeso(l.vehicle.pricePerDay)}
             <Typography component="span" variant="caption" color="text.secondary" fontWeight={600} sx={{ ml: 0.5 }}>
@@ -316,7 +339,35 @@ export default function ExploreMapListingStrip({
     '&::-webkit-scrollbar': { display: 'none' },
   }
 
-  const carousel = isCompact ? (
+  const verticalScrollSx = {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    py: 0.5,
+    scrollSnapType: 'y mandatory' as const,
+    WebkitOverflowScrolling: 'touch' as const,
+    overscrollBehaviorY: 'contain' as const,
+    scrollbarWidth: 'thin' as const,
+  }
+
+  const carousel =
+    orientation === 'vertical' ? (
+      <Box
+        ref={scrollRef}
+        sx={{
+          ...verticalScrollSx,
+          px: layout === 'panel' ? { xs: 1, sm: 1.5 } : 0,
+          pb: layout === 'panel' ? { xs: 1.5, sm: 2 } : 0.5,
+          pt: layout === 'panel' ? 0 : 0,
+        }}
+      >
+        {cards}
+      </Box>
+    ) : isCompact ? (
     <Box sx={{ position: 'relative', mx: 0, px: 0, pb: 0.5 }}>
       <IconButton
         aria-label="Previous listings"
@@ -350,7 +401,7 @@ export default function ExploreMapListingStrip({
         <ChevronRight fontSize="small" />
       </IconButton>
     </Box>
-  ) : (
+    ) : (
     <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 0.5 }}>
       <IconButton
         aria-label="Previous listings"
@@ -374,31 +425,44 @@ export default function ExploreMapListingStrip({
         <ChevronRight />
       </IconButton>
     </Stack>
-  )
+    )
 
   if (layout === 'minimal') {
     return (
-      <Box>
-        <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
-          {title}
-        </Typography>
+      <Box sx={orientation === 'vertical' ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } : undefined}>
+        {title ? (
+          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5, flexShrink: 0 }}>
+            {title}
+          </Typography>
+        ) : null}
         {carousel}
       </Box>
     )
   }
 
+  const panelPaperSx =
+    orientation === 'vertical'
+      ? {
+          borderRadius: 3,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          overflow: 'hidden',
+          boxShadow: `0 2px 12px ${alpha('#000', 0.04)}`,
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }
+      : {
+          borderRadius: 3,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          overflow: 'hidden',
+          boxShadow: `0 2px 12px ${alpha('#000', 0.04)}`,
+        }
+
   return (
-    <Paper
-      elevation={0}
-      variant="outlined"
-      sx={{
-        borderRadius: 3,
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-        overflow: 'hidden',
-        boxShadow: `0 2px 12px ${alpha('#000', 0.04)}`,
-      }}
-    >
+    <Paper elevation={0} variant="outlined" sx={panelPaperSx}>
       <Stack
         direction="row"
         alignItems="center"
@@ -406,7 +470,12 @@ export default function ExploreMapListingStrip({
         flexWrap="wrap"
         useFlexGap
         gap={1}
-        sx={{ px: { xs: 1.75, sm: 2 }, pt: { xs: 1.75, sm: 2 }, pb: { xs: 1, sm: 1 } }}
+        sx={{
+          px: { xs: 1.75, sm: 2 },
+          pt: { xs: 1.75, sm: 2 },
+          pb: { xs: 1, sm: 1 },
+          flexShrink: 0,
+        }}
       >
         <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
           {title}
@@ -419,7 +488,11 @@ export default function ExploreMapListingStrip({
           sx={{ fontWeight: 700 }}
         />
       </Stack>
-      <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: { xs: 1.5, sm: 2 }, pt: 0, overflow: 'hidden' }}>{carousel}</Box>
+      {orientation === 'vertical' ? (
+        carousel
+      ) : (
+        <Box sx={{ px: { xs: 1, sm: 1.5 }, pb: { xs: 1.5, sm: 2 }, pt: 0, overflow: 'hidden' }}>{carousel}</Box>
+      )}
     </Paper>
   )
 }

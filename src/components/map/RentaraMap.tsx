@@ -8,7 +8,6 @@ import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap, ZoomControl }
 import { PHILIPPINES_MAP_MIN_ZOOM, PHILIPPINES_MAX_BOUNDS_CORNERS } from '../../constants/geo'
 import { RENTARA_MAP_TILE_URL } from '../../constants/rentaraMapStyle'
 import { getHostPickupMapIcon, getRenterUserLocationMapIcon } from '../../utils/pickupRouteMapIcons'
-import MapAttributionNote from './MapAttributionNote'
 import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { haversineKm, type LatLng } from '../../utils/distance'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
@@ -248,7 +247,6 @@ export default function RentaraMap({ hostLocation }: RentaraMapProps) {
           )}
         </MapContainer>
       </Box>
-      <MapAttributionNote />
       <Paper
         elevation={0}
         square

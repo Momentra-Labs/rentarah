@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 html {
+  height: 100%;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   /* Prevent rare horizontal nudge on mobile when the layout settles */
@@ -18,10 +19,16 @@ html {
 
 body {
   margin: 0;
+  height: 100%;
   min-height: 100dvh;
   /* iOS safe areas; content can also use padding-bottom: env(safe-area-inset-bottom) */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+#root {
+  height: 100%;
+  min-height: 100dvh;
 }
 
 /**
@@ -49,6 +56,17 @@ body {
   border: none !important;
 }
 
+@keyframes rentara-pin-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* --- Rentara map “chrome”: Voyager basemap, app-like controls; attribution is below map --- */
 .rentara-leaflet-surface.leaflet-container {
   /* Warmer than pure grey — sits behind Voyager’s greens and water blues */
@@ -67,12 +85,19 @@ body {
   z-index: 650;
 }
 
-/* Slight clarity boost (Voyager is already colorful; we avoid “dead” desaturation) */
-.rentara-leaflet-surface .leaflet-tile-container img.leaflet-tile {
-  filter: saturate(1.05) contrast(1.02);
+/*
+ * Tile visibility: Leaflet 1.9 sets mix-blend-mode: plus-lighter on raster tiles (Chromium seam fix).
+ * On our light #e7ece4 container that can wash tiles out to near-white in some browsers/GPUs.
+ * Tailwind preflight also sets img { max-width: 100%; height: auto } — reinforce Leaflet’s overrides.
+ */
+.rentara-leaflet-surface.leaflet-container .leaflet-tile-pane img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  mix-blend-mode: normal !important;
+  /* Avoid filter: some Chromium / GPU paths wash raster tiles to near-white on wide flex layouts */
 }
 
-/* Default control hidden — credit lives in {@link MapAttributionNote} */
+/* Default on-map attribution hidden — product maps use tiles without the floating OSM chip */
 .rentara-leaflet-surface .leaflet-control-attribution {
   display: none !important;
 }

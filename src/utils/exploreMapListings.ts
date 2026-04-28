@@ -18,6 +18,8 @@ export type ExploreMapListing = {
     thumbnailUrl: string
     locationName: string
     vehicleType: Car['vehicleType']
+    rating: number
+    reviewCount: number
   }
   /** Client-only: source row for navigation; omit when wiring a real API. */
   _source: Car
@@ -52,6 +54,8 @@ export function carsToExploreListings(cars: Car[]): ExploreMapListing[] {
         thumbnailUrl: car.images[0] ?? '',
         locationName: car.location,
         vehicleType: car.vehicleType,
+        rating: car.rating,
+        reviewCount: car.reviewCount,
       },
       _source: car,
     }

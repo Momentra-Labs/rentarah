@@ -23,7 +23,6 @@ export default function ChatPage() {
   const user = useAuthStore((s) => s.user)
   const bookings = useBookingStore((s) => s.bookings)
   const syncThreadsFromBookings = useChatStore((s) => s.syncThreadsFromBookings)
-  const getThreadsForUser = useChatStore((s) => s.getThreadsForUser)
   const markThreadRead = useChatStore((s) => s.markThreadRead)
   const sendMessage = useChatStore((s) => s.sendMessage)
   const threadById = useChatStore((s) => s.threadById)
@@ -32,7 +31,12 @@ export default function ChatPage() {
     syncThreadsFromBookings(bookings)
   }, [bookings, syncThreadsFromBookings])
 
-  const threads = useMemo(() => (user ? getThreadsForUser(user.id) : []), [user, getThreadsForUser, threadById])
+  const threads = useMemo(() => {
+    if (!user) return []
+    return Object.values(threadById)
+      .filter((x) => x.hostId === user.id || x.renterId === user.id)
+      .sort((a, b) => (a.lastMessageAt < b.lastMessageAt ? 1 : -1))
+  }, [user, threadById])
 
   const activeThread = threadId ? threadById[threadId] : undefined
   const activeMessages = threadId ? (messagesByThread[threadId] ?? []) : []
