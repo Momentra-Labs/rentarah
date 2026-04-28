@@ -1224,7 +1224,12 @@ export default function MapPage() {
               disableBackdropTransition={!iOS}
               disableDiscovery={iOS}
               hideBackdrop
-              ModalProps={{ keepMounted: true }}
+              ModalProps={{
+                keepMounted: true,
+                disableScrollLock: true,
+                /** Let taps reach the map + Leaflet popups outside the sheet (see Paper `pointerEvents: 'auto'`). */
+                sx: { pointerEvents: 'none' },
+              }}
               SlideProps={{
                 easing: theme.transitions.easing.easeOut,
                 timeout: { enter: 400, exit: 300 },
@@ -1237,6 +1242,8 @@ export default function MapPage() {
                 sx: {
                   borderTopLeftRadius: 22,
                   borderTopRightRadius: 22,
+                  /** Re-enable hits on sheet chrome + listing strip only */
+                  pointerEvents: 'auto',
                   /** Caps sheet height; content is authored to shrink-wrap so excess map stays visible. */
                   height: 'auto',
                   maxHeight: 'min(38dvh, 320px)',
