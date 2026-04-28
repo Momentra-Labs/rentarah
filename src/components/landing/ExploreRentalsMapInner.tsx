@@ -1,5 +1,3 @@
-import ChevronLeft from '@mui/icons-material/ChevronLeft'
-import ChevronRight from '@mui/icons-material/ChevronRight'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import L from 'leaflet'
 import {
@@ -25,8 +23,10 @@ import MarkerClusterGroup from 'react-leaflet-markercluster'
 
 import { PHILIPPINES_MAP_MIN_ZOOM, PHILIPPINES_MAX_BOUNDS_CORNERS } from '../../constants/geo'
 import { RENTARA_MAP_PRIMARY, RENTARA_MAP_TILE_URL } from '../../constants/rentaraMapStyle'
-import type { ExploreMapListing } from '../../utils/exploreMapListings'
-import { listingsSortedByDistanceFrom } from '../../utils/exploreMapListings'
+import {
+  listingsInSamePickupCitySorted,
+  type ExploreMapListing,
+} from '../../utils/exploreMapListings'
 import type { LatLng } from '../../utils/distance'
 import { formatPeso } from '../../utils/formatCurrency'
 import { ensureLeafletDefaultIcons } from '../../utils/leafletDefaultIcon'
@@ -35,9 +35,49 @@ import { getExploreMapPriceBadgeIcon } from '../../utils/mapExplorePriceBadge'
 import { getRentaraVehiclePinIcon } from '../../utils/mapVehiclePinIcon'
 import { isTwoWheeler } from '../../utils/vehicleUtils'
 
+import { ExploreMapPopupCityPrevNextRow, ExploreMapPopupSwipeRail, ExploreMapVehiclePopupCompactHorizontal } from './exploreMapVehiclePopup'
+
 const MANILA_CENTER: L.LatLngTuple = [14.5995, 120.9842]
 const PRIMARY = RENTARA_MAP_PRIMARY
 const PH_BOUNDS = L.latLngBounds(PHILIPPINES_MAX_BOUNDS_CORNERS)
+
+/** Fraction of viewport height from top — pin appears in lower band so the popup/card stays unobstructed. */
+const LOWER_SCREEN_MARKER_FRAC = 0.72
+
+function schedulePanLatLngTowardLowerThird(map: L.Map, latlng: L.LatLng): void {
+  const run = () => {
+    if (!map.getContainer()?.isConnected) return
+    const size = map.getSize()
+    if (size.x < 32 || size.y < 32) return
+    const pt = map.latLngToContainerPoint(latlng)
+    const target = L.point(size.x / 2, size.y * LOWER_SCREEN_MARKER_FRAC)
+    map.panBy(L.point(pt.x - target.x, pt.y - target.y))
+  }
+  requestAnimationFrame(run)
+  requestAnimationFrame(() => requestAnimationFrame(run))
+  window.setTimeout(run, 72)
+  window.setTimeout(run, 220)
+}
+
+/**
+ * Leaflet’s `invalidateSize` touches `_mapPane` / `_leaflet_pos`; calling it before the map panes
+ * exist (or after the container disconnected) throws. ResizeObserver + shell resize events can fire
+ * in that window on desktop flex layouts.
+ */
+function safeInvalidateSize(map: L.Map, options?: boolean | { animate?: boolean; pan?: boolean }): boolean {
+  const el = map.getContainer()
+  if (!el?.isConnected) return false
+  try {
+    if (typeof options === 'boolean') {
+      map.invalidateSize(options)
+    } else {
+      map.invalidateSize(options ?? { animate: false })
+    }
+    return true
+  } catch {
+    return false
+  }
+}
 
 function clampLatLngToPhilippines(latlng: L.LatLng): L.LatLng {
   const sw = PH_BOUNDS.getSouthWest()
@@ -77,7 +117,7 @@ export type ExploreRentalsMapInnerProps = {
   enableFlyTo?: boolean
   /** `price` — marketplace-style ₱/day pills; `vehicle` — compact type icons (e.g. landing preview). */
   markerStyle?: 'vehicle' | 'price'
-  /** Group nearby markers into clusters (full map); off for small previews. */
+  /** When `true`, group nearby markers via leaflet.markercluster (see `exploreMapClusterDefaults`; default off on product maps). */
   enableClustering?: boolean
   /** Bump to fit all markers in view again (desktop “Fit to results”). */
   fitBoundsRequestId?: number
@@ -97,6 +137,12 @@ export type ExploreRentalsMapInnerProps = {
    * `compact` = mobile: first auto view whole PH (`fitBounds`); OOB pins clamp to PH box for fit (legacy).
    */
   mapSurface?: 'compact' | 'wide'
+  /** Desktop listing strip hover: sync marker emphasis + stacking. */
+  hoveredListingId?: string | null
+  /**
+   * Mobile `/map`: compact popup + pan pin into lower viewport band. Previews omit (default false).
+   */
+  compactVehiclePopup?: boolean
 }
 
 /**
@@ -114,8 +160,7 @@ function MapInvalidateOnResize({ afterInvalidate }: { afterInvalidate?: (m: L.Ma
     const c = map.getContainer()
     if (!c) return
     const ro = new ResizeObserver(() => {
-      map.invalidateSize({ animate: false })
-      afterInvalidate?.(map)
+      if (safeInvalidateSize(map, { animate: false })) afterInvalidate?.(map)
     })
     ro.observe(c)
     return () => ro.disconnect()
@@ -129,8 +174,7 @@ function MapShellResizeSync({ afterInvalidate }: { afterInvalidate?: (m: L.Map) 
   useEffect(() => {
     const onShellResize = () => {
       requestAnimationFrame(() => {
-        map.invalidateSize({ animate: false })
-        afterInvalidate?.(map)
+        if (safeInvalidateSize(map, { animate: false })) afterInvalidate?.(map)
       })
     }
     window.addEventListener('rentara-map-shell-resize', onShellResize)
@@ -150,7 +194,7 @@ function MapLayoutStabilizer() {
     let frames = 0
     const tick = () => {
       if (cancelled) return
-      map.invalidateSize({ animate: false })
+      safeInvalidateSize(map, { animate: false })
       const { x, y } = map.getSize()
       if (x >= 32 && y >= 32) return
       if (frames++ < 48) {
@@ -159,10 +203,10 @@ function MapLayoutStabilizer() {
     }
     tick()
     const t1 = window.setTimeout(() => {
-      if (!cancelled) map.invalidateSize({ animate: false })
+      if (!cancelled) safeInvalidateSize(map, { animate: false })
     }, 120)
     const t2 = window.setTimeout(() => {
-      if (!cancelled) map.invalidateSize({ animate: false })
+      if (!cancelled) safeInvalidateSize(map, { animate: false })
     }, 400)
     return () => {
       cancelled = true
@@ -230,7 +274,7 @@ function MapBoundsController({
       if (cancelled) return
 
       if (!listings.length) {
-        map.invalidateSize({ animate: false })
+        safeInvalidateSize(map, { animate: false })
         const { x: xe, y: ye } = map.getSize()
         if (xe < 24 || ye < 24) {
           if (frames++ < 48) requestAnimationFrame(apply)
@@ -246,7 +290,7 @@ function MapBoundsController({
       /** Skip all work (especially `invalidateSize`) when nothing would change the view — avoids fighting user zoom/pan. */
       if (!manualFit && !keyChanged) return
 
-      map.invalidateSize({ animate: false })
+      safeInvalidateSize(map, { animate: false })
       const { x, y } = map.getSize()
       if (x < 24 || y < 24) {
         if (frames++ < 48) requestAnimationFrame(apply)
@@ -334,7 +378,7 @@ function ShowInListingButton({
       size="small"
       variant="outlined"
       color="primary"
-      sx={{ borderRadius: 1.25, textTransform: 'none', fontWeight: 600, py: 0.4, fontSize: 12 }}
+      sx={{ borderRadius: 1.25, textTransform: 'none', fontWeight: 600, py: 0.55, fontSize: 12 }}
       onClick={() => {
         map.closePopup()
         onShowInListing(listing)
@@ -347,6 +391,15 @@ function ShowInListingButton({
 
 /** Zoom after selecting a pin — road-level detail (Carto native tiles to 18). */
 const SELECTED_PIN_STREET_ZOOM = 18
+
+/**
+ * Leaflet popup / fly skips: `/map` can be at `maxZoom` 19 while we cap fly at 18 —
+ * comparing `zoom === targetZoom` would always fail at 19 and force `closePopup` + `setView`, which collapses spiderfy.
+ */
+const SELECT_ALREADY_FRAMED_MAX_CENTER_DISTANCE_M = 260
+
+/** Extra margin when testing if the selected pin is already on screen (not just near `map.getCenter()` — auto-pan shifts the center away from the pin). */
+const SELECT_ALREADY_FRAMED_BOUNDS_PAD = 0.2
 
 /**
  * Pan the map so the open vehicle popup card is centered in the map container (not stuck to the pin edge).
@@ -415,18 +468,23 @@ function CenterExplorePopupOnOpen({ recenterCard }: { recenterCard: boolean }) {
  * Snap map to the listing’s coordinates at street-level zoom. Uses `setView` with no animation so the pin
  * stays on the exact lat/lng.
  *
- * On the first direct marker tap, Leaflet opens the popup, then this effect runs and moves the map — that
- * leaves the popup half-laid-out until we reset it. We `closePopup()` before `setView`, then open again on
- * `moveend` (plus short timers when the view doesn’t change and `moveend` never fires).
+ * Avoids repeating `closePopup` + `setView` when the map is already close enough to the pin at street zoom
+ * (including current zoom above target, e.g. 19 vs 18, and when the pin is **in the current viewport** even if
+ * the map center is far after popup auto-pan — otherwise switching spiderfied markers collapses the cluster) —
+ * that repetition collapses leaflet.markercluster’s spiderfy and makes the UI jump back to the cluster badge.
+ *
+ * When the map really needs to move, we `closePopup()` before `setView`, then reopen on `moveend` (plus timers).
  */
 function FlyToSelected({
   selectedId,
   listings,
   markerRegistry,
+  preferPinBelowCard,
 }: {
   selectedId: string | null
   listings: ExploreMapListing[]
   markerRegistry: MutableRefObject<Map<string, L.Marker>>
+  preferPinBelowCard?: boolean
 }) {
   const map = useMap()
   const listingsRef = useRef(listings)
@@ -446,16 +504,52 @@ function FlyToSelected({
       markerRegistry.current.get(id)?.openPopup()
     }
 
-    const afterMove = () => {
+    const runAfterSelect = () => {
       if (!map.getContainer().isConnected) return
-      map.invalidateSize(false)
+      safeInvalidateSize(map, false)
       refreshPopup()
       requestAnimationFrame(refreshPopup)
+      if (preferPinBelowCard) {
+        const ll = clampLatLngToPhilippines(L.latLng(hit.latitude, hit.longitude))
+        window.setTimeout(() => schedulePanLatLngTowardLowerThird(map, ll), 0)
+        window.setTimeout(() => schedulePanLatLngTowardLowerThird(map, ll), 120)
+      }
+    }
+
+    const curZ = map.getZoom()
+    const zoomAlreadyStreetOrCloser =
+      curZ != null && curZ + 1e-4 >= targetZoom
+    const nearMapCenter =
+      map.getCenter().distanceTo(center) < SELECT_ALREADY_FRAMED_MAX_CENTER_DISTANCE_M
+    const pinAlreadyInViewport = map
+      .getBounds()
+      .pad(SELECT_ALREADY_FRAMED_BOUNDS_PAD)
+      .contains(center)
+    const alreadyFramed =
+      zoomAlreadyStreetOrCloser && (nearMapCenter || pinAlreadyInViewport)
+
+    /**
+     * Skip `closePopup` + `setView` when already at the pin — leaflet.markercluster would otherwise
+     * un-spiderfy and the cluster “count” badge can replace the open vehicle popup.
+     */
+    if (alreadyFramed) {
+      const idRaf = window.requestAnimationFrame(runAfterSelect)
+      const tStable = window.setTimeout(runAfterSelect, 48)
+      const tPopup = window.setTimeout(refreshPopup, 170)
+      return () => {
+        window.cancelAnimationFrame(idRaf)
+        window.clearTimeout(tStable)
+        window.clearTimeout(tPopup)
+      }
+    }
+
+    const afterMove = () => {
+      runAfterSelect()
     }
 
     const apply = () => {
       if (!map.getContainer().isConnected) return
-      map.invalidateSize(false)
+      safeInvalidateSize(map, false)
       map.closePopup()
       map.setView(center, targetZoom, { animate: false })
     }
@@ -464,7 +558,7 @@ function FlyToSelected({
     apply()
 
     const t1 = window.setTimeout(() => {
-      map.invalidateSize(false)
+      safeInvalidateSize(map, false)
       refreshPopup()
     }, 110)
     const t2 = window.setTimeout(refreshPopup, 300)
@@ -474,52 +568,161 @@ function FlyToSelected({
       window.clearTimeout(t1)
       window.clearTimeout(t2)
     }
-  }, [map, selectedId, markerRegistry])
+  }, [map, selectedId, markerRegistry, preferPinBelowCard])
   return null
 }
 
-function NearbyVehicleNav({
-  current,
-  listings,
-  onNavigate,
+/** After any popup opens on mobile `/map`, nudge pin into the lower screen band (matches fly-to UX). */
+function SnapExplorePinOnPopupOpen({
+  enabled,
+  selectedId,
+  markerRegistry,
 }: {
-  current: ExploreMapListing
-  listings: ExploreMapListing[]
-  onNavigate: (direction: 'next' | 'prev') => void
+  enabled: boolean
+  selectedId: string | null
+  markerRegistry: MutableRefObject<Map<string, L.Marker>>
 }) {
-  const ring = useMemo(() => listingsSortedByDistanceFrom(current, listings), [current, listings])
-  const idx = ring.findIndex((l) => l.id === current.id)
-  if (ring.length < 2 || idx < 0) return null
+  const map = useMap()
+  const selectedIdRef = useRef(selectedId)
+  selectedIdRef.current = selectedId
+
+  useEffect(() => {
+    if (!enabled) return
+    const handler = () => {
+      const id = selectedIdRef.current
+      if (!id) return
+      const m = markerRegistry.current.get(id)
+      if (!m) return
+      schedulePanLatLngTowardLowerThird(map, clampLatLngToPhilippines(m.getLatLng()))
+    }
+    map.on('popupopen', handler)
+    return () => {
+      void map.off('popupopen', handler)
+    }
+  }, [enabled, map, markerRegistry])
+  return null
+}
+
+/** Vehicle popup: compact + swipe rail on mobile; stacked desktop — prev/next stays within pickup city hub. */
+function MapVehicleLeafletPopupContent({
+  listing,
+  listings,
+  compactVehiclePopup,
+  onViewDetails,
+  onShowInListing,
+  onNearbyNavigate,
+}: {
+  listing: ExploreMapListing
+  listings: ExploreMapListing[]
+  compactVehiclePopup: boolean
+  onViewDetails: (l: ExploreMapListing) => void
+  onShowInListing?: (l: ExploreMapListing) => void
+  onNearbyNavigate?: (direction: 'next' | 'prev') => void
+}) {
+  const ring = useMemo(() => listingsInSamePickupCitySorted(listing, listings), [listing, listings])
+  const idx = ring.findIndex((l) => l.id === listing.id)
+  const canSwipe = Boolean(onNearbyNavigate) && ring.length >= 2 && idx >= 0
+  const canPrev = canSwipe && ring.length >= 2
+  const canNext = canSwipe && ring.length >= 2
+
+  const showIn =
+    onShowInListing ? (
+      <ShowInListingButton listing={listing} onShowInListing={onShowInListing} />
+    ) : null
+
+  const legacyVertical = (
+    <Box sx={{ width: '100%', maxWidth: 252, py: 0.25, px: 0.35, boxSizing: 'border-box' }}>
+      <Box
+        component="img"
+        src={listing.vehicle.thumbnailUrl}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        sx={{
+          width: '100%',
+          height: { xs: 56, sm: 64 },
+          objectFit: 'cover',
+          borderRadius: 0.75,
+          display: 'block',
+          mb: 0.5,
+          bgcolor: 'grey.100',
+        }}
+      />
+      <Typography fontWeight={700} sx={{ lineHeight: 1.25, pr: 2, fontSize: 13, letterSpacing: '-0.01em' }}>
+        {listing.vehicle.displayName}
+      </Typography>
+      <Typography sx={{ mt: 0.35, fontSize: 13, fontWeight: 700, color: 'primary.main' }}>
+        {formatPeso(listing.vehicle.pricePerDay)}
+        <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
+          {' '}
+          / day
+        </Typography>
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.3, fontSize: 11 }}>
+        {listing.vehicle.locationName}
+      </Typography>
+      <Stack spacing={1.25} sx={{ mt: 0.75, width: '100%' }}>
+        <Button
+          fullWidth
+          size="small"
+          variant="contained"
+          sx={{
+            bgcolor: PRIMARY,
+            '&:hover': { bgcolor: '#1647b8' },
+            borderRadius: 1.25,
+            textTransform: 'none',
+            fontWeight: 600,
+            py: 0.4,
+            fontSize: 12,
+          }}
+          onClick={() => onViewDetails(listing)}
+        >
+          View details
+        </Button>
+        {showIn}
+      </Stack>
+    </Box>
+  )
+
+  const compactHorizontal = (
+    <ExploreMapVehiclePopupCompactHorizontal
+      listing={listing}
+      listingPrimaryHex={PRIMARY}
+      onViewDetails={() => onViewDetails(listing)}
+      footerSlotAfterButtons={showIn}
+    />
+  )
+
+  const body = compactVehiclePopup ? compactHorizontal : legacyVertical
+
+  if (!canSwipe || !onNearbyNavigate) return body
+
+  if (compactVehiclePopup) {
+    return (
+      <ExploreMapPopupSwipeRail
+        canPrev={canPrev}
+        canNext={canNext}
+        onSwipePrev={() => onNearbyNavigate('prev')}
+        onSwipeNext={() => onNearbyNavigate('next')}
+        positionLabel={`${idx + 1} / ${ring.length} · Same city`}
+      >
+        {body}
+      </ExploreMapPopupSwipeRail>
+    )
+  }
+
+  const cityNavLabel = `${idx + 1} / ${ring.length} · Same city`
 
   return (
-    <Box sx={{ mt: 0.75, pt: 0.75, borderTop: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, lineHeight: 1.3, fontSize: 10 }}>
-        {ring.length} on map — by distance
-      </Typography>
-      <Stack direction="row" spacing={0.5}>
-        <Button
-          fullWidth
-          size="small"
-          variant="outlined"
-          color="primary"
-          startIcon={<ChevronLeft sx={{ fontSize: 16 }} />}
-          onClick={() => onNavigate('prev')}
-          sx={{ borderRadius: 1.25, textTransform: 'none', fontWeight: 600, py: 0.35, fontSize: 12 }}
-        >
-          Prev
-        </Button>
-        <Button
-          fullWidth
-          size="small"
-          variant="outlined"
-          color="primary"
-          endIcon={<ChevronRight sx={{ fontSize: 16 }} />}
-          onClick={() => onNavigate('next')}
-          sx={{ borderRadius: 1.25, textTransform: 'none', fontWeight: 600, py: 0.35, fontSize: 12 }}
-        >
-          Next
-        </Button>
-      </Stack>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'stretch', width: '100%', maxWidth: 280 }}>
+      {body}
+      <ExploreMapPopupCityPrevNextRow
+        canPrev={canPrev}
+        canNext={canNext}
+        positionLabel={cityNavLabel}
+        onPrev={() => onNearbyNavigate('prev')}
+        onNext={() => onNearbyNavigate('next')}
+      />
     </Box>
   )
 }
@@ -529,12 +732,14 @@ function VehicleMarker({
   icon,
   onSelect,
   markerRegistry,
+  zIndexOffset = 0,
   children,
 }: {
   listing: ExploreMapListing
   icon: L.DivIcon
   onSelect: (id: string) => void
   markerRegistry: MutableRefObject<Map<string, L.Marker>>
+  zIndexOffset?: number
   children: ReactNode
 }) {
   const markerRef = useRef<L.Marker | null>(null)
@@ -555,6 +760,7 @@ function VehicleMarker({
       ref={markerRef}
       position={[listing.latitude, listing.longitude]}
       icon={icon}
+      zIndexOffset={zIndexOffset}
       exploreVehicleBucket={exploreVehicleBucket}
       explorePricePerDay={listing.vehicle.pricePerDay}
       eventHandlers={{
@@ -618,18 +824,20 @@ export default function ExploreRentalsMapInner({
   scrollWheelZoom = true,
   enableFlyTo = true,
   markerStyle = 'price',
-  enableClustering = true,
+  enableClustering = false,
   fitBoundsRequestId = 0,
   clusterChunkDelay = 50,
   clusterAnimations = true,
   clusterRadius = 52,
   strictPhilippinesBounds = false,
   mapSurface = 'compact',
+  hoveredListingId = null,
+  compactVehiclePopup = false,
 }: ExploreRentalsMapInnerProps) {
   const markerRegistry = useRef<Map<string, L.Marker>>(new Map())
 
   const afterMapResize = useCallback((m: L.Map) => {
-    /** `MapInvalidateOnResize` already called `invalidateSize` in the same tick; do not call again here (avoids `_leaflet_pos` errors). */
+    /** When enabled, nudge the view inside PH after resize; resize handlers already call `safeInvalidateSize`. */
     if (!strictPhilippinesBounds) return
     requestAnimationFrame(() => {
       if (!m.getContainer()?.isConnected) return
@@ -661,14 +869,16 @@ export default function ExploreRentalsMapInner({
     const m = new Map<string, L.DivIcon>()
     for (const l of listings) {
       const bucket = isTwoWheeler(l.vehicle) ? 'two_wheeler' : 'car'
+      const selected = selectedId === l.id
+      const highlighted = hoveredListingId === l.id
       const icon =
         markerStyle === 'price'
-          ? getExploreMapPriceBadgeIcon(l.vehicle.pricePerDay, selectedId === l.id, bucket)
-          : getRentaraVehiclePinIcon(l.vehicle.vehicleType, selectedId === l.id)
+          ? getExploreMapPriceBadgeIcon(l.vehicle.pricePerDay, selected, bucket, highlighted)
+          : getRentaraVehiclePinIcon(l.vehicle.vehicleType, selected)
       m.set(l.id, icon)
     }
     return m
-  }, [listings, selectedId, markerStyle])
+  }, [listings, selectedId, hoveredListingId, markerStyle])
 
   return (
     <Stack direction="column" sx={{ height: '100%', minHeight: 0 }} spacing={0}>
@@ -703,8 +913,18 @@ export default function ExploreRentalsMapInner({
           <MapEnsurePhilippinesCenter />
           <CenterExplorePopupOnOpen recenterCard={!enableFlyTo} />
           {enableFlyTo ? (
-            <FlyToSelected selectedId={selectedId} listings={listings} markerRegistry={markerRegistry} />
+            <FlyToSelected
+              selectedId={selectedId}
+              listings={listings}
+              markerRegistry={markerRegistry}
+              preferPinBelowCard={compactVehiclePopup}
+            />
           ) : null}
+          <SnapExplorePinOnPopupOpen
+            enabled={compactVehiclePopup}
+            selectedId={selectedId}
+            markerRegistry={markerRegistry}
+          />
           {isUserInsidePhilippines(userLocation) && userLocation ? (
             <CircleMarker
               center={[userLocation.lat, userLocation.lng]}
@@ -732,96 +952,41 @@ export default function ExploreRentalsMapInner({
                 <VehicleMarker
                   key={listing.id}
                   listing={listing}
+                  zIndexOffset={
+                    selectedId === listing.id ? 1100 : hoveredListingId === listing.id ? 650 : 0
+                  }
                   icon={
                     icons.get(listing.id) ??
                     (markerStyle === 'price'
                       ? getExploreMapPriceBadgeIcon(
                           listing.vehicle.pricePerDay,
-                          false,
+                          selectedId === listing.id,
                           isTwoWheeler(listing.vehicle) ? 'two_wheeler' : 'car',
+                          hoveredListingId === listing.id,
                         )
-                      : getRentaraVehiclePinIcon(listing.vehicle.vehicleType, false))
+                      : getRentaraVehiclePinIcon(listing.vehicle.vehicleType, selectedId === listing.id))
                   }
                   onSelect={onSelect}
                   markerRegistry={markerRegistry}
                 >
                   <Popup
                     className="rentara-explore-popup"
-                    offset={[0, 8]}
+                    offset={[0, compactVehiclePopup ? 4 : 8]}
                     autoPan
                     keepInView={false}
                     autoPanPaddingTopLeft={[20, 72]}
-                    autoPanPaddingBottomRight={[28, 160]}
-                    minWidth={216}
-                    maxWidth={268}
+                    autoPanPaddingBottomRight={compactVehiclePopup ? [28, 120] : [28, 160]}
+                    minWidth={compactVehiclePopup ? 272 : 216}
+                    maxWidth={compactVehiclePopup ? 312 : 268}
                   >
-                    <Box sx={{ width: '100%', maxWidth: 252, py: 0.25, px: 0.35, boxSizing: 'border-box' }}>
-                      <Box
-                        component="img"
-                        src={listing.vehicle.thumbnailUrl}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        sx={{
-                          width: '100%',
-                          height: { xs: 56, sm: 64 },
-                          objectFit: 'cover',
-                          borderRadius: 0.75,
-                          display: 'block',
-                          mb: 0.5,
-                          bgcolor: 'grey.100',
-                        }}
-                      />
-                      <Typography
-                        fontWeight={700}
-                        sx={{ lineHeight: 1.25, pr: 2, fontSize: 13, letterSpacing: '-0.01em' }}
-                      >
-                        {listing.vehicle.displayName}
-                      </Typography>
-                      <Typography sx={{ mt: 0.35, fontSize: 13, fontWeight: 700, color: 'primary.main' }}>
-                        {formatPeso(listing.vehicle.pricePerDay)}
-                        <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                          {' '}
-                          / day
-                        </Typography>
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mt: 0.25, lineHeight: 1.3, fontSize: 11 }}
-                      >
-                        {listing.vehicle.locationName}
-                      </Typography>
-                      <Stack spacing={0.5} sx={{ mt: 0.75, width: '100%' }}>
-                        <Button
-                          fullWidth
-                          size="small"
-                          variant="contained"
-                          sx={{
-                            bgcolor: PRIMARY,
-                            '&:hover': { bgcolor: '#1647b8' },
-                            borderRadius: 1.25,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            py: 0.4,
-                            fontSize: 12,
-                          }}
-                          onClick={() => onViewDetails(listing)}
-                        >
-                          View details
-                        </Button>
-                        {onShowInListing ? (
-                          <ShowInListingButton listing={listing} onShowInListing={onShowInListing} />
-                        ) : null}
-                      </Stack>
-                      {onNearbyNavigate ? (
-                        <NearbyVehicleNav
-                          current={listing}
-                          listings={listings}
-                          onNavigate={onNearbyNavigate}
-                        />
-                      ) : null}
-                    </Box>
+                    <MapVehicleLeafletPopupContent
+                      listing={listing}
+                      listings={listings}
+                      compactVehiclePopup={compactVehiclePopup}
+                      onViewDetails={onViewDetails}
+                      onShowInListing={onShowInListing}
+                      onNearbyNavigate={onNearbyNavigate}
+                    />
                   </Popup>
                 </VehicleMarker>
               ))}
@@ -831,96 +996,41 @@ export default function ExploreRentalsMapInner({
               <VehicleMarker
                 key={listing.id}
                 listing={listing}
+                zIndexOffset={
+                  selectedId === listing.id ? 1100 : hoveredListingId === listing.id ? 650 : 0
+                }
                 icon={
                   icons.get(listing.id) ??
                   (markerStyle === 'price'
                     ? getExploreMapPriceBadgeIcon(
                         listing.vehicle.pricePerDay,
-                        false,
+                        selectedId === listing.id,
                         isTwoWheeler(listing.vehicle) ? 'two_wheeler' : 'car',
+                        hoveredListingId === listing.id,
                       )
-                    : getRentaraVehiclePinIcon(listing.vehicle.vehicleType, false))
+                    : getRentaraVehiclePinIcon(listing.vehicle.vehicleType, selectedId === listing.id))
                 }
                 onSelect={onSelect}
                 markerRegistry={markerRegistry}
               >
                 <Popup
                   className="rentara-explore-popup"
-                  offset={[0, 8]}
+                  offset={[0, compactVehiclePopup ? 4 : 8]}
                   autoPan
                   keepInView={false}
                   autoPanPaddingTopLeft={[20, 72]}
-                  autoPanPaddingBottomRight={[28, 160]}
-                  minWidth={216}
-                  maxWidth={268}
+                  autoPanPaddingBottomRight={compactVehiclePopup ? [28, 120] : [28, 160]}
+                  minWidth={compactVehiclePopup ? 272 : 216}
+                  maxWidth={compactVehiclePopup ? 312 : 268}
                 >
-                  <Box sx={{ width: '100%', maxWidth: 252, py: 0.25, px: 0.35, boxSizing: 'border-box' }}>
-                    <Box
-                      component="img"
-                      src={listing.vehicle.thumbnailUrl}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      sx={{
-                        width: '100%',
-                        height: { xs: 56, sm: 64 },
-                        objectFit: 'cover',
-                        borderRadius: 0.75,
-                        display: 'block',
-                        mb: 0.5,
-                        bgcolor: 'grey.100',
-                      }}
-                    />
-                    <Typography
-                      fontWeight={700}
-                      sx={{ lineHeight: 1.25, pr: 2, fontSize: 13, letterSpacing: '-0.01em' }}
-                    >
-                      {listing.vehicle.displayName}
-                    </Typography>
-                    <Typography sx={{ mt: 0.35, fontSize: 13, fontWeight: 700, color: 'primary.main' }}>
-                      {formatPeso(listing.vehicle.pricePerDay)}
-                      <Typography component="span" sx={{ fontSize: 11, color: 'text.secondary', fontWeight: 500 }}>
-                        {' '}
-                        / day
-                      </Typography>
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: 'block', mt: 0.25, lineHeight: 1.3, fontSize: 11 }}
-                    >
-                      {listing.vehicle.locationName}
-                    </Typography>
-                    <Stack spacing={0.5} sx={{ mt: 0.75, width: '100%' }}>
-                      <Button
-                        fullWidth
-                        size="small"
-                        variant="contained"
-                        sx={{
-                          bgcolor: PRIMARY,
-                          '&:hover': { bgcolor: '#1647b8' },
-                          borderRadius: 1.25,
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          py: 0.4,
-                          fontSize: 12,
-                        }}
-                        onClick={() => onViewDetails(listing)}
-                      >
-                        View details
-                      </Button>
-                      {onShowInListing ? (
-                        <ShowInListingButton listing={listing} onShowInListing={onShowInListing} />
-                      ) : null}
-                    </Stack>
-                    {onNearbyNavigate ? (
-                      <NearbyVehicleNav
-                        current={listing}
-                        listings={listings}
-                        onNavigate={onNearbyNavigate}
-                      />
-                    ) : null}
-                  </Box>
+                  <MapVehicleLeafletPopupContent
+                    listing={listing}
+                    listings={listings}
+                    compactVehiclePopup={compactVehiclePopup}
+                    onViewDetails={onViewDetails}
+                    onShowInListing={onShowInListing}
+                    onNearbyNavigate={onNearbyNavigate}
+                  />
                 </Popup>
               </VehicleMarker>
             ))

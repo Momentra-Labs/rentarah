@@ -169,9 +169,10 @@ export default function MainLayout() {
                 ? 'max(8px, env(safe-area-inset-bottom, 0px))'
                 : immersiveMapMobile
                   ? {
+                      /** Map is full-bleed edge-to-edge; no `12px` floor (that caused a gap under the map on desktop). */
                       xs: 'env(safe-area-inset-bottom, 0px)',
                       sm: 'env(safe-area-inset-bottom, 0px)',
-                      md: 'max(12px, env(safe-area-inset-bottom))',
+                      md: 'env(safe-area-inset-bottom, 0px)',
                     }
                   : {
                       xs: MOBILE_BOTTOM_NAV_SX_PB,

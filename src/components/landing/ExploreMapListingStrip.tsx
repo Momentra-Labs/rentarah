@@ -17,7 +17,8 @@ import {
   useTheme,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import type { SxProps, Theme } from '@mui/material/styles'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
 import { formatPeso } from '../../utils/formatCurrency'
@@ -48,6 +49,12 @@ export type ExploreMapListingStripProps = {
   layout?: 'panel' | 'minimal'
   /** Horizontal strip (default) or scrollable column for sidebar / bottom sheet. */
   orientation?: 'horizontal' | 'vertical'
+  /** Extra controls in the panel header row (e.g. “vehicles on map” on desktop /map). */
+  headerExtra?: ReactNode
+  /** Desktop /map: drive map marker hover emphasis from listing cards. */
+  onListingHover?: (listingId: string | null) => void
+  /** Desktop /map sidebar: `'outer'` lets the **column** scroll (filters + listings); `'inner'` keeps listing cards in their own scrollbar. */
+  listScrollMode?: 'inner' | 'outer'
 }
 
 /**
@@ -64,6 +71,9 @@ export default function ExploreMapListingStrip({
   listingScrollRequest = 0,
   layout = 'panel',
   orientation = 'horizontal',
+  headerExtra,
+  onListingHover,
+  listScrollMode = 'inner',
 }: ExploreMapListingStripProps) {
   const theme = useTheme()
   const isCompact = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
@@ -83,6 +93,9 @@ export default function ExploreMapListingStrip({
     setCanPrev(scrollLeft > SCROLL_EDGE_EPS)
     setCanNext(scrollLeft < scrollWidth - clientWidth - SCROLL_EDGE_EPS)
   }, [orientation])
+
+  const listingsScrollOuterParent =
+    listScrollMode === 'outer' && orientation === 'vertical' && layout === 'panel'
 
   useEffect(() => {
     if (!autoScrollToSelected || !selectedId || !scrollRef.current) return
@@ -155,6 +168,8 @@ export default function ExploreMapListingStrip({
         data-listing-id={l.id}
         elevation={0}
         onClick={() => onSelect(l.id)}
+        onMouseEnter={() => onListingHover?.(l.id)}
+        onMouseLeave={() => onListingHover?.(null)}
         sx={{
           flex: '0 0 auto',
           width: orientation === 'vertical' ? '100%' : { xs: 'min(280px, 82vw)', sm: 248 },
@@ -197,6 +212,7 @@ export default function ExploreMapListingStrip({
             flexShrink: 0,
             bgcolor: 'grey.100',
             overflow: 'hidden',
+            borderRadius: '8px',
           }}
         >
           <Box
@@ -209,6 +225,7 @@ export default function ExploreMapListingStrip({
               height: '100%',
               objectFit: 'cover',
               display: 'block',
+              borderRadius: '8px',
             }}
           />
         </Box>
@@ -352,21 +369,65 @@ export default function ExploreMapListingStrip({
     WebkitOverflowScrolling: 'touch' as const,
     overscrollBehaviorY: 'contain' as const,
     scrollbarWidth: 'thin' as const,
+    scrollbarGutter: 'stable',
   }
 
   const carousel =
     orientation === 'vertical' ? (
-      <Box
-        ref={scrollRef}
-        sx={{
-          ...verticalScrollSx,
-          px: layout === 'panel' ? { xs: 1, sm: 1.5 } : 0,
-          pb: layout === 'panel' ? { xs: 1.5, sm: 2 } : 0.5,
-          pt: layout === 'panel' ? 0 : 0,
-        }}
-      >
-        {cards}
-      </Box>
+      listingsScrollOuterParent ? (
+        <Box
+          ref={scrollRef}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            py: 0.5,
+            px: layout === 'panel' ? { xs: 1, sm: 1.5 } : 0,
+            pb: layout === 'panel' ? { xs: 1.5, sm: 2 } : 0.5,
+            width: '100%',
+          }}
+        >
+          {cards}
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            position: 'relative',
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            ref={scrollRef}
+            sx={{
+              ...verticalScrollSx,
+              px: layout === 'panel' ? { xs: 1, sm: 1.5 } : 0,
+              pb: layout === 'panel' ? { xs: 1.5, sm: 2 } : 0.5,
+              pt: layout === 'panel' ? 0 : 0,
+            }}
+          >
+            {cards}
+          </Box>
+          {layout === 'panel' ? (
+            <Box
+              aria-hidden
+              sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 48,
+                pointerEvents: 'none',
+                background: (t) =>
+                  `linear-gradient(to top, ${t.palette.background.paper} 12%, ${alpha(t.palette.background.paper, 0)})`,
+              }}
+            />
+          ) : null}
+        </Box>
+      )
     ) : isCompact ? (
     <Box sx={{ position: 'relative', mx: 0, px: 0, pb: 0.5 }}>
       <IconButton
@@ -440,19 +501,35 @@ export default function ExploreMapListingStrip({
     )
   }
 
-  const panelPaperSx =
+  const panelPaperSx: SxProps<Theme> =
     orientation === 'vertical'
-      ? {
-          borderRadius: 3,
-          borderColor: 'divider',
-          bgcolor: 'background.paper',
-          overflow: 'hidden',
-          boxShadow: `0 2px 12px ${alpha('#000', 0.04)}`,
-          flex: 1,
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }
+      ? listingsScrollOuterParent
+        ? {
+            borderRadius: 3,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            overflow: 'hidden',
+            boxShadow: `0 2px 12px ${alpha('#000', 0.04)}`,
+            flex: 'none',
+            width: '100%',
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }
+        : {
+            borderRadius: 3,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            overflow: 'hidden',
+            boxShadow: `0 2px 12px ${alpha('#000', 0.04)}`,
+            flex: '1 1 0%',
+            minHeight: 0,
+            height: '100%',
+            width: '100%',
+            alignSelf: 'stretch',
+            display: 'flex',
+            flexDirection: 'column',
+          }
       : {
           borderRadius: 3,
           borderColor: 'divider',
@@ -480,13 +557,16 @@ export default function ExploreMapListingStrip({
         <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
           {title}
         </Typography>
-        <Chip
-          size="small"
-          color="primary"
-          variant="outlined"
-          label={`${listings.length} ${listings.length === 1 ? 'listing' : 'listings'}`}
-          sx={{ fontWeight: 700 }}
-        />
+        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" sx={{ justifyContent: 'flex-end', gap: 1 }}>
+          {headerExtra}
+          <Chip
+            size="small"
+            color="primary"
+            variant="outlined"
+            label={`${listings.length} ${listings.length === 1 ? 'listing' : 'listings'}`}
+            sx={{ fontWeight: 700 }}
+          />
+        </Stack>
       </Stack>
       {orientation === 'vertical' ? (
         carousel

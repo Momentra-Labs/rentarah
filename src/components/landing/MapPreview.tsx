@@ -8,6 +8,7 @@ import ExploreMapFallbackList from '../map/ExploreMapFallbackList'
 import { useNearViewport } from '../../hooks/useNearViewport'
 import { useGeolocationStore } from '../../store/useGeolocationStore'
 import type { Car } from '../../types'
+import { EXPLORE_MAP_CLUSTER_TUNING } from '../../utils/exploreMapClusterDefaults'
 import {
   carsToExploreListings,
   filterExploreListings,
@@ -192,6 +193,7 @@ export default function MapPreview({ cars }: MapPreviewProps) {
               <Suspense fallback={suspenseFallback}>
                 <Box sx={{ height: PREVIEW_HEIGHT, position: 'relative' }}>
                   <ExploreRentalsMapLazy
+                    {...EXPLORE_MAP_CLUSTER_TUNING}
                     listings={listingsForMap}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
@@ -200,7 +202,6 @@ export default function MapPreview({ cars }: MapPreviewProps) {
                     scrollWheelZoom={false}
                     enableFlyTo={false}
                     markerStyle="vehicle"
-                    enableClustering={false}
                   />
                   {overlayAndCtas}
                 </Box>

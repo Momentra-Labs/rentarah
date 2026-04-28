@@ -1,4 +1,5 @@
 import { isNationalLocationQuery } from '../constants/geo'
+import { resolveCityHallCoords } from '../data/ncrCityHalls'
 import type { Car } from '../types'
 import { haversineKm, type LatLng } from './distance'
 import { getCarPickupLatLng } from './mapPickupLocation'
@@ -131,10 +132,28 @@ export function applyExploreMapFilters(
 }
 
 /**
- * Radius for strict geographic “nearby” helpers (e.g. future tight-radius UX). Map prev/next
- * uses {@link listingsSortedByDistanceFrom} so metro / country-wide pins still cycle sensibly.
+ * Radius for strict geographic “nearby” helpers (e.g. future tight-radius UX).
+ * Map prev/next uses {@link listingsInSamePickupCitySorted}.
  */
 export const NEARBY_LISTINGS_RADIUS_KM = 6
+
+function samePickupCityHall(a: ExploreMapListing, b: ExploreMapListing): boolean {
+  const ca = resolveCityHallCoords(a.vehicle.locationName)
+  const cb = resolveCityHallCoords(b.vehicle.locationName)
+  return ca.lat === cb.lat && ca.lng === cb.lng
+}
+
+/**
+ * Listings whose pickup location maps to the same hub as `center` ({@link resolveCityHallCoords}),
+ * ordered by distance from `center` for map prev/next.
+ */
+export function listingsInSamePickupCitySorted(
+  center: ExploreMapListing,
+  listings: ExploreMapListing[],
+): ExploreMapListing[] {
+  const inCity = listings.filter((l) => samePickupCityHall(center, l))
+  return listingsSortedByDistanceFrom(center, inCity)
+}
 
 /**
  * All listings within `radiusKm` of `center` (inclusive), sorted by distance ascending (ties by id).
@@ -157,8 +176,8 @@ export function listingsWithinRadiusKm(
 }
 
 /**
- * Every listing on the current map (same filtered set), ordered by distance from `center`.
- * Used for Previous / Next so users can step through all visible pins, not only those within a few km.
+ * Every listing in `listings`, ordered by distance from `center` (ties by id).
+ * Used by {@link listingsInSamePickupCitySorted}; also useful for generic distance ordering.
  */
 export function listingsSortedByDistanceFrom(
   center: ExploreMapListing,

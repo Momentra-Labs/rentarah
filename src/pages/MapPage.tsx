@@ -25,7 +25,7 @@ import {
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import ExploreMapListingStrip from '../components/landing/ExploreMapListingStrip'
@@ -36,15 +36,16 @@ import ExploreMapFallbackList from '../components/map/ExploreMapFallbackList'
 import { MapPageResponsiveSplit } from '../components/map/MapPageLayouts'
 import { useCarsStore } from '../store/useCarsStore'
 import { useGeolocationStore } from '../store/useGeolocationStore'
+import { EXPLORE_MAP_CLUSTER_TUNING } from '../utils/exploreMapClusterDefaults'
 import {
   applyExploreMapFilters,
   carsToExploreListings,
-  listingsSortedByDistanceFrom,
+  listingsInSamePickupCitySorted,
   type ExploreMapFilterMode,
   type ExploreMapListing,
 } from '../utils/exploreMapListings'
 
-/** Same Leaflet surface as landing `MapPreview` — one chunk; clustering toggles by breakpoint only. */
+/** Same Leaflet surface as landing `MapPreview` — one chunk; map tuning {@link EXPLORE_MAP_CLUSTER_TUNING}. */
 const ExploreRentalsMapLazy = lazy(() => import('../components/landing/ExploreRentalsMapInner'))
 
 function formatPesoShort(n: number): string {
@@ -77,8 +78,12 @@ export default function MapPage() {
   const [mapFocusNonce, setMapFocusNonce] = useState(0)
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false)
   const [listingsDrawerOpen, setListingsDrawerOpen] = useState(false)
+  /** One subtle vibrate when the listings sheet nears fully expanded while dragging */
+  const listingsDrawerFullSnapHapticGatedRef = useRef(false)
   /** Desktop: increment to force the map to fit all filtered pins in view. */
   const [fitBoundsNonce, setFitBoundsNonce] = useState(0)
+  /** Desktop: listing-card hover syncs map marker styling / z-order. */
+  const [hoveredListingId, setHoveredListingId] = useState<string | null>(null)
 
   /**
    * Map-only overlays must stay **below** `theme.zIndex.drawer` (1200). Leaflet uses ~500–650;
@@ -98,6 +103,21 @@ export default function MapPage() {
   useLayoutEffect(() => {
     window.scrollTo(0, 0)
   }, [location.pathname, location.key])
+
+  /** Anchored split-panel: lock document scroll on desktop /map so only the tools column scrolls. */
+  useEffect(() => {
+    if (isCompactLayout || location.pathname !== '/map') return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
+  }, [isCompactLayout, location.pathname])
 
   const handleMapSelect = useCallback((id: string) => {
     setSelectionFromListingStrip(false)
@@ -190,11 +210,17 @@ export default function MapPage() {
     }
   }, [filtered, selectedId])
 
+  useEffect(() => {
+    if (hoveredListingId && !filtered.some((l) => l.id === hoveredListingId)) {
+      setHoveredListingId(null)
+    }
+  }, [filtered, hoveredListingId])
+
   const handleNearbyNavigate = useCallback(
     (dir: 'next' | 'prev') => {
       const cur = filtered.find((l) => l.id === selectedId)
       if (!cur) return
-      const ring = listingsSortedByDistanceFrom(cur, filtered)
+      const ring = listingsInSamePickupCitySorted(cur, filtered)
       if (ring.length < 2) return
       const i = ring.findIndex((l) => l.id === selectedId)
       if (i < 0) return
@@ -205,6 +231,18 @@ export default function MapPage() {
     },
     [filtered, selectedId, handleMapSelect],
   )
+
+  /** When the listings swipeable sheet is dragged near fully open, give a light haptic cue (supported devices). */
+  const onListingsDrawerPaperTouchMove = useCallback((e: React.TouchEvent<HTMLElement>) => {
+    if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return
+    const top = e.currentTarget.getBoundingClientRect().top
+    const frac = top / Math.max(window.innerHeight, 320)
+    if (frac <= 0.065 && !listingsDrawerFullSnapHapticGatedRef.current) {
+      listingsDrawerFullSnapHapticGatedRef.current = true
+      navigator.vibrate(14)
+    }
+    if (frac > 0.2) listingsDrawerFullSnapHapticGatedRef.current = false
+  }, [])
 
   const onViewDetails = (l: ExploreMapListing) => navigate(`/cars/${l.id}`)
 
@@ -301,9 +339,12 @@ export default function MapPage() {
                 fontSize: '0.8125rem',
                 color: 'text.secondary',
                 '&.Mui-selected': {
-                  bgcolor: 'common.white',
-                  color: 'primary.main',
-                  boxShadow: (th) => `0 1px 4px ${alpha(th.palette.common.black, 0.06)}`,
+                  bgcolor: (th) => alpha(th.palette.primary.main, 0.14),
+                  color: 'primary.dark',
+                  fontWeight: 800,
+                  border: '1px solid',
+                  borderColor: 'primary.main',
+                  boxShadow: (th) => `0 1px 4px ${alpha(th.palette.primary.main, 0.22)}`,
                 },
               },
             }),
@@ -409,7 +450,47 @@ export default function MapPage() {
                 mr: 0.25,
               },
             }
-          : undefined
+          : {
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                alignItems: 'center',
+                bgcolor: 'background.paper',
+                transition: (t) =>
+                  t.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
+                '& fieldset': { borderColor: 'divider', borderWidth: 1 },
+                '&:hover fieldset': {
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.35),
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                  borderWidth: 1,
+                },
+                '&.Mui-focused': {
+                  boxShadow: (t) => `0 0 0 2px ${alpha(t.palette.primary.main, 0.35)}`,
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                py: 1.15,
+                lineHeight: 1.5,
+                display: 'block',
+                fontSize: '0.875rem',
+                letterSpacing: '-0.01em',
+                color: 'text.primary',
+                '&::placeholder': {
+                  color: 'text.secondary',
+                  opacity: 1,
+                  lineHeight: 'inherit',
+                },
+              },
+              '& .MuiInputAdornment-root': {
+                ml: 0.5,
+                mr: 0,
+                alignSelf: 'center',
+                height: 'auto',
+                maxHeight: 'none',
+                '& .MuiSvgIcon-root': { display: 'block' },
+              },
+            }
       }
     />
   )
@@ -468,19 +549,32 @@ export default function MapPage() {
         valueLabelDisplay="auto"
         valueLabelFormat={(v) => formatPesoShort(v)}
         disableSwap
-        sx={{
-          '& .MuiSlider-thumb': { width: 18, height: 18 },
-          '& .MuiSlider-track': { height: 6, borderRadius: 3 },
-          '& .MuiSlider-rail': { height: 6, borderRadius: 3, opacity: 0.35 },
-        }}
+        sx={(t) => ({
+          '& .MuiSlider-thumb': {
+            width: { xs: 18, md: 14 },
+            height: { xs: 18, md: 14 },
+            bgcolor: 'common.white',
+            border: '1px solid',
+            borderColor: alpha(t.palette.grey[500], 0.45),
+            boxShadow: '0 2px 6px rgba(15,23,42,0.12)',
+            transition: t.transitions.create(['box-shadow', 'border-color'], { duration: 160 }),
+            '&:hover, &.Mui-focusVisible, &.Mui-active': {
+              boxShadow: '0 2px 10px rgba(15,23,42,0.18)',
+              borderColor: alpha(t.palette.primary.main, 0.55),
+            },
+          },
+          '& .MuiSlider-track': {
+            height: { xs: 6, md: 4 },
+            borderRadius: 2,
+            border: 'none',
+          },
+          '& .MuiSlider-rail': {
+            height: { xs: 6, md: 4 },
+            borderRadius: 2,
+            opacity: { xs: 0.35, md: 0.28 },
+          },
+        })}
       />
-    </Stack>
-  )
-
-  const locationPriceBlock = (
-    <Stack spacing={2}>
-      {!isCompactLayout ? locationSearchField : null}
-      {priceFilterCore}
     </Stack>
   )
 
@@ -509,6 +603,7 @@ export default function MapPage() {
         <Suspense fallback={mapSuspense}>
           <Box sx={{ height: '100%' }}>
             <ExploreRentalsMapLazy
+              {...EXPLORE_MAP_CLUSTER_TUNING}
               listings={filtered}
               selectedId={selectedId}
               onSelect={handleMapSelect}
@@ -518,11 +613,9 @@ export default function MapPage() {
               mapFocusNonce={mapFocusNonce}
               onNearbyNavigate={handleNearbyNavigate}
               markerStyle="price"
-              enableClustering={isCompactLayout}
               fitBoundsRequestId={fitBoundsNonce}
-              clusterChunkDelay={isCompactLayout ? 50 : 96}
-              clusterAnimations={isCompactLayout}
-              clusterRadius={isCompactLayout ? 52 : 68}
+              hoveredListingId={hoveredListingId}
+              compactVehiclePopup={isCompactLayout}
             />
           </Box>
         </Suspense>
@@ -538,18 +631,25 @@ export default function MapPage() {
     /** `1 1 0` + `minHeight: 0` fills the split-pane column; plain `flex: 1` + only abspos children often yields ~0 height on desktop. */
     flex: '1 1 0px',
     minWidth: 0,
-    /** Taller map canvas on desktop (same inner component as landing; more room than preview). */
-    minHeight: { xs: 0, md: 560 },
-    /** `overflow: hidden` + `border-radius` on wide flex panes can blank Leaflet raster tiles in Chrome; clip only on mobile. */
-    overflow: { xs: 'hidden', md: 'visible' },
+    /**
+     * Desktop split: map uses the full map column (remaining width after the tools sidebar).
+     * Mobile: column height comes from the flex chain; no fixed max so the map can grow with the layout.
+     */
+    minHeight: { xs: 0, md: 0 },
+    maxHeight: { xs: 'none', md: '100%' },
+    height: { xs: 'auto', md: '100%' },
+    maxWidth: { xs: 'none', md: '100%' },
+    width: '100%',
+    alignSelf: { md: 'stretch' },
+    mx: { xs: 0, md: 0 },
+    /** Clip tiles/markers to the chrome; desktop uses square corners so hidden overflow does not blank raster tiles. */
+    overflow: 'hidden',
     border: { xs: 'none', md: '1px solid' },
     borderColor: 'divider',
     boxShadow: { xs: 'none', md: `0 12px 40px ${alpha('#000', 0.07)}` },
     bgcolor: { xs: 'grey.50', md: 'common.white' },
     scrollMarginTop: { xs: 72, md: 88 },
-    /** Sharp corners on desktop avoid Leaflet + rounded overflow clipping raster tiles in Chrome. */
     borderRadius: 0,
-    width: '100%',
   }
 
   const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -563,34 +663,81 @@ export default function MapPage() {
         flexDirection: 'column',
         bgcolor: 'background.default',
         width: '100%',
+        height: { xs: 'auto', md: '100%' },
+        maxHeight: { xs: 'none', md: '100%' },
+        overflow: { xs: 'visible', md: 'hidden' },
       }}
     >
       <MapPageResponsiveSplit
         isMobile={isCompactLayout}
         sidebar={
           <Stack
+            component="aside"
+            aria-label="Map filters and listings"
             sx={{
               display: { xs: 'none', md: 'flex' },
-              width: { md: 'min(420px, 32vw)' },
-              maxWidth: { md: 460 },
+              flexDirection: 'column',
+              minHeight: { md: 0 },
+              width: { md: 'min(420px, max(360px, 30vw))' },
+              maxWidth: { md: 440 },
+              minWidth: { md: 360 },
               flexShrink: 0,
+              height: { md: '100%' },
+              maxHeight: { md: '100%' },
+              overflow: { md: 'hidden' },
               borderRight: '1px solid',
               borderColor: 'divider',
               bgcolor: 'background.paper',
-              minHeight: 0,
-              borderRadius: { md: '20px 0 0 20px' },
-              boxShadow: { md: (t) => `4px 0 24px ${alpha(t.palette.common.black, 0.05)}` },
-              zIndex: 0,
+              borderRadius: 0,
+              boxShadow: 'none',
+              zIndex: 1,
             }}
           >
-            <Box sx={{ flexShrink: 0, p: 2, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-              <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
+            {/*
+              Single scroll column: search, filters, header, price, listings — matches mobile “everything
+              scrolls” ergonomics and avoids nested scroll regions fighting each other.
+            */}
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarGutter: 'stable',
+                display: 'flex',
+                flexDirection: 'column',
+                px: { md: 3 },
+                pt: { md: 2 },
+                pb: { md: 2.5 },
+              }}
+            >
+              <Box
+                sx={{
+                  flexShrink: 0,
+                  pb: { md: 2 },
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                }}
+              >
+                {locationSearchField}
+                <Box sx={{ mt: 1.75 }}>{typeToggle}</Box>
+              </Box>
+              <Stack
+                direction="row"
+                alignItems="flex-start"
+                justifyContent="space-between"
+                gap={1}
+                sx={{ flexShrink: 0, mt: { md: 2.5 } }}
+              >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <PageHeader
                     overline="Explore"
                     title="Rental map"
                     subtitle="Filter by vehicle type, price, and area. Your location (when shared) powers Nearby and centers the map."
                     dense
+                    variant="mapSidebar"
                   />
                 </Box>
                 <Tooltip title="Fit map to filtered results">
@@ -614,42 +761,31 @@ export default function MapPage() {
                   </span>
                 </Tooltip>
               </Stack>
-              <Chip
-                size="small"
-                color="primary"
-                variant="outlined"
-                label={`${filtered.length} ${filtered.length === 1 ? 'vehicle' : 'vehicles'} on map`}
-                sx={{ mt: 1.5, fontWeight: 700 }}
-              />
-            </Box>
-            <Stack spacing={2} sx={{ p: 2, flexShrink: 0 }}>
-              {typeToggle}
-              {locationPriceBlock}
-            </Stack>
-            <Box
-              id="explore-map-listing-strip"
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                px: 2,
-                pb: 2,
-                pt: 0,
-                overflow: 'hidden',
-              }}
-            >
-              <ExploreMapListingStrip
-                listings={filtered}
-                selectedId={selectedId}
-                onSelect={handleListingStripSelect}
-                onViewDetails={onViewDetails}
-                onViewOnMap={handleViewOnMap}
-                autoScrollToSelected={selectionFromListingStrip}
-                listingScrollRequest={listingScrollRequest}
-                title="Listings on this map"
-                orientation="vertical"
-              />
+              <Box sx={{ mt: 2, flexShrink: 0 }}>{priceFilterCore}</Box>
+              <Box id="explore-map-listing-strip" sx={{ mt: 2, flexShrink: 0, minWidth: 0 }}>
+                <ExploreMapListingStrip
+                  listings={filtered}
+                  selectedId={selectedId}
+                  onSelect={handleListingStripSelect}
+                  onViewDetails={onViewDetails}
+                  onViewOnMap={handleViewOnMap}
+                  autoScrollToSelected={selectionFromListingStrip}
+                  listingScrollRequest={listingScrollRequest}
+                  title="Listings on this map"
+                  orientation="vertical"
+                  listScrollMode="outer"
+                  onListingHover={setHoveredListingId}
+                  headerExtra={
+                    <Chip
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      label={`${filtered.length} ${filtered.length === 1 ? 'vehicle' : 'vehicles'} on map`}
+                      sx={{ fontWeight: 700 }}
+                    />
+                  }
+                />
+              </Box>
             </Box>
           </Stack>
         }
@@ -685,8 +821,10 @@ export default function MapPage() {
                     borderRadius: '16px',
                     border: '1px solid',
                     borderColor: 'divider',
-                    bgcolor: 'common.white',
-                    boxShadow: (t) => `0 8px 32px ${alpha(t.palette.common.black, 0.08)}`,
+                    bgcolor: alpha('#ffffff', 0.86),
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    boxShadow: (t) => `0 8px 32px ${alpha(t.palette.common.black, 0.09)}`,
                   }}
                 >
                   {locationSearchField}
@@ -698,9 +836,12 @@ export default function MapPage() {
                       sx={{
                         position: 'relative',
                         flexShrink: 0,
-                        alignSelf: 'stretch',
-                        width: 48,
+                        alignSelf: 'center',
+                        width: 44,
+                        height: 44,
+                        minWidth: 44,
                         minHeight: 44,
+                        p: 0,
                         borderRadius: '12px',
                         border: '1px solid',
                         borderColor: (t) => alpha(t.palette.primary.main, 0.22),
@@ -773,7 +914,7 @@ export default function MapPage() {
                 }}
               >
                 <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
-                  Prices on pins · clusters show lowest rate · tap for details
+                  Prices on pins · tap a pin for details
                 </Typography>
               </Box>
             ) : null}
@@ -802,19 +943,29 @@ export default function MapPage() {
                 }}
               >
                 <Typography variant="caption" fontWeight={700} sx={{ color: 'inherit' }}>
-                  Prices on pins · clusters show lowest rate · tap for details
+                  Prices on pins · tap a pin for details
                 </Typography>
               </Box>
             ) : null}
 
             <Box id="explore-map-canvas" sx={mapChromeSx}>
-              <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, position: 'relative' }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  minWidth: 0,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  alignSelf: 'stretch',
+                }}
+              >
                 <Box
                   sx={{
                     position: 'absolute',
                     inset: 0,
                     zIndex: 2,
-                    '& .leaflet-container': { borderRadius: 0 },
+                    overflow: 'hidden',
+                    '& .leaflet-container': { height: '100%', width: '100%', borderRadius: 0 },
                   }}
                 >
                   {mapBody}
@@ -858,12 +1009,14 @@ export default function MapPage() {
               >
                 <Box
                   sx={{
-                    width: 40,
-                    height: 5,
-                    borderRadius: 3,
-                    bgcolor: 'divider',
+                    width: 52,
+                    height: 7,
+                    borderRadius: 999,
+                    bgcolor: (t) => alpha(t.palette.grey[800], 0.32),
                     mx: 'auto',
-                    mb: 1.25,
+                    mb: 1.35,
+                    flexShrink: 0,
+                    boxShadow: (t) => `0 0 0 2px ${alpha(t.palette.common.white, 0.7)}`,
                   }}
                 />
                 <Typography variant="h6" fontWeight={800} sx={{ textAlign: 'center', letterSpacing: '-0.02em' }}>
@@ -939,13 +1092,23 @@ export default function MapPage() {
             <SwipeableDrawer
               anchor="bottom"
               open={listingsDrawerOpen}
-              onClose={() => setListingsDrawerOpen(false)}
-              onOpen={() => setListingsDrawerOpen(true)}
+              onClose={() => {
+                listingsDrawerFullSnapHapticGatedRef.current = false
+                setListingsDrawerOpen(false)
+              }}
+              onOpen={() => {
+                listingsDrawerFullSnapHapticGatedRef.current = false
+                setListingsDrawerOpen(true)
+              }}
               disableBackdropTransition={!iOS}
               disableDiscovery={iOS}
               hideBackdrop
               ModalProps={{ keepMounted: true }}
               PaperProps={{
+                onTouchMove: onListingsDrawerPaperTouchMove as React.TouchEventHandler<HTMLDivElement>,
+                onTouchStart: () => {
+                  listingsDrawerFullSnapHapticGatedRef.current = false
+                },
                 sx: {
                   borderTopLeftRadius: 20,
                   borderTopRightRadius: 20,
@@ -965,14 +1128,15 @@ export default function MapPage() {
             >
               <Box
                 sx={{
-                  width: 44,
-                  height: 5,
-                  borderRadius: 3,
-                  bgcolor: 'divider',
+                  width: 52,
+                  height: 7,
+                  borderRadius: 999,
+                  bgcolor: (t) => alpha(t.palette.grey[800], 0.32),
                   mx: 'auto',
                   mt: 1,
                   mb: 0.5,
                   flexShrink: 0,
+                  boxShadow: (t) => `0 0 0 2px ${alpha(t.palette.common.white, 0.7)}`,
                 }}
               />
               <Stack
@@ -1015,6 +1179,7 @@ export default function MapPage() {
                   layout="minimal"
                   orientation="vertical"
                   title=""
+                  onListingHover={setHoveredListingId}
                 />
               </Box>
             </SwipeableDrawer>

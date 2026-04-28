@@ -51,8 +51,7 @@ export default function RentaraLoadingLogo() {
         <svg
           viewBox="0 0 120 148"
           width="100%"
-          height="auto"
-          style={{ display: 'block' }}
+          style={{ display: 'block', height: 'auto' }}
           aria-hidden
         >
           <defs>
@@ -78,10 +77,10 @@ export default function RentaraLoadingLogo() {
           <motion.circle
             cx="60"
             cy="56"
-            r="19.5"
             fill="none"
             stroke={alpha(primary, 0.35)}
             strokeWidth="1.25"
+            initial={{ r: 19.5, opacity: 0.35 }}
             animate={
               floatActive
                 ? { r: [19.5, 21.2, 19.5], opacity: [0.35, 0.65, 0.35] }
@@ -140,7 +139,6 @@ export default function RentaraLoadingLogo() {
                 key={delay}
                 cx="60"
                 cy="135"
-                r="3"
                 fill="none"
                 stroke={primarySoft}
                 strokeWidth="2"

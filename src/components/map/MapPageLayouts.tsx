@@ -41,8 +41,8 @@ export function MobileMapLayout({ children }: { children: ReactNode }) {
 }
 
 /**
- * Desktop /map: fixed-width sidebar + flexible map column (`flex: 1 1 0` + `minHeight: 0`) so
- * Leaflet always gets a non-zero sized box after layout.
+ * Desktop /map: row split — **sidebar shell** (filters/listings width comes from sidebar content)
+ * vs **map shell** (`flex: 1 1 0` + `minHeight: 0`) so Leaflet always gets a non-zero box.
  */
 export function DesktopMapLayout({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) {
   return (
@@ -50,24 +50,51 @@ export function DesktopMapLayout({ sidebar, children }: { sidebar: ReactNode; ch
       sx={{
         flex: 1,
         minHeight: 0,
+        height: '100%',
+        /** Match `main` vertical padding: Navbar 64px + bottom safe-area only (no extra 12px on /map). */
+        maxHeight: 'min(100%, calc(100dvh - 64px - env(safe-area-inset-bottom, 0px)))',
         width: '100%',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'stretch',
         alignSelf: 'stretch',
+        overflow: 'hidden',
         bgcolor: 'grey.50',
       }}
     >
       <MapLayoutResizePulse />
-      {sidebar}
+      {/* Sidebar column: filters + listing strip — does not shrink in the flex row */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          flexShrink: 0,
+          minHeight: 0,
+          alignSelf: 'stretch',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: (t) => t.zIndex.appBar - 5,
+        }}
+      >
+        {sidebar}
+      </Box>
+      {/* Map column — takes all remaining horizontal space */}
       <Box
         sx={{
           flex: '1 1 0px',
-          minWidth: { md: 'min(520px, 56vw)' },
+          minWidth: { md: 'min(360px, 40vw)' },
           minHeight: 0,
+          /**
+           * Fill the split row; cap to dynamic viewport minus Navbar (~64px) and bottom safe-area only
+           * (aligned with `MainLayout` `main` padding on `/map`).
+           */
+          alignSelf: 'stretch',
+          height: '100%',
+          maxHeight: 'calc(100dvh - 64px - env(safe-area-inset-bottom, 0px))',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
+          overflow: 'hidden',
           zIndex: (t) => t.zIndex.appBar - 10,
         }}
       >
