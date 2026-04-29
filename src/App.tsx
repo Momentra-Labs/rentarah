@@ -6,6 +6,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import BookingPage from './pages/BookingPage'
 import CarDetailPage from './pages/CarDetailPage'
 import ChatPage from './pages/ChatPage'
+import CompleteProfilePage from './pages/CompleteProfilePage'
 import DashboardPage from './pages/DashboardPage'
 import HostDashboardPage from './pages/HostDashboardPage'
 import HostInvitePage from './pages/HostInvitePage'
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/search/model" element={<VehicleModelSearchPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/become-a-host" element={<HostInvitePage />} />
+          <Route path="/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/cars/:id" element={<CarDetailRoute />} />
           <Route
             path="/booking/:carId"

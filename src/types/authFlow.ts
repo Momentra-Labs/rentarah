@@ -5,4 +5,12 @@ export type AuthLocationState = {
   authTab?: 'login' | 'register'
   /** After sign-in/register, continue to checkout for this vehicle. */
   pendingBookCarId?: string
+  /** When opening Register, preselect this role (e.g. Host from /become-a-host); user may change. */
+  defaultAccountRole?: 'renter' | 'host' | 'both'
+}
+
+/** Passed to `/complete-profile` — resume booking or deep link after onboarding. */
+export type CompleteProfileLocationState = {
+  from?: string
+  pendingBookCarId?: string | null
 }

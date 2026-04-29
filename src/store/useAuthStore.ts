@@ -4,9 +4,10 @@ import { create } from 'zustand'
 import { signOutFirebaseIfAny } from '../lib/firebaseGoogle'
 
 import { DEMO_USER_ID } from '../data/mockUsers'
-import type { AuthUser, StoredUser } from '../types'
+import type { AuthUser, StoredUser, AccountRole } from '../types'
 
-/** Second demo account — SSO mock; not valid for password login. */
+/** @deprecated Use {@link AccountRole} from `../types` */
+export type RegisterAccountRole = AccountRole
 export const MOCK_GOOGLE_USER_ID = 'user_google_mock'
 const MOCK_GOOGLE_OAUTH_HASH = '__oauth_google_mock__'
 
@@ -26,6 +27,7 @@ function demoSeedUser(): StoredUser {
     isHost: true,
     avatar: 'CR',
     createdAt: new Date().toISOString(),
+    accountRole: 'both',
   }
 }
 
@@ -37,10 +39,11 @@ function googleMockSeedUser(): StoredUser {
     firstName: 'Alex',
     lastName: 'Santos',
     phone: '+639181112233',
-    licenseNumber: '',
+    licenseNumber: 'MOCK000',
     isHost: false,
     avatar: 'AS',
     createdAt: new Date().toISOString(),
+    accountRole: 'renter',
   }
 }
 
@@ -64,14 +67,17 @@ function migrateUsers(users: StoredUser[]): StoredUser[] {
         lastName: 'Reyes',
         isHost: true,
         avatar: 'CR',
+        accountRole: 'both',
       } as StoredUser
     }
-    return { ...u, email }
+    return {
+      ...u,
+      email,
+      accountRole: u.accountRole ?? (u.isHost ? 'host' : 'renter'),
+    }
   })
   return Array.from(new Map(mapped.map((u) => [u.id, u])).values())
 }
-
-export type RegisterAccountRole = 'renter' | 'host' | 'both'
 
 export interface RegisterInput {
   firstName: string
@@ -79,6 +85,7 @@ export interface RegisterInput {
   email: string
   password: string
   phone: string
+  licenseNumber: string
   /** Host + list vehicles; both = renter who may also host. */
   accountRole?: RegisterAccountRole
 }
@@ -94,6 +101,7 @@ function stripPassword(u: StoredUser): AuthUser {
     isHost: u.isHost,
     avatar: u.avatar,
     createdAt: u.createdAt,
+    accountRole: u.accountRole,
   }
 }
 
@@ -111,7 +119,11 @@ interface AuthStoreState {
   loginWithFirebaseUser: (profile: AuthUser) => void
   register: (data: RegisterInput) => void
   logout: () => void
-  updateProfile: (data: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'phone' | 'licenseNumber' | 'avatar'>>) => void
+  updateProfile: (
+    data: Partial<
+      Pick<AuthUser, 'firstName' | 'lastName' | 'phone' | 'licenseNumber' | 'avatar' | 'isHost' | 'accountRole'>
+    >,
+  ) => void
   becomeHost: () => void
 }
 
@@ -163,10 +175,11 @@ export const useAuthStore = create<AuthStoreState>()(
           email: data.email.toLowerCase(),
           passwordHash: btoa(data.password),
           phone: data.phone,
-          licenseNumber: '',
+          licenseNumber: data.licenseNumber.trim().toUpperCase(),
           isHost,
           avatar: `${data.firstName[0] ?? '?'}${data.lastName[0] ?? '?'}`.toUpperCase(),
           createdAt: new Date().toISOString(),
+          accountRole: role,
         }
         set((s) => ({
           users: [...s.users, newUser],
@@ -239,6 +252,13 @@ export const useAuthStore = create<AuthStoreState>()(
           const hydratedUser = user
           if (!p?.authProvider || authProvider === 'none') {
             authProvider = users.some((u) => u.id === hydratedUser.id) ? 'credentials' : 'firebase'
+          }
+        }
+
+        if (user !== null && user.accountRole == null && authProvider !== 'firebase') {
+          user = {
+            ...user,
+            accountRole: user.isHost ? 'host' : 'renter',
           }
         }
 

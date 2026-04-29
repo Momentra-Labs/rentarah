@@ -15,8 +15,6 @@ export const accountRoleSchema = z.enum(['renter', 'host', 'both'], {
   message: 'Please select your role to continue.',
 })
 
-export type AccountRole = z.infer<typeof accountRoleSchema>
-
 /** Step 1 of wizard — user must explicitly pick a role (no implicit default). */
 export const registerStepRoleSchema = z.object({
   accountRole: accountRoleSchema,
@@ -41,7 +39,7 @@ export const registerStepPasswordSchema = z
     path: ['confirmPassword'],
   })
 
-/** Step 4 — identity + phone. */
+/** Step 4 — identity + phone + license (required for rentals). */
 export const registerStepProfileSchema = z.object({
   firstName: z.string().min(2, 'First name should be at least 2 characters'),
   lastName: z.string().min(2, 'Last name should be at least 2 characters'),
@@ -49,6 +47,10 @@ export const registerStepProfileSchema = z.object({
     .string()
     .min(1, 'Enter your mobile number')
     .regex(/^(\+63|0)?[0-9]{10,11}$/, 'Use a PH mobile number (10–11 digits after +63 or 0)'),
+  licenseNumber: z
+    .string()
+    .min(3, 'Enter your driver’s license number')
+    .regex(/^[A-Za-z0-9-]+$/, 'Use letters, numbers, or hyphens only'),
 })
 
 /** Canonical stored shape (submission). */
@@ -63,6 +65,10 @@ export const registerFullSchema = z
       .string()
       .min(1)
       .regex(/^(\+63|0)?[0-9]{10,11}$/),
+    licenseNumber: z
+      .string()
+      .min(3)
+      .regex(/^[A-Za-z0-9-]+$/),
     accountRole: accountRoleSchema,
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -74,3 +80,20 @@ export const registerFullSchema = z
 export type RegisterFormValues = Omit<z.infer<typeof registerFullSchema>, 'accountRole'> & {
   accountRole: z.infer<typeof registerFullSchema>['accountRole'] | ''
 }
+
+/** Post–Google / incomplete OAuth — same bar as registration profile + role. */
+export const completeProfileSchema = z.object({
+  firstName: z.string().min(2, 'First name should be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name should be at least 2 characters'),
+  phone: z
+    .string()
+    .min(1, 'Enter your mobile number')
+    .regex(/^(\+63|0)?[0-9]{10,11}$/, 'Use a PH mobile number (10–11 digits after +63 or 0)'),
+  licenseNumber: z
+    .string()
+    .min(3, 'Enter your driver’s license number')
+    .regex(/^[A-Za-z0-9-]+$/, 'Use letters, numbers, or hyphens only'),
+  accountRole: accountRoleSchema,
+})
+
+export type CompleteProfileFormValues = z.infer<typeof completeProfileSchema>

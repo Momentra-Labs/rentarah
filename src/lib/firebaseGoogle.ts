@@ -30,6 +30,7 @@ export function mapFirebaseUserToAuthUser(u: FirebaseUser): AuthUser {
   /** Two-letter initials; photo URLs are supported by Avatar in spots that check `startsWith http` elsewhere. */
   const avatarChars = `${parts[0]?.[0] ?? '?'}${parts[1]?.[0] ?? parts[0]?.[1] ?? '?'}`.toUpperCase()
 
+  /** OAuth: `accountRole` and PH phone + license → `/complete-profile`. */
   return {
     id: u.uid,
     email: (u.email ?? '').toLowerCase(),

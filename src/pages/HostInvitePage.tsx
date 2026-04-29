@@ -46,16 +46,20 @@ export default function HostInvitePage() {
   const location = useLocation()
   const user = useAuthStore((s) => s.user)
 
-  const openAuth = (tab: AuthLocationState['authTab']) => {
+  const openAuth = (tab: AuthLocationState['authTab'], opts?: { defaultAccountRole?: AuthLocationState['defaultAccountRole'] }) => {
     navigate(`${location.pathname}${location.search}`, {
-      state: { auth: true, authTab: tab ?? 'register' } satisfies AuthLocationState,
+      state: {
+        auth: true,
+        authTab: tab ?? 'register',
+        ...(opts?.defaultAccountRole !== undefined ? { defaultAccountRole: opts.defaultAccountRole } : {}),
+      } satisfies AuthLocationState,
     })
   }
 
   const primaryLabel = !user ? 'Sign up to host' : user.isHost ? 'Open host dashboard' : 'Continue to host setup'
   const handlePrimary = () => {
     if (!user) {
-      openAuth('register')
+      openAuth('register', { defaultAccountRole: 'host' })
       return
     }
     navigate('/host')

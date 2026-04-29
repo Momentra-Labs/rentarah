@@ -38,14 +38,17 @@ import {
 import { alpha, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 
+import type { AccountRole } from '../../types'
 import { isFirebaseConfigured } from '../../lib/firebase'
 import { mapFirebaseUserToAuthUser, signInWithGoogle } from '../../lib/firebaseGoogle'
 import type { RegisterAccountRole } from '../../store/useAuthStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useSnackbarStore } from '../../store/useSnackbarStore'
+import { RoleCard } from './RoleCard'
+import { authOutlinedFieldSx } from './authFieldSx'
 import {
   loginSchema,
   type LoginFormValues,
@@ -72,6 +75,7 @@ const REGISTER_FORM_DEFAULTS: RegisterFormValues = {
   firstName: '',
   lastName: '',
   phone: '',
+  licenseNumber: '',
   accountRole: '',
 }
 
@@ -103,36 +107,6 @@ const strengthBarValue = (level: PasswordStrengthLevel) => {
     default:
       return 0
   }
-}
-
-/** Outlined inputs: Rentara rings; optional compact tier for thumb-friendly 44px min height + denser gutters. */
-function authOutlinedFieldSx(theme: Theme, compact?: boolean) {
-  return {
-    overflow: 'visible',
-    /**
-     * MUI sets InputLabel `overflow: hidden` + shrink `transform`; same-node overflow clips transformed text.
-     * Double-`&` raises specificity so this wins over styled defaults + responsiveFontSizes on body1.
-     */
-    '&& .MuiInputLabel-root': {
-      overflow: 'visible',
-      textOverflow: 'clip',
-      lineHeight: 1.5,
-      pointerEvents: 'auto',
-    },
-    '& .MuiOutlinedInput-root': {
-      borderRadius: compact ? 2 : 2.5,
-      minHeight: compact ? 44 : undefined,
-      alignItems: 'center',
-      transition: 'box-shadow 0.2s ease',
-      '&:hover fieldset': { borderColor: alpha(theme.palette.primary.main, 0.45) },
-      '&.Mui-focused': {
-        boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}`,
-      },
-    },
-    '& .MuiFormHelperText-root': compact
-      ? { mt: 0.5, fontSize: '0.7rem', lineHeight: 1.35 }
-      : {},
-  } as const
 }
 
 function SocialGoogleLogin({
@@ -218,131 +192,23 @@ function SocialGoogleLogin({
   )
 }
 
-function RoleCard({
-  title,
-  description,
-  icon,
-  selected,
-  radioName,
-  radioValue,
-  onCommitted,
-  onBlurInput,
-}: {
-  title: string
-  description: string
-  icon: ReactNode
-  selected: boolean
-  radioName: string
-  radioValue: string
-  onCommitted: () => void
-  /** RHF blur for touched state on the role field */
-  onBlurInput?: () => void
-}) {
-  const theme = useTheme()
-  const isNarrowPhone = useMediaQuery(theme.breakpoints.down('sm'))
-  const inputId = `rentara-role-radio-${radioValue}`
-
-  return (
-    <Box
-      component="label"
-      htmlFor={inputId}
-      className="block cursor-pointer overflow-hidden rounded-2xl"
-      sx={{
-        display: 'block',
-        px: { xs: 2, sm: 2.25 },
-        py: { xs: 2, sm: 2.25 },
-        outline: 'none',
-        transition: 'box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease',
-        borderRadius: '16px',
-        borderWidth: selected ? '2px' : '1px',
-        borderStyle: 'solid',
-        borderColor: selected ? 'primary.main' : alpha(theme.palette.divider, theme.palette.mode === 'light' ? 0.12 : 0.22),
-        boxShadow: selected
-          ? `0 10px 28px ${alpha(theme.palette.primary.main, 0.12)}`
-          : `0 1px 4px ${alpha(theme.palette.common.black, 0.055)}`,
-        bgcolor: selected
-          ? alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.04 : 0.1)
-          : 'background.paper',
-        '&:focus-within': {
-          boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`,
-        },
-        '@media (hover: hover)': {
-          '&:hover': !selected
-            ? {
-                bgcolor: alpha(theme.palette.grey[50], theme.palette.mode === 'light' ? 1 : 0.06),
-              }
-            : {},
-        },
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          gap: 1.5,
-          width: '100%',
-        }}
-      >
-        <Box sx={{ pt: isNarrowPhone ? 0.15 : 0.25, color: selected ? 'primary.main' : 'text.secondary', flexShrink: 0 }}>
-          {icon}
-        </Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            component="span"
-            fontWeight={800}
-            sx={{
-              display: 'block',
-              fontSize: isNarrowPhone ? '0.9375rem' : '1rem',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.25,
-              color: 'text.primary',
-            }}
-          >
-            {title}
-          </Typography>
-          <Typography
-            component="span"
-            variant="body2"
-            sx={{
-              display: 'block',
-              mt: 0.5,
-              lineHeight: 1.45,
-              fontWeight: selected ? 600 : 500,
-              fontSize: isNarrowPhone ? '0.78rem' : '0.8125rem',
-              color: selected ? 'text.primary' : 'text.secondary',
-              opacity: selected ? 0.95 : 0.98,
-            }}
-          >
-            {description}
-          </Typography>
-        </Box>
-        <input
-          id={inputId}
-          name={radioName}
-          type="radio"
-          value={radioValue}
-          checked={selected}
-          className="mt-1 h-5 w-5 shrink-0 cursor-pointer"
-          style={{ accentColor: theme.palette.primary.main }}
-          onChange={() => onCommitted()}
-          onBlur={onBlurInput}
-          onClick={(e) => e.stopPropagation()}
-        />
-      </Box>
-    </Box>
-  )
-}
-
 interface AuthDialogProps {
   open: boolean
   onClose: () => void
   /** Called after a successful sign-in or registration (before `onClose`). Use for return-to-flow (e.g. checkout). */
   onAuthenticated?: () => void
   defaultTab?: 'login' | 'register'
+  /** When opening Register from host CTAs, preselect this role; user can still change. Session draft wins if it already has a role. */
+  registerAccountRolePreset?: AccountRole
 }
 
-export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab = 'login' }: AuthDialogProps) {
+export default function AuthDialog({
+  open,
+  onClose,
+  onAuthenticated,
+  defaultTab = 'login',
+  registerAccountRolePreset,
+}: AuthDialogProps) {
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
   /** `scroll="body"` scrolls the window when the dialog opens — sticky nav appears to jump to the top. */
@@ -449,10 +315,16 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     } catch {
       registrationMerged = { ...REGISTER_FORM_DEFAULTS }
     }
+    if (
+      registerAccountRolePreset &&
+      (registrationMerged.accountRole === '' || !registrationMerged.accountRole)
+    ) {
+      registrationMerged = { ...registrationMerged, accountRole: registerAccountRolePreset }
+    }
     resetRegisterForm(registrationMerged)
     /** Only [open] + prop defaultTab trigger a session/tab reset — not unstable RHF reset() identities mid-dialog. */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- resetLoginForm/resetRegisterForm intentionally omitted from deps (see guard above).
-  }, [open, defaultTab])
+  }, [open, defaultTab, registerAccountRolePreset])
 
   const applyZodIssues = useCallback(
     (issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey>; message: string }>) => {
@@ -603,6 +475,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
         email: data.email.trim().toLowerCase(),
         password: data.password,
         phone: data.phone,
+        licenseNumber: data.licenseNumber,
         accountRole: data.accountRole as RegisterAccountRole,
       })
       try {
@@ -1236,6 +1109,19 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                         error={!!rf.formState.errors.phone}
                         helperText={
                           rf.formState.errors.phone?.message ?? 'Philippine numbers: +63 or 0 prefix, then 10 digits.'
+                        }
+                        sx={compactFieldSx}
+                      />
+                      <TextField
+                        size="small"
+                        label="Driver’s license number"
+                        autoComplete="off"
+                        fullWidth
+                        margin="none"
+                        {...rf.register('licenseNumber', { onChange: () => rf.clearErrors('licenseNumber') })}
+                        error={!!rf.formState.errors.licenseNumber}
+                        helperText={
+                          rf.formState.errors.licenseNumber?.message ?? 'As shown on your license — letters, numbers, or hyphens.'
                         }
                         sx={compactFieldSx}
                       />

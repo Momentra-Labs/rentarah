@@ -19,6 +19,7 @@ import { useChatStore } from '../../store/useChatStore'
 import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { useSearchStore } from '../../store/useSearchStore'
 import type { AuthLocationState } from '../../types/authFlow'
+import { isAuthProfileComplete } from '../../lib/authProfile'
 
 /** Short beat so the brand mark registers without blocking return visits. */
 const MIN_LOADING_SCREEN_MS = 800
@@ -50,6 +51,7 @@ export default function MainLayout() {
   const restoreIfPermittedOnLoad = useGeolocationStore((s) => s.restoreIfPermittedOnLoad)
   const [authOpen, setAuthOpen] = useState(false)
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
+  const [registerAccountRolePreset, setRegisterAccountRolePreset] = useState<'renter' | 'host' | 'both' | undefined>(undefined)
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
   /** Survives re-renders: after auth, continue reserve → checkout if set. */
   const pendingBookCarIdRef = useRef<string | null>(null)
@@ -82,12 +84,14 @@ export default function MainLayout() {
 
   const handleAuthOpen = useCallback(() => {
     setAuthDialogDefaultTab('login')
+    setRegisterAccountRolePreset(undefined)
     setAuthOpen(true)
   }, [])
 
   const handleAuthClose = useCallback(() => {
     setAuthOpen(false)
     setAuthDialogDefaultTab('login')
+    setRegisterAccountRolePreset(undefined)
     pendingBookCarIdRef.current = null
   }, [])
 
@@ -97,12 +101,29 @@ export default function MainLayout() {
     if (!st?.auth) return
     if (st.pendingBookCarId) pendingBookCarIdRef.current = st.pendingBookCarId
     setAuthDialogDefaultTab(st.authTab === 'register' ? 'register' : 'login')
+    if (st.authTab === 'register') {
+      setRegisterAccountRolePreset(st.defaultAccountRole)
+    } else {
+      setRegisterAccountRolePreset(undefined)
+    }
     setAuthOpen(true)
     navigate(`${location.pathname}${location.search}`, { replace: true, state: {} })
   }, [location.pathname, location.search, location.state, navigate])
 
   const handleAuthenticated = useCallback(() => {
+    const u = useAuthStore.getState().user
     const carId = pendingBookCarIdRef.current
+    if (u && !isAuthProfileComplete(u)) {
+      navigate('/complete-profile', {
+        replace: true,
+        state: {
+          from: `${location.pathname}${location.search}`,
+          pendingBookCarId: carId,
+        },
+      })
+      pendingBookCarIdRef.current = null
+      return
+    }
     pendingBookCarIdRef.current = null
     if (!carId) return
     const car = useCarsStore.getState().cars.find((c) => c.id === carId)
@@ -112,7 +133,7 @@ export default function MainLayout() {
       useBookingStore.getState().initBooking(car, pickup, dropoff)
       navigate(`/booking/${carId}`)
     }
-  }, [navigate])
+  }, [navigate, location.pathname, location.search])
 
   return (
     <Box
@@ -216,6 +237,7 @@ export default function MainLayout() {
         onClose={handleAuthClose}
         onAuthenticated={handleAuthenticated}
         defaultTab={authDialogDefaultTab}
+        registerAccountRolePreset={registerAccountRolePreset}
       />
       {!showLoadingScreen ? <OnboardingFlow /> : null}
     </Box>

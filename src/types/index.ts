@@ -271,6 +271,9 @@ export interface PricingBreakdown {
 
 // --- auth (existing auth store) ---
 
+/** Renter vs host intent from registration wizard or OAuth profile completion. */
+export type AccountRole = 'renter' | 'host' | 'both'
+
 export interface AuthUser {
   id: string
   firstName: string
@@ -281,6 +284,8 @@ export interface AuthUser {
   isHost: boolean
   avatar: string
   createdAt: string
+  /** Required for bookings once set (email signup + OAuth onboarding). OAuth users omit until `/complete-profile`. */
+  accountRole?: AccountRole
 }
 
 export interface StoredUser extends AuthUser {
