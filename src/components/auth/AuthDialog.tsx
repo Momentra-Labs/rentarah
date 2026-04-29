@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import CheckCircleRounded from '@mui/icons-material/CheckCircleRounded'
-import Facebook from '@mui/icons-material/Facebook'
 import Close from '@mui/icons-material/Close'
 import DirectionsCarOutlined from '@mui/icons-material/DirectionsCarOutlined'
 import ErrorOutlineRounded from '@mui/icons-material/ErrorOutlineRounded'
@@ -40,7 +39,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 
 import type { RegisterAccountRole } from '../../store/useAuthStore'
@@ -90,28 +89,29 @@ const strengthBarValue = (level: PasswordStrengthLevel) => {
   }
 }
 
-/** Keeps login & register outlined fields visually aligned (same hover/focus as MUI defaults, no extra InputProps on email). */
-function authOutlinedFieldSx(theme: Theme) {
+/** Outlined inputs: Rentara rings; optional compact tier for thumb-friendly 44px min height + denser gutters. */
+function authOutlinedFieldSx(theme: Theme, compact?: boolean) {
   return {
     '& .MuiOutlinedInput-root': {
-      borderRadius: 2.5,
+      borderRadius: compact ? 2 : 2.5,
+      minHeight: compact ? 44 : undefined,
       transition: 'box-shadow 0.2s ease',
       '&:hover fieldset': { borderColor: alpha(theme.palette.primary.main, 0.45) },
       '&.Mui-focused': {
         boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}`,
       },
     },
+    '& .MuiFormHelperText-root': compact
+      ? { mt: 0.5, fontSize: '0.7rem', lineHeight: 1.35 }
+      : {},
   } as const
 }
 
 function SocialLoginPlaceholder() {
   return (
     <Box
+      className="mt-3 rounded-xl px-3 py-2.5 sm:mt-4 sm:rounded-2xl sm:p-4 border border-dashed"
       sx={{
-        mt: 2.5,
-        p: 2,
-        borderRadius: 2.5,
-        border: '1px dashed',
         borderColor: 'divider',
         bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.03 : 0.08),
       }}
@@ -124,42 +124,24 @@ function SocialLoginPlaceholder() {
           </Typography>
           <Divider sx={{ flex: 1 }} />
         </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="inherit"
-            disabled
-            startIcon={<Google />}
-            sx={{
-              borderColor: 'divider',
-              color: 'text.secondary',
-              py: 1.2,
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              '&.Mui-disabled': { opacity: 0.88 },
-            }}
-          >
-            Google
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="inherit"
-            disabled
-            startIcon={<Facebook />}
-            sx={{
-              borderColor: 'divider',
-              color: 'text.secondary',
-              py: 1.2,
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              '&.Mui-disabled': { opacity: 0.88 },
-            }}
-          >
-            Facebook
-          </Button>
-        </Stack>
+        <Button
+          fullWidth
+          variant="outlined"
+          color="inherit"
+          disabled
+          className="min-h-touch rounded-2xl"
+          startIcon={<Google />}
+          sx={{
+            borderColor: 'divider',
+            color: 'text.secondary',
+            py: 1.2,
+            borderRadius: 2,
+            bgcolor: 'background.paper',
+            '&.Mui-disabled': { opacity: 0.88 },
+          }}
+        >
+          Google
+        </Button>
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', lineHeight: 1.45, px: 0.5 }}>
           Social sign-in is coming soon — use your email for now.
         </Typography>
@@ -410,6 +392,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
   const loginSubmitting = lf.formState.isSubmitting
   const registerSubmitting = rf.formState.isSubmitting
 
+  const mqShortViewport = useMediaQuery('(max-height:700px)')
+  const mqNarrowWidth = useMediaQuery('(max-width:420px)')
+  const compactAuthFields = fullScreen || mqShortViewport || mqNarrowWidth
+  const compactFieldSx = useMemo(() => authOutlinedFieldSx(theme, compactAuthFields), [theme, compactAuthFields])
+
   const slideSx = { width: '100%' }
 
   return (
@@ -438,9 +425,12 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
         onExited: restoreBackdropScroll,
       }}
       PaperProps={{
+        className:
+          'flex max-h-[min(100dvh,100vh)] flex-col overflow-hidden sm:max-h-none ' +
+          (fullScreen ? 'min-h-[100dvh] w-full max-w-full rounded-none border-0 shadow-none' : 'rounded-3xl'),
         sx: {
           borderRadius: fullScreen ? 0 : 3,
-          overflow: 'visible',
+          overflow: 'hidden',
           border: fullScreen ? 'none' : '1px solid',
           borderColor: 'divider',
           boxShadow: fullScreen ? 'none' : `0 24px 48px -12px ${alpha(theme.palette.common.black, 0.2)}`,
@@ -462,38 +452,35 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     >
       <DialogTitle
         id="auth-dialog-title"
+        className="relative shrink-0 overflow-x-hidden px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-8 sm:pb-3 sm:pt-6"
         sx={{
           position: 'relative',
           overflowX: 'hidden',
-          /** Match DialogContent `px` exactly so tabs + fields share one column width. */
-          px: { xs: 1.5, sm: 2.75 },
-          pt: { xs: `max(12px, env(safe-area-inset-top))`, sm: 3 },
-          pb: 2,
         }}
       >
         <IconButton
           aria-label="Close"
           onClick={onClose}
           size="small"
-          sx={{
-            position: 'absolute',
-            right: 8,
-            top: { xs: `max(8px, env(safe-area-inset-top))`, sm: 12 },
-            zIndex: 2,
-          }}
+          className="min-h-touch min-w-touch absolute right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[2] sm:right-3 sm:top-3"
         >
           <Close />
         </IconButton>
         {/** Only the top heading needs inset so it doesn’t run under the floating close control. */}
-        <Box sx={{ mb: 2, pr: { xs: 5.5, sm: 6 } }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.3 }}>
+        <Box className="mb-2 pr-12 sm:mb-3 sm:pr-14">
+          <Typography variant="h6" className="text-fluid-heading font-extrabold tracking-tight">
             {tab === 'login' ? 'Welcome back' : 'Create your account'}
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mt: 0.35 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mt: 0.25 }} className="text-[0.7rem] sm:text-[0.75rem]">
             Rentara — Philippines rentals
           </Typography>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.55 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          className="mb-3 hidden text-fluid leading-snug sm:mb-5 sm:block"
+          sx={{ lineHeight: 1.55 }}
+        >
           {tab === 'login'
             ? 'Sign in to book vehicles, manage trips, and message hosts — all in one place.'
             : 'Three quick steps: secure your account, tell us about you, then choose how you’ll use Rentara.'}
@@ -501,6 +488,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
         <ToggleButtonGroup
           exclusive
           value={tab}
+          className="[&_.MuiToggleButton-root]:min-h-touch"
           onChange={(_, v) => {
             if (v != null) {
               setTab(v)
@@ -525,7 +513,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               minWidth: 0,
               maxWidth: '50%',
               justifyContent: 'center',
-              py: 1.15,
+              py: compactAuthFields ? 0.85 : 1.15,
               textTransform: 'none',
               fontWeight: 800,
               fontSize: '0.9375rem',
@@ -545,21 +533,26 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       </DialogTitle>
 
       <DialogContent
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-0 sm:px-8 sm:pb-6"
         sx={{
-          px: { xs: 1.5, sm: 2.75 },
-          pb: 3,
-          pt: 0.5,
-          overflow: 'visible',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {tab === 'login' ? (
-          <Stack component="form" spacing={2} onSubmit={onLogin} noValidate sx={{ width: '100%' }}>
+          <Stack
+            component="form"
+            spacing={compactAuthFields ? 1.25 : 2}
+            onSubmit={onLogin}
+            noValidate
+            sx={{ width: '100%' }}
+          >
             {lf.formState.errors.root && (
               <Alert severity="error" icon={<ErrorOutlineRounded />} sx={{ borderRadius: 2 }}>
                 {lf.formState.errors.root.message}
               </Alert>
             )}
             <TextField
+              size="small"
               label="Email"
               type="email"
               autoComplete="email"
@@ -568,9 +561,10 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               {...lf.register('email')}
               error={!!lf.formState.errors.email}
               helperText={lf.formState.errors.email?.message ?? 'Used for bookings and receipts.'}
-              sx={authOutlinedFieldSx(theme)}
+              sx={compactFieldSx}
             />
             <TextField
+              size="small"
               label="Password"
               type={showLoginPassword ? 'text' : 'password'}
               autoComplete="current-password"
@@ -579,7 +573,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               {...lf.register('password')}
               error={!!lf.formState.errors.password}
               helperText={lf.formState.errors.password?.message}
-              sx={authOutlinedFieldSx(theme)}
+              sx={compactFieldSx}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -588,6 +582,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                       onClick={() => setShowLoginPassword((p) => !p)}
                       edge="end"
                       size="small"
+                      className="min-h-touch min-w-touch rounded-lg"
                     >
                       {showLoginPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -621,8 +616,9 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               variant="contained"
               size="large"
               disabled={loginSubmitting}
+              className="min-h-touch w-full rounded-2xl !font-semibold"
               sx={{
-                py: 1.35,
+                py: compactAuthFields ? 1.05 : 1.35,
                 fontWeight: 700,
                 borderRadius: 2,
                 boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
@@ -647,7 +643,13 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
             <SocialLoginPlaceholder />
           </Stack>
         ) : (
-          <Stack component="form" onSubmit={onRegister} noValidate spacing={2} sx={{ width: '100%' }}>
+          <Stack
+            component="form"
+            onSubmit={onRegister}
+            noValidate
+            spacing={compactAuthFields ? 1.25 : 2}
+            sx={{ width: '100%' }}
+          >
             <Box sx={{ mb: 0.5 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                 <Typography variant="caption" color="primary" fontWeight={800} letterSpacing="0.06em" textTransform="uppercase">
@@ -690,7 +692,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               </Alert>
             )}
 
-            <Box sx={{ position: 'relative', minHeight: fullScreen ? 280 : 260 }}>
+            <Box className="relative min-h-[min(38dvh,220px)] sm:min-h-[260px]" sx={{ position: 'relative' }}>
               <AnimatePresence mode="wait" initial={false}>
                 {registerStep === 0 && (
                   <motion.div
@@ -703,6 +705,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                   >
                     <Stack spacing={2}>
                       <TextField
+              size="small"
                         label="Email"
                         type="email"
                         autoComplete="email"
@@ -713,10 +716,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                         })}
                         error={!!rf.formState.errors.email}
                         helperText={rf.formState.errors.email?.message ?? 'Used for bookings and receipts.'}
-                        sx={authOutlinedFieldSx(theme)}
+                        sx={compactFieldSx}
                       />
                       <Box>
                         <TextField
+              size="small"
                           label="Password"
                           type={showRegPassword ? 'text' : 'password'}
                           autoComplete="new-password"
@@ -730,7 +734,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                           })}
                           error={!!rf.formState.errors.password}
                           helperText={rf.formState.errors.password?.message ?? 'At least 8 characters.'}
-                          sx={authOutlinedFieldSx(theme)}
+                          sx={compactFieldSx}
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position="end">
@@ -739,6 +743,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                                   onClick={() => setShowRegPassword((p) => !p)}
                                   edge="end"
                                   size="small"
+                                  className="min-h-touch min-w-touch rounded-lg"
                                 >
                                   {showRegPassword ? <VisibilityOff /> : <Visibility />}
                                 </IconButton>
@@ -774,6 +779,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                         )}
                       </Box>
                       <TextField
+              size="small"
                         label="Confirm password"
                         type={showRegConfirm ? 'text' : 'password'}
                         autoComplete="new-password"
@@ -784,7 +790,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                         })}
                         error={!!rf.formState.errors.confirmPassword}
                         helperText={rf.formState.errors.confirmPassword?.message}
-                        sx={authOutlinedFieldSx(theme)}
+                        sx={compactFieldSx}
                         InputProps={{
                           endAdornment: (
                             <InputAdornment position="end">
@@ -793,6 +799,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                                 onClick={() => setShowRegConfirm((p) => !p)}
                                 edge="end"
                                 size="small"
+                                className="min-h-touch min-w-touch rounded-lg"
                               >
                                 {showRegConfirm ? <VisibilityOff /> : <Visibility />}
                               </IconButton>
@@ -816,6 +823,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                     <Stack spacing={2}>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                         <TextField
+              size="small"
                           label="First name"
                           autoComplete="given-name"
                           fullWidth
@@ -823,9 +831,10 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                           {...rf.register('firstName', { onChange: () => rf.clearErrors('firstName') })}
                           error={!!rf.formState.errors.firstName}
                           helperText={rf.formState.errors.firstName?.message ?? 'As on your ID or license.'}
-                          sx={authOutlinedFieldSx(theme)}
+                          sx={compactFieldSx}
                         />
                         <TextField
+              size="small"
                           label="Last name"
                           autoComplete="family-name"
                           fullWidth
@@ -833,10 +842,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                           {...rf.register('lastName', { onChange: () => rf.clearErrors('lastName') })}
                           error={!!rf.formState.errors.lastName}
                           helperText={rf.formState.errors.lastName?.message}
-                          sx={authOutlinedFieldSx(theme)}
+                          sx={compactFieldSx}
                         />
                       </Stack>
                       <TextField
+              size="small"
                         label="Mobile number"
                         placeholder="+63 9xx xxx xxxx"
                         autoComplete="tel"
@@ -847,7 +857,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                         helperText={
                           rf.formState.errors.phone?.message ?? 'Philippine numbers: +63 or 0 prefix, then 10 digits.'
                         }
-                        sx={authOutlinedFieldSx(theme)}
+                        sx={compactFieldSx}
                       />
                     </Stack>
                   </motion.div>

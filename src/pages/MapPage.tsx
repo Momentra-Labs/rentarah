@@ -1,5 +1,6 @@
 import ChevronLeft from '@mui/icons-material/ChevronLeft'
 import ChevronRight from '@mui/icons-material/ChevronRight'
+import AllInclusiveOutlined from '@mui/icons-material/AllInclusiveOutlined'
 import CloseRounded from '@mui/icons-material/CloseRounded'
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import Explore from '@mui/icons-material/Explore'
@@ -67,6 +68,9 @@ const MOBILE_LISTING_PEEK_RESERVE_PX = 102
 export default function MapPage() {
   const theme = useTheme()
   const isCompactLayout = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
+  /** Thumb-scale map toolbar: chip text hidden; icons keep 44px hit targets inside toggles */
+  const mapFiltersIconOnly = useMediaQuery('(max-width:359.95px)', { noSsr: true })
+  const filtersIconOnly = isCompactLayout && mapFiltersIconOnly
   const navigate = useNavigate()
   const location = useLocation()
   const cars = useCarsStore((s) => s.cars)
@@ -324,8 +328,9 @@ export default function MapPage() {
                 border: 'none',
                 borderRadius: '10px',
                 mx: 0,
-                px: 1.35,
-                py: 0.75,
+                ...(filtersIconOnly
+                  ? { minWidth: 44, minHeight: 44, px: 0.75, py: 0.65 }
+                  : { px: 1.35, py: 0.75 }),
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '0.8125rem',
@@ -368,22 +373,36 @@ export default function MapPage() {
             }),
       }}
     >
-      <ToggleButton value="all">All</ToggleButton>
-      <ToggleButton value="cars">
-        <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
-          <DirectionsCar sx={{ fontSize: 18 }} />
-          <Box component="span" sx={{ display: 'inline' }}>
-            Car
-          </Box>
-        </Stack>
+      <ToggleButton value="all" aria-label="All vehicles">
+        {filtersIconOnly ? (
+          <AllInclusiveOutlined sx={{ fontSize: 22 }} aria-hidden />
+        ) : (
+          'All'
+        )}
       </ToggleButton>
-      <ToggleButton value="motorcycles">
-        <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
-          <TwoWheeler sx={{ fontSize: 18 }} />
-          <Box component="span" sx={{ display: 'inline' }}>
-            Moto
-          </Box>
-        </Stack>
+      <ToggleButton value="cars" aria-label="Cars">
+        {filtersIconOnly ? (
+          <DirectionsCar sx={{ fontSize: 22 }} aria-hidden />
+        ) : (
+          <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
+            <DirectionsCar sx={{ fontSize: 18 }} />
+            <Box component="span" sx={{ display: 'inline' }}>
+              Car
+            </Box>
+          </Stack>
+        )}
+      </ToggleButton>
+      <ToggleButton value="motorcycles" aria-label="Motorcycles">
+        {filtersIconOnly ? (
+          <TwoWheeler sx={{ fontSize: 22 }} aria-hidden />
+        ) : (
+          <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
+            <TwoWheeler sx={{ fontSize: 18 }} />
+            <Box component="span" sx={{ display: 'inline' }}>
+              Moto
+            </Box>
+          </Stack>
+        )}
       </ToggleButton>
       <Tooltip
         title={
@@ -393,13 +412,17 @@ export default function MapPage() {
         }
       >
         <span>
-          <ToggleButton value="nearby" disabled={nearbyDisabled}>
-            <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
-              <Explore sx={{ fontSize: 18 }} />
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                Nearby
-              </Box>
-            </Stack>
+          <ToggleButton value="nearby" disabled={nearbyDisabled} aria-label="Nearby">
+            {filtersIconOnly ? (
+              <Explore sx={{ fontSize: 22 }} aria-hidden />
+            ) : (
+              <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
+                <Explore sx={{ fontSize: 18 }} />
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                  Nearby
+                </Box>
+              </Stack>
+            )}
           </ToggleButton>
         </span>
       </Tooltip>
@@ -914,21 +937,19 @@ export default function MapPage() {
             )}
             {isCompactLayout ? (
               <Box
+                className="pointer-events-none px-2 max-[359px]:px-1.5 xs:px-3 [&>*]:pointer-events-auto"
                 sx={{
                   position: 'absolute',
-                  top: 10,
+                  top: { xs: 8, sm: 10 },
                   left: 0,
                   right: 0,
                   zIndex: zMap.toolbar,
-                  px: 2,
-                  pointerEvents: 'none',
-                  '& > *': { pointerEvents: 'auto' },
                 }}
               >
                 <Paper
                   elevation={0}
+                  className="rounded-2xl border border-solid border-transparent p-2 shadow-search backdrop-blur-md max-[359px]:p-1.5 sm:p-3.5"
                   sx={{
-                    p: 1.25,
                     borderRadius: '16px',
                     border: '1px solid',
                     borderColor: 'divider',
