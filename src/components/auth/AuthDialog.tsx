@@ -41,6 +41,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 
+import { isFirebaseConfigured } from '../../lib/firebase'
+import { mapFirebaseUserToAuthUser, signInWithGoogle } from '../../lib/firebaseGoogle'
 import type { RegisterAccountRole } from '../../store/useAuthStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useSnackbarStore } from '../../store/useSnackbarStore'
@@ -133,12 +135,25 @@ function authOutlinedFieldSx(theme: Theme, compact?: boolean) {
   } as const
 }
 
-function SocialLoginPlaceholder() {
+function SocialGoogleLogin({
+  useFirebase,
+  onSignedIn,
+}: {
+  /** When true, Firebase Google OAuth is wired; footer copy differs from demo. */
+  useFirebase: boolean
+  /**
+   * Caller shows snackbar + closes dialog (mirrors email sign-in success).
+   */
+  onSignedIn: () => Promise<void> | void
+}) {
+  const [loading, setLoading] = useState(false)
+
   return (
     <Box
-      className="mt-3 rounded-xl px-3 py-2.5 sm:mt-4 sm:rounded-2xl sm:p-4 border border-dashed"
+      className="mt-3 rounded-xl px-3 py-2.5 sm:mt-4 sm:rounded-2xl sm:p-4 border"
       sx={{
         borderColor: 'divider',
+        borderStyle: 'solid',
         bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.03 : 0.08),
       }}
     >
@@ -155,22 +170,48 @@ function SocialLoginPlaceholder() {
           fullWidth
           variant="outlined"
           color="inherit"
-          disabled
+          disabled={loading}
           className="min-h-touch rounded-2xl"
-          startIcon={<Google />}
+          startIcon={loading ? undefined : <Google />}
           sx={{
             borderColor: 'divider',
-            color: 'text.secondary',
+            color: 'text.primary',
             py: 1.2,
             borderRadius: 2,
             bgcolor: 'background.paper',
-            '&.Mui-disabled': { opacity: 0.88 },
+          }}
+          onClick={() => {
+            void (async () => {
+              setLoading(true)
+              try {
+                await onSignedIn()
+              } finally {
+                setLoading(false)
+              }
+            })()
           }}
         >
-          Google
+          {loading ? (
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+              <CircularProgress size={22} color="primary" thickness={5} />
+              <span>Connecting…</span>
+            </Stack>
+          ) : (
+            'Google'
+          )}
         </Button>
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', lineHeight: 1.45, px: 0.5 }}>
-          Social sign-in is coming soon — use your email for now.
+          {useFirebase ? (
+            <>
+              Sign in with your Google account. Your session stays in sync with Firebase; the API can verify ID tokens when
+              you call authenticated routes.
+            </>
+          ) : (
+            <>
+              Demo: simulates Google sign-in (local profile <strong>google.demo@rentara.com</strong>) — add{' '}
+              <code>VITE_FIREBASE_*</code> for real OAuth.
+            </>
+          )}
         </Typography>
       </Stack>
     </Box>
@@ -324,6 +365,8 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
   const [showRegConfirm, setShowRegConfirm] = useState(false)
 
   const loginAction = useAuthStore((s) => s.login)
+  const loginWithFirebaseUser = useAuthStore((s) => s.loginWithFirebaseUser)
+  const loginWithGoogleMockAction = useAuthStore((s) => s.loginWithGoogleMock)
   const registerAction = useAuthStore((s) => s.register)
   const showSuccess = useSnackbarStore((s) => s.showSuccess)
   const showError = useSnackbarStore((s) => s.showError)
@@ -504,6 +547,47 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       showError('Sign-in didn’t work — please check your details.')
     }
   })
+
+  const firebaseGoogleEnabled = useMemo(() => isFirebaseConfigured(), [])
+  const handleGoogleSignIn = useCallback(async () => {
+    lf.clearErrors('root')
+    if (firebaseGoogleEnabled) {
+      try {
+        const fu = await signInWithGoogle()
+        loginWithFirebaseUser(mapFirebaseUserToAuthUser(fu))
+        const u = useAuthStore.getState().user
+        showSuccess(u ? `Signed in with Google — hello, ${u.firstName}!` : 'Signed in')
+        onAuthenticated?.()
+        onClose()
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Google sign-in failed.'
+        showError(msg)
+        lf.setError('root', { type: 'manual', message: msg })
+      }
+      return
+    }
+    await new Promise((r) => setTimeout(r, 420))
+    try {
+      loginWithGoogleMockAction()
+      const u = useAuthStore.getState().user
+      showSuccess(u ? `Signed in with Google (demo) — hello, ${u.firstName}!` : 'Signed in')
+      onAuthenticated?.()
+      onClose()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Something went wrong. Try again.'
+      showError(msg)
+      lf.setError('root', { type: 'manual', message: msg })
+    }
+  }, [
+    lf,
+    firebaseGoogleEnabled,
+    loginWithFirebaseUser,
+    loginWithGoogleMockAction,
+    showError,
+    showSuccess,
+    onAuthenticated,
+    onClose,
+  ])
 
   const finalizeRegisterSubmit = rf.handleSubmit(async (data) => {
     const parsed = registerFullSchema.safeParse(data)
@@ -1233,7 +1317,9 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
           </Stack>
         )}
 
-        <SocialLoginPlaceholder />
+        {tab === 'login' ? (
+          <SocialGoogleLogin useFirebase={firebaseGoogleEnabled} onSignedIn={handleGoogleSignIn} />
+        ) : null}
 
         <Box
           sx={{

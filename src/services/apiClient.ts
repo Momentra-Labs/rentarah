@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config'
+import { getFirebaseIdToken } from '../lib/firebaseAuth'
 
 /**
  * Thrown by {@link request} when the server returns a non-2xx or the response body is not JSON.
@@ -23,13 +24,12 @@ export interface RequestOptions {
   body?: unknown
   /** Optional AbortSignal for cancellable fetches */
   signal?: AbortSignal
+  /**
+   * When true, attaches `Authorization: Bearer <Firebase ID token>` if the user is signed in
+   * and Firebase env is configured (`src/lib/firebase.ts`).
+   */
+  authenticate?: boolean
 }
-
-const jsonHeaders: HeadersInit = {
-  'Content-Type': 'application/json',
-  Accept: 'application/json',
-}
-
 /**
  * Low-level JSON HTTP client. All domain services should go through this (or mock) — never
  * `fetch` inside React components.
@@ -39,12 +39,21 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     throw new ApiError(0, 'VITE_API_URL is not set; enable mock data or provide a base URL in .env')
   }
 
-  const { method = 'GET', body, signal } = options
+  const { method = 'GET', body, signal, authenticate } = options
   const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  })
+  if (authenticate) {
+    const tok = await getFirebaseIdToken()
+    if (tok) headers.set('Authorization', `Bearer ${tok}`)
+  }
 
   const res = await fetch(url, {
     method,
-    headers: jsonHeaders,
+    headers,
     body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
     signal,
   })
@@ -66,11 +75,20 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 }
 
 /** Convenience wrapper for `GET` requests. */
-export function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  return request<T>(path, { method: 'GET', signal })
+export function getJson<T>(
+  path: string,
+  signal?: AbortSignal,
+  opts?: { authenticate?: boolean },
+): Promise<T> {
+  return request<T>(path, { method: 'GET', signal, authenticate: opts?.authenticate })
 }
 
 /** Convenience wrapper for `POST` requests with a JSON body. */
-export function postJson<T, B = unknown>(path: string, body: B, signal?: AbortSignal): Promise<T> {
-  return request<T>(path, { method: 'POST', body, signal })
+export function postJson<T, B = unknown>(
+  path: string,
+  body: B,
+  signal?: AbortSignal,
+  opts?: { authenticate?: boolean },
+): Promise<T> {
+  return request<T>(path, { method: 'POST', body, signal, authenticate: opts?.authenticate })
 }

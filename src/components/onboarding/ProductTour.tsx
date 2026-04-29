@@ -10,17 +10,13 @@ const TOUR_COPY = [
     description: 'Set where you’re going and your trip dates — we’ll match you with available cars and motorcycles.',
   },
   {
-    title: 'Map',
-    description: 'Preview rentals on the map, then open the full map to explore pins, prices, and areas.',
-  },
-  {
     title: 'Listings',
     description: 'Browse cards for photos, specs, and host info — tap through to book when you’re ready.',
   },
   {
     title: 'Start here',
     description:
-      'Browse vehicles, open the map, or plan a trip — everything you need to rent a car or motorcycle is one tap away.',
+      'Use the trip planner or scroll to explore — search and categories are also in the sidebar.',
   },
 ] as const
 

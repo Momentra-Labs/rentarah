@@ -1,8 +1,14 @@
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { create } from 'zustand'
 
+import { signOutFirebaseIfAny } from '../lib/firebaseGoogle'
+
 import { DEMO_USER_ID } from '../data/mockUsers'
 import type { AuthUser, StoredUser } from '../types'
+
+/** Second demo account — SSO mock; not valid for password login. */
+export const MOCK_GOOGLE_USER_ID = 'user_google_mock'
+const MOCK_GOOGLE_OAUTH_HASH = '__oauth_google_mock__'
 
 /**
  * Seeded user — id matches mock catalog `hostId` for Carlo (`user_001`), so the host dashboard
@@ -21,6 +27,29 @@ function demoSeedUser(): StoredUser {
     avatar: 'CR',
     createdAt: new Date().toISOString(),
   }
+}
+
+function googleMockSeedUser(): StoredUser {
+  return {
+    id: MOCK_GOOGLE_USER_ID,
+    email: 'google.demo@rentara.com',
+    passwordHash: MOCK_GOOGLE_OAUTH_HASH,
+    firstName: 'Alex',
+    lastName: 'Santos',
+    phone: '+639181112233',
+    licenseNumber: '',
+    isHost: false,
+    avatar: 'AS',
+    createdAt: new Date().toISOString(),
+  }
+}
+
+/** Ensure persisted client state includes both seed users. */
+function ensureSeedUsers(users: StoredUser[]): StoredUser[] {
+  const byId = new Map(users.map((u) => [u.id, u]))
+  if (!byId.has(DEMO_USER_ID)) byId.set(DEMO_USER_ID, demoSeedUser())
+  if (!byId.has(MOCK_GOOGLE_USER_ID)) byId.set(MOCK_GOOGLE_USER_ID, googleMockSeedUser())
+  return migrateUsers(Array.from(byId.values()))
 }
 
 function migrateUsers(users: StoredUser[]): StoredUser[] {
@@ -68,10 +97,18 @@ function stripPassword(u: StoredUser): AuthUser {
   }
 }
 
+/** How {@link AuthUser} was authenticated — persisted so Firebase-linked sessions survive reload. */
+export type AuthSessionProvider = 'none' | 'credentials' | 'firebase'
+
 interface AuthStoreState {
+  authProvider: AuthSessionProvider
   user: AuthUser | null
   users: StoredUser[]
   login: (email: string, password: string) => void
+  /** Pretend Google SSO — loads the mock Google-linked renter profile (no Firebase). */
+  loginWithGoogleMock: () => void
+  /** Real Firebase Google SSO — persists via Firebase SDK + mirrors into {@link user}. */
+  loginWithFirebaseUser: (profile: AuthUser) => void
   register: (data: RegisterInput) => void
   logout: () => void
   updateProfile: (data: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'phone' | 'licenseNumber' | 'avatar'>>) => void
@@ -81,8 +118,9 @@ interface AuthStoreState {
 export const useAuthStore = create<AuthStoreState>()(
   persist(
     (set, get) => ({
+      authProvider: 'none',
       user: null,
-      users: [demoSeedUser()],
+      users: ensureSeedUsers([demoSeedUser()]),
 
       login: (email, password) => {
         const hash = btoa(password)
@@ -92,7 +130,25 @@ export const useAuthStore = create<AuthStoreState>()(
         if (!found || found.passwordHash !== hash) {
           throw new Error('Invalid credentials')
         }
-        set({ user: stripPassword(found) })
+        set({ user: stripPassword(found), authProvider: 'credentials' })
+      },
+
+      loginWithGoogleMock: () => {
+        const google = get().users.find((u) => u.id === MOCK_GOOGLE_USER_ID)
+        if (!google) {
+          set((s) => ({
+            users: ensureSeedUsers(s.users),
+          }))
+          const again = get().users.find((u) => u.id === MOCK_GOOGLE_USER_ID)
+          if (!again) throw new Error('Mock Google account missing')
+          set({ user: stripPassword(again), authProvider: 'credentials' })
+          return
+        }
+        set({ user: stripPassword(google), authProvider: 'credentials' })
+      },
+
+      loginWithFirebaseUser: (profile) => {
+        set({ user: profile, authProvider: 'firebase' })
       },
 
       register: (data) => {
@@ -115,15 +171,23 @@ export const useAuthStore = create<AuthStoreState>()(
         set((s) => ({
           users: [...s.users, newUser],
           user: stripPassword(newUser),
+          authProvider: 'credentials',
         }))
       },
 
-      logout: () => set({ user: null }),
+      logout: () => {
+        void signOutFirebaseIfAny()
+        set({ user: null, authProvider: 'none' })
+      },
 
       updateProfile: (data) => {
         const cur = get().user
         if (!cur) return
         const merged: AuthUser = { ...cur, ...data }
+        if (get().authProvider === 'firebase') {
+          set({ user: merged })
+          return
+        }
         const full: StoredUser | undefined = get().users.find((u) => u.id === cur.id)
         if (!full) return
         const updatedStored: StoredUser = {
@@ -139,6 +203,10 @@ export const useAuthStore = create<AuthStoreState>()(
       becomeHost: () => {
         const cur = get().user
         if (!cur) return
+        if (get().authProvider === 'firebase') {
+          set({ user: { ...cur, isHost: true } })
+          return
+        }
         set((s) => ({
           user: { ...cur, isHost: true },
           users: s.users.map((u) => (u.id === cur.id ? { ...u, isHost: true } : u)),
@@ -151,24 +219,51 @@ export const useAuthStore = create<AuthStoreState>()(
       merge: (persisted, current) => {
         const p = persisted as Partial<AuthStoreState> | undefined
         const raw = p?.users && Array.isArray(p.users) && p.users.length > 0 ? p.users : current.users
-        const users = migrateUsers(raw)
+        const users = ensureSeedUsers(migrateUsers(raw))
         let user: AuthUser | null = (p?.user as AuthUser | null | undefined) ?? current.user
+
+        let authProvider: AuthSessionProvider =
+          p?.authProvider === 'credentials' || p?.authProvider === 'firebase' || p?.authProvider === 'none'
+            ? (p.authProvider as AuthSessionProvider)
+            : 'none'
+
         if (user?.id === 'user_demo') {
           const full = users.find((u) => u.id === DEMO_USER_ID) ?? users[0]
           user = full ? stripPassword(full) : null
-        } else if (user !== null) {
-          const id = user.id
-          if (!users.some((u) => u.id === id)) {
-            user = null
+          if (user) authProvider = 'credentials'
+        }
+
+        if (!user) {
+          authProvider = 'none'
+        } else {
+          const hydratedUser = user
+          if (!p?.authProvider || authProvider === 'none') {
+            authProvider = users.some((u) => u.id === hydratedUser.id) ? 'credentials' : 'firebase'
           }
         }
+
+        if (user !== null) {
+          if (authProvider === 'firebase') {
+            // Trusted — firebase_uid not in seeded `users`.
+          } else if (!users.some((u) => u.id === user!.id)) {
+            user = null
+            authProvider = 'none'
+          }
+        }
+
         return {
           ...current,
           ...p,
+          authProvider,
           users,
           user,
         }
       },
+      partialize: (state) => ({
+        user: state.user,
+        users: state.users,
+        authProvider: state.authProvider,
+      }),
     },
   ),
 )

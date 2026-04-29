@@ -6,6 +6,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { BrowserRouter } from 'react-router-dom'
 
 import App from './App'
+import { FirebaseAuthSync } from './components/auth/FirebaseAuthSync'
 import { theme } from './theme'
 
 import 'leaflet/dist/leaflet.css'
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             v7_relativeSplatPath: true,
           }}
         >
+          <FirebaseAuthSync />
           <App />
         </BrowserRouter>
       </LocalizationProvider>

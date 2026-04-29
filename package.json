@@ -30,6 +30,7 @@
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.2.0",
     "dayjs": "^1.11.20",
+    "firebase": "^11.10.0",
     "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",

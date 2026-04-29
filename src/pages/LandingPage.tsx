@@ -20,7 +20,6 @@ import {
   Chip,
   Container,
   Grid,
-  Link,
   Paper,
   Skeleton,
   Stack,
@@ -33,16 +32,13 @@ import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
 import { useMobileLightMotion } from '../hooks/useMobileLightMotion'
 import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import DateRangePicker from '../components/common/DateRangePicker'
 import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
-import LandingMapFab from '../components/landing/LandingMapFab'
-import MapCTAButton from '../components/landing/MapCTAButton'
-import MapPreview from '../components/landing/MapPreview'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
@@ -69,6 +65,26 @@ const CATS = [
   { icon: LocalOffer, label: 'Budget', type: 'Budget' },
   { icon: Bolt, label: 'Electric', type: 'Electric' },
   { icon: AirportShuttle, label: 'Truck', type: 'Truck' },
+] as const
+
+const HERO_TRUST_NUMBERS = [
+  { k: '2,400+', l: 'vehicles listed' },
+  { k: '98%', l: 'happy renters' },
+  { k: '₱0', l: 'hidden fees' },
+] as const
+
+/** Condensed under hero headline (replaces tall “How it works” + Trust page sections). */
+const HERO_FLOW_COMPACT = [
+  { Icon: SearchRounded, title: 'Search', line: 'Choose area and dates that fit your trip.' },
+  { Icon: BookOnline, title: 'Book', line: 'Confirm details and pay securely (test mode).' },
+  { Icon: DirectionsCar, title: 'Drive', line: 'Meet your host, grab the keys, and go.' },
+] as const
+
+const HERO_WHY_COMPACT = [
+  { Icon: Shield, title: 'Insured trips', line: 'Protection options on every booking.' },
+  { Icon: Verified, title: 'Verified hosts', line: 'Profiles and reviews you can trust.' },
+  { Icon: Security, title: 'Secure payments', line: 'Stripe test mode — card stays with Stripe.' },
+  { Icon: Key, title: 'Flexible pickup', line: 'City pickup points with clear addresses across the PH.' },
 ] as const
 
 export default function LandingPage() {
@@ -169,18 +185,23 @@ export default function LandingPage() {
           overflow: 'hidden',
           background: `linear-gradient(165deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${theme.palette.background.default} 42%, ${alpha(theme.palette.grey[50], 1)} 100%)`,
           pt: { xs: 2, md: 8 },
-          pb: { xs: 3, md: 9 },
+          pb: { xs: 4, md: 9 },
         }}
       >
         <HeroAmbientBackground />
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
-          <Grid container spacing={{ xs: 3, md: 5 }} alignItems="stretch">
+          <Grid container spacing={{ xs: 2.5, md: 6 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7} sx={{ order: { xs: 2, md: 1 } }}>
               <motion.div initial="hidden" animate="visible" variants={fadeUpVariants} transition={tHero}>
                 <Stack
                   data-onboarding="hero"
-                  spacing={{ xs: 2, md: 3 }}
-                  sx={{ maxWidth: 560 }}
+                  spacing={{ xs: 2.25, sm: 2.5, md: 4 }}
+                  sx={{
+                    /** Cap width on small screens only; full column above sm so Trust tiles stay readable */
+                    maxWidth: { xs: 560 },
+                    width: '100%',
+                    pr: { md: 0.5 },
+                  }}
                 >
                   <Chip
                     label="Available across the Philippines"
@@ -190,10 +211,10 @@ export default function LandingPage() {
                       alignSelf: 'flex-start',
                       fontWeight: 600,
                       borderRadius: '999px',
-                      px: { xs: 0.75, sm: 0.5 },
+                      px: { xs: 1, sm: 0.5 },
                       py: 0.25,
-                      fontSize: { xs: '0.7rem', sm: '0.8125rem' },
-                      height: { xs: 26, sm: 32 },
+                      fontSize: { xs: '0.71875rem', sm: '0.8125rem' },
+                      height: { xs: 28, sm: 32 },
                       bgcolor: alpha(theme.palette.primary.main, 0.1),
                       color: 'primary.dark',
                       border: '1px solid',
@@ -204,10 +225,11 @@ export default function LandingPage() {
                     variant="h1"
                     sx={{
                       letterSpacing: '-0.03em',
-                      lineHeight: { xs: 1.12, sm: 1.08 },
-                      fontSize: { xs: '1.65rem', sm: '2.125rem', md: theme.typography.h1.fontSize },
+                      lineHeight: { xs: 1.11, sm: 1.08 },
+                      fontSize: { xs: '1.7rem', sm: '2.125rem', md: theme.typography.h1.fontSize },
                       fontWeight: 800,
-                      whiteSpace: { xs: 'normal', sm: 'pre-line' },
+                      whiteSpace: 'pre-line',
+                      textWrap: 'balance',
                     }}
                   >
                     {'Rent the right ride—\ncars and motorcycles\nfor trips anywhere in the PH.'}
@@ -216,145 +238,299 @@ export default function LandingPage() {
                     variant="body1"
                     color="text.secondary"
                     sx={{
-                      fontSize: { xs: '0.9rem', sm: '1rem', md: '1.0625rem' },
-                      lineHeight: { xs: 1.55, sm: 1.65 },
+                      fontSize: { xs: '0.9375rem', sm: '1rem', md: '1.0625rem' },
+                      lineHeight: { xs: 1.58, sm: 1.65, md: 1.62 },
+                      maxWidth: { xs: '100%', md: '38em' },
                     }}
                   >
                     Transparent pricing in PHP, verified hosts, and pickup from Luzon to Mindanao — from sedans to sport
                     bikes, book in minutes and ride with confidence.
                   </Typography>
 
-                  <Stack spacing={{ xs: 1.25, sm: 1.5 }} sx={{ pt: 0.5 }}>
-                    {/* Mobile: one primary CTA + plan + text link (tab bar = Map; no duplicate map buttons). */}
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ alignItems: { sm: 'stretch' } }}>
-                      <Button
-                        component={RouterLink}
-                        to="/search"
-                        variant="contained"
-                        size="large"
-                        endIcon={<ArrowForward />}
-                        sx={{
-                          py: { xs: 1.15, sm: 1.35 },
-                          px: { xs: 2, sm: 2.5 },
-                          minHeight: { xs: 48, sm: 42 },
-                          borderRadius: { xs: 2.5, sm: 2 },
-                          fontSize: { xs: '0.9375rem', sm: '1rem' },
-                          fontWeight: 700,
-                          width: { xs: '100%', sm: 'auto' },
-                          boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.35)}`,
-                          '&:hover': {
-                            boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
-                          },
-                        }}
-                      >
-                        Browse vehicles
-                      </Button>
-                      {!isMobile ? <MapCTAButton variant="hero" to="/map" /> : null}
-                    </Stack>
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      spacing={{ xs: 1, sm: 1.5 }}
-                      alignItems={{ xs: 'stretch', sm: 'center' }}
-                    >
-                      <Button
-                        href="#trip-search"
-                        variant="outlined"
-                        color="primary"
-                        size="large"
-                        fullWidth={isMobile}
-                        sx={{
-                          py: { xs: 1.15, sm: 1.35 },
-                          px: { xs: 2, sm: 2.5 },
-                          minHeight: { xs: 48, sm: 42 },
-                          borderRadius: { xs: 2.5, sm: 2 },
-                          fontSize: { xs: '0.9375rem', sm: '1rem' },
-                          fontWeight: 600,
-                          borderWidth: 2,
-                          '&:hover': { borderWidth: 2 },
-                        }}
-                      >
-                        Plan a trip
-                      </Button>
-                      <Link
-                        component="button"
-                        type="button"
-                        variant="body2"
-                        onClick={() =>
-                          document
-                            .getElementById('explore-map-preview')
-                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                        }
-                        sx={{
-                          cursor: 'pointer',
-                          textAlign: { xs: 'center', sm: 'center' },
-                          alignSelf: { xs: 'center', sm: 'auto' },
-                          fontWeight: 600,
-                          fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                          border: 'none',
-                          background: 'none',
-                          fontFamily: 'inherit',
-                          color: 'primary.main',
-                          textDecoration: 'underline',
-                          '&:hover': { color: 'primary.dark' },
-                        }}
-                      >
-                        {isMobile ? 'Preview map on this page' : 'See map preview on this page'}
-                      </Link>
-                    </Stack>
-                  </Stack>
-
-                  <Stack
-                    direction="row"
-                    flexWrap="wrap"
-                    useFlexGap
-                    spacing={1.25}
+                  <Box
                     sx={{
-                      pt: 1,
-                      justifyContent: { xs: 'space-between', sm: 'flex-start' },
-                      gap: { xs: 1, sm: 1.25 },
+                      width: '100%',
+                      borderRadius: { xs: 2.5, sm: 0 },
+                      border: { xs: '1px solid', sm: 'none' },
+                      borderColor: { xs: alpha(theme.palette.divider, 0.88), sm: 'transparent' },
+                      bgcolor: { xs: alpha(theme.palette.background.paper, 0.75), sm: 'transparent' },
+                      backdropFilter: { xs: 'blur(18px)', sm: 'none' },
+                      WebkitBackdropFilter: { xs: 'blur(18px)', sm: 'none' },
+                      boxShadow: { xs: `0 4px 24px ${alpha('#000', 0.04)}`, sm: 'none' },
+                      overflow: 'hidden',
                     }}
                   >
-                    {[
-                      { k: '2,400+', l: 'vehicles listed' },
-                      { k: '98%', l: 'happy renters' },
-                      { k: '₱0', l: 'hidden fees' },
-                    ].map((s) => (
-                      <Paper
-                        key={s.k}
-                        elevation={0}
+                    <Grid
+                      container
+                      columnSpacing={{ xs: 0.75, sm: 2.5, md: 4 }}
+                      rowSpacing={0}
+                      sx={{
+                        borderTop: { xs: 'none', sm: '1px solid' },
+                        borderColor: 'divider',
+                        pt: { xs: 1.75, sm: 2.25, md: 2.5 },
+                        px: { xs: 1, sm: 0 },
+                        mt: { xs: 0, md: 0.25 },
+                        width: '100%',
+                      }}
+                    >
+                      {HERO_TRUST_NUMBERS.map((s) => (
+                        <Grid item xs={4} sm={4} md={4} key={s.k}>
+                          <Stack
+                            spacing={{ xs: 0.375, sm: 0.35, md: 0.5 }}
+                            sx={{
+                              textAlign: { xs: 'center', sm: 'left' },
+                            }}
+                          >
+                            <Typography
+                              variant="subtitle2"
+                              fontWeight={800}
+                              sx={{
+                                lineHeight: 1.15,
+                                fontSize: { xs: '0.84375rem', sm: '0.9375rem', md: '1rem' },
+                                letterSpacing: '-0.02em',
+                              }}
+                            >
+                              {s.k}
+                            </Typography>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{
+                                display: 'block',
+                                fontSize: { xs: '0.65625rem', sm: '0.71875rem', md: '0.75rem' },
+                                lineHeight: { xs: 1.35, md: 1.4 },
+                                letterSpacing: { xs: '0.015em', sm: '0.012em' },
+                                opacity: { xs: 0.92, sm: 1 },
+                              }}
+                            >
+                              {s.l}
+                            </Typography>
+                          </Stack>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+
+                  <Box
+                    id="how"
+                    component="section"
+                    aria-labelledby="landing-how-heading"
+                    sx={{
+                      borderRadius: { xs: 2.5, sm: 0 },
+                      px: { xs: 2, sm: 0 },
+                      py: { xs: 2, sm: 0 },
+                      bgcolor: { xs: alpha(theme.palette.primary.main, 0.035), sm: 'transparent' },
+                      border: { xs: `1px solid ${alpha(theme.palette.primary.main, 0.09)}`, sm: 'none' },
+                    }}
+                  >
+                    <Stack spacing={{ xs: 1.125, sm: 1.25, md: 1.75 }}>
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="primary"
+                          sx={{
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            fontSize: { xs: '0.6375rem', sm: '0.65rem', md: '0.6875rem' },
+                          }}
+                        >
+                          Simple flow
+                        </Typography>
+                        <Typography
+                          id="landing-how-heading"
+                          variant="subtitle1"
+                          component="h2"
+                          sx={{
+                            fontWeight: 800,
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.28,
+                            mt: { xs: 0.35, md: 0.5 },
+                            fontSize: { xs: '1.0125rem', sm: '1.0625rem', md: '1.125rem' },
+                          }}
+                        >
+                          How it works
+                        </Typography>
+                      </Box>
+                      <Stack spacing={{ xs: 1.375, sm: 1.25, md: 2 }}>
+                        {HERO_FLOW_COMPACT.map(({ Icon, title, line }, idx) => (
+                          <Stack
+                            key={title}
+                            direction="row"
+                            spacing={{ xs: 1.375, sm: 1.5, md: 1.75 }}
+                            alignItems="flex-start"
+                            sx={{
+                              pb: idx < HERO_FLOW_COMPACT.length - 1 ? { xs: 1.375, sm: 0 } : 0,
+                              borderBottom:
+                                idx < HERO_FLOW_COMPACT.length - 1 ? { xs: `1px solid ${alpha(theme.palette.divider, 0.65)}`, sm: 'none' } : undefined,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                flexShrink: 0,
+                                width: { xs: 40, sm: 36, md: 40 },
+                                height: { xs: 40, sm: 36, md: 40 },
+                                borderRadius: { xs: 2, sm: 1.5, md: 2 },
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                color: 'primary.main',
+                                mt: { xs: 0.0625, sm: 0 },
+                              }}
+                            >
+                              <Icon sx={{ fontSize: { xs: 21, sm: 20, md: 22 } }} aria-hidden />
+                            </Box>
+                            <Box sx={{ minWidth: 0, pt: { xs: 0.25, sm: 0.25, md: 0.375 } }}>
+                              <Typography
+                                variant="body2"
+                                fontWeight={700}
+                                sx={{
+                                  fontSize: { xs: '0.84375rem', sm: '0.895rem', md: '0.9375rem' },
+                                  lineHeight: { xs: 1.32, md: 1.35 },
+                                }}
+                              >
+                                {title}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: 'block',
+                                  mt: { xs: 0.3125, md: 0.375 },
+                                  fontSize: { xs: '0.709375rem', sm: '0.78125rem', md: '0.8125rem' },
+                                  lineHeight: { xs: 1.5, md: 1.55 },
+                                  overflowWrap: 'break-word',
+                                  wordBreak: 'normal',
+                                }}
+                              >
+                                {line}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Stack>
+                  </Box>
+
+                  <Stack
+                    spacing={{ xs: 1.125, sm: 1.25, md: 2 }}
+                    component="section"
+                    aria-labelledby="landing-trust-heading"
+                    sx={{
+                      borderRadius: { xs: 2.5, sm: 0 },
+                      px: { xs: 2, sm: 0 },
+                      py: { xs: 2, sm: 0 },
+                      bgcolor: { xs: alpha(theme.palette.grey[50], 0.92), sm: 'transparent' },
+                      border: { xs: `1px solid ${alpha(theme.palette.divider, 0.75)}`, sm: 'none' },
+                      boxShadow: { xs: `inset 0 1px 0 ${alpha('#fff', 0.65)}`, sm: 'none' },
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="primary"
                         sx={{
-                          flex: { xs: '1 1 calc(33.333% - 8px)', sm: '0 0 auto' },
-                          minWidth: { xs: 0, sm: 104 },
-                          maxWidth: { xs: 'none', sm: 'none' },
-                          px: { xs: 1, sm: 2 },
-                          py: { xs: 0.85, sm: 1.25 },
-                          borderRadius: { xs: 2, sm: 2 },
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: alpha(theme.palette.background.default, 0.85),
-                          backdropFilter: 'blur(8px)',
-                          transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                          '@media (hover: hover)': {
-                            '&:hover': {
-                              borderColor: alpha(theme.palette.primary.main, 0.35),
-                              boxShadow: softShadow,
-                            },
-                          },
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          fontSize: { xs: '0.6375rem', sm: '0.65rem', md: '0.6875rem' },
                         }}
                       >
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={800}
-                          color="text.primary"
-                          sx={{ lineHeight: 1.2, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}
-                        >
-                          {s.k}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                          {s.l}
-                        </Typography>
-                      </Paper>
-                    ))}
+                        Why renters choose us
+                      </Typography>
+                      <Typography
+                        id="landing-trust-heading"
+                        variant="subtitle1"
+                        component="h2"
+                        sx={{
+                          fontWeight: 800,
+                          letterSpacing: '-0.02em',
+                          lineHeight: 1.28,
+                          mt: { xs: 0.35, md: 0.5 },
+                          fontSize: { xs: '1.0125rem', sm: '1.0625rem', md: '1.125rem' },
+                        }}
+                      >
+                        Trust built into every trip
+                      </Typography>
+                    </Box>
+                    <Grid container spacing={{ xs: 0, sm: 1.5, md: 2.5 }}>
+                      {HERO_WHY_COMPACT.map(({ Icon, title, line }, idx) => {
+                        const isLast = idx === HERO_WHY_COMPACT.length - 1
+                        return (
+                          <Grid item xs={12} sm={6} md={6} lg={6} xl={3} key={title}>
+                            <Stack
+                              direction="row"
+                              spacing={{ xs: 1.5, sm: 1.25 }}
+                              alignItems="flex-start"
+                              sx={{
+                                height: { xs: 'auto', sm: '100%' },
+                                p: { xs: 0, sm: 1.5, md: 2 },
+                                pb: { xs: isLast ? 0 : 1.5, sm: 0 },
+                                borderBottom: {
+                                  xs: isLast ? 'none' : `1px solid ${alpha(theme.palette.divider, 0.55)}`,
+                                  sm: 'none',
+                                },
+                                borderRadius: { xs: 0, sm: 2 },
+                                bgcolor: {
+                                  xs: 'transparent',
+                                  sm: alpha(theme.palette.background.paper, 0.94),
+                                },
+                                border: {
+                                  xs: 'none',
+                                  sm: `1px solid ${alpha(theme.palette.divider, 0.72)}`,
+                                },
+                                boxShadow: {
+                                  xs: 'none',
+                                  sm: `0 2px 12px ${alpha('#000', 0.035)}`,
+                                },
+                              }}
+                            >
+                            <Box
+                              sx={{
+                                width: { xs: 36, sm: 32, md: 36 },
+                                height: { xs: 36, sm: 32, md: 36 },
+                                borderRadius: '50%',
+                                flexShrink: 0,
+                                bgcolor: alpha(theme.palette.primary.main, 0.11),
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'primary.main',
+                              }}
+                            >
+                              <Icon sx={{ fontSize: { xs: 18, sm: 16, md: 17 } }} aria-hidden />
+                            </Box>
+                            <Box sx={{ minWidth: 0, flex: 1, pt: { xs: 0.125, md: 0.125 } }}>
+                              <Typography
+                                variant="body2"
+                                fontWeight={700}
+                                sx={{
+                                  fontSize: { xs: '0.875rem', sm: '0.84375rem', md: '0.90625rem' },
+                                  lineHeight: { xs: 1.33, md: 1.35 },
+                                  letterSpacing: '-0.015em',
+                                }}
+                              >
+                                {title}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: 'block',
+                                  mt: { xs: 0.375, sm: 0.25, md: 0.5 },
+                                  fontSize: { xs: '0.75rem', sm: '0.75rem', md: '0.8125rem' },
+                                  lineHeight: { xs: 1.5, md: 1.55 },
+                                  overflowWrap: 'break-word',
+                                  wordBreak: 'normal',
+                                }}
+                              >
+                                {line}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Grid>
+                        )
+                      })}
+                    </Grid>
                   </Stack>
                 </Stack>
               </motion.div>
@@ -375,7 +551,7 @@ export default function LandingPage() {
                   sx={{
                     height: '100%',
                     /** 16px inset @ xs — 8px grid, compact without feeling cramped */
-                    p: { xs: 2, sm: 3.25 },
+                    p: { xs: 2, sm: 3.25, md: 3.5 },
                     borderRadius: { xs: 2.5, md: 3 },
                     border: '1px solid',
                     borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
@@ -601,21 +777,6 @@ export default function LandingPage() {
                       >
                         Search available vehicles
                       </Button>
-                      <Typography variant="body2" component="div" textAlign="center" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-                        <Link
-                          component={RouterLink}
-                          to="/search"
-                          underline="always"
-                          fontWeight={600}
-                          color="primary"
-                          sx={{
-                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                            textUnderlineOffset: 3,
-                          }}
-                        >
-                          Skip dates — browse all vehicles
-                        </Link>
-                      </Typography>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -625,9 +786,6 @@ export default function LandingPage() {
         </Container>
       </Box>
 
-      <MapPreview cars={cars} />
-
-      {/* Categories */}
       <Box id="categories" sx={{ bgcolor: 'grey.50', py: { xs: 4.5, md: 9 } }}>
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <motion.div
@@ -748,14 +906,8 @@ export default function LandingPage() {
             variants={fadeUpVariants}
             transition={tSection}
           >
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              justifyContent="space-between"
-              alignItems={{ xs: 'stretch', sm: 'flex-end' }}
-              spacing={2}
-              sx={{ mb: { xs: 2.5, sm: 3 }, gap: 2 }}
-            >
-              <Box sx={{ maxWidth: 520 }}>
+            <Stack spacing={2} sx={{ mb: { xs: 2.5, sm: 3 }, maxWidth: 560 }}>
+              <Box>
                 <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                   Two wheels
                 </Typography>
@@ -766,25 +918,6 @@ export default function LandingPage() {
                   Sport, naked, and touring bikes with helmets on many listings — filter the full range on search.
                 </Typography>
               </Box>
-              <Button
-                component={RouterLink}
-                to="/search?vt=motorcycle"
-                variant="outlined"
-                color="primary"
-                size="medium"
-                onClick={() => setFilter({ types: [], vehicleType: 'motorcycle' })}
-                endIcon={<ArrowForward />}
-                sx={{
-                  flexShrink: 0,
-                  borderWidth: 2,
-                  borderRadius: 2.5,
-                  minHeight: { xs: 46, sm: 40 },
-                  fontWeight: 700,
-                  '&:hover': { borderWidth: 2 },
-                }}
-              >
-                See all motorcycles
-              </Button>
             </Stack>
             <Grid container spacing={{ xs: 2, md: 3 }}>
               {motoPicks.map((car) => (
@@ -808,42 +941,16 @@ export default function LandingPage() {
           variants={fadeUpVariants}
           transition={tSection}
         >
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            justifyContent="space-between"
-            alignItems={{ xs: 'stretch', sm: 'flex-end' }}
-            spacing={2}
-            sx={{ mb: { xs: 2.5, md: 4 }, gap: 2 }}
-          >
-            <Box sx={{ maxWidth: 520 }}>
-              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                Hand-picked
-              </Typography>
-              <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.35rem', sm: '2rem', md: '2.125rem' } }}>
-                Top picks this week
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
-                Mix of top-rated cars and a standout motorcycle this week — tap a card for details and booking.
-              </Typography>
-            </Box>
-            <Button
-              component={RouterLink}
-              to="/search"
-              variant="outlined"
-              color="primary"
-              size="medium"
-              endIcon={<ArrowForward />}
-              sx={{
-                flexShrink: 0,
-                borderWidth: 2,
-                borderRadius: 2.5,
-                minHeight: { xs: 46, sm: 40 },
-                fontWeight: 700,
-                '&:hover': { borderWidth: 2 },
-              }}
-            >
-              View all
-            </Button>
+          <Stack spacing={2} sx={{ mb: { xs: 2.5, md: 4 }, maxWidth: 560 }}>
+            <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+              Hand-picked
+            </Typography>
+            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.35rem', sm: '2rem', md: '2.125rem' } }}>
+              Top picks this week
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
+              Mix of top-rated cars and a standout motorcycle this week — tap a card for details and booking.
+            </Typography>
           </Stack>
           <Grid container spacing={{ xs: 2, md: 3.5 }}>
             {cars.length === 0
@@ -863,174 +970,6 @@ export default function LandingPage() {
         </motion.div>
       </Container>
 
-      {/* How it works */}
-      <Box id="how" sx={{ bgcolor: 'grey.50', py: { xs: 4.5, md: 9 } }}>
-        <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={landingViewport}
-            variants={fadeUpVariants}
-            transition={tSection}
-          >
-            <Stack spacing={0.75} sx={{ mb: { xs: 2.5, sm: 4 }, textAlign: { xs: 'left', sm: 'center' } }}>
-              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                Simple flow
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.35rem', sm: '2rem', md: '2.125rem' } }}>
-                How it works
-              </Typography>
-            </Stack>
-            <Grid container spacing={{ xs: 1.5, sm: 3 }}>
-              {[
-                { icon: SearchRounded, t: 'Search', d: 'Choose area and dates that fit your trip.' },
-                { icon: BookOnline, t: 'Book', d: 'Confirm details and pay securely (test mode).' },
-                { icon: DirectionsCar, t: 'Drive', d: 'Meet your host, grab the keys, and go.' },
-              ].map((s) => {
-                const Icon = s.icon
-                return (
-                <Grid item xs={12} md={4} key={s.t}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: { xs: 2.25, sm: 3 },
-                      height: '100%',
-                      borderRadius: { xs: 2.5, sm: 3 },
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      bgcolor: 'background.default',
-                      transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-                      '@media (hover: hover)': {
-                        '&:hover': {
-                          boxShadow: softShadow,
-                          borderColor: alpha(theme.palette.primary.main, 0.12),
-                        },
-                      },
-                    }}
-                  >
-                    <Stack
-                      direction={{ xs: 'row', sm: 'column' }}
-                      spacing={{ xs: 2, sm: 0 }}
-                      alignItems={{ xs: 'flex-start', sm: 'center' }}
-                    >
-                      <Box
-                        sx={{
-                          flexShrink: 0,
-                          width: { xs: 48, sm: 56 },
-                          height: { xs: 48, sm: 56 },
-                          borderRadius: 2,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: 'primary.main',
-                        }}
-                      >
-                        <Icon sx={{ fontSize: { xs: 26, sm: 30 } }} aria-hidden />
-                      </Box>
-                      <Box sx={{ textAlign: { xs: 'left', sm: 'center' }, minWidth: 0, pt: { sm: 1.5 } }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '1rem', sm: '1.25rem' }, mb: 0.75 }}>
-                          {s.t}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                          {s.d}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Paper>
-                </Grid>
-                )
-              })}
-            </Grid>
-          </motion.div>
-        </Container>
-      </Box>
-
-      {/* Trust — mobile: list-style rows; desktop: 4-up grid */}
-      <Box sx={{ py: { xs: 4.5, md: 9 } }}>
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={landingViewport}
-            variants={fadeUpVariants}
-            transition={tSection}
-          >
-            <Stack
-              spacing={0.75}
-              sx={{
-                mb: { xs: 2.5, md: 5 },
-                textAlign: { xs: 'left', md: 'center' },
-                maxWidth: { xs: 'none', md: 560 },
-                mx: { md: 'auto' },
-              }}
-            >
-              <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-                Why renters choose us
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.35rem', sm: '2rem', md: '2.125rem' } }}>
-                Trust built into every trip
-              </Typography>
-            </Stack>
-            <Grid container spacing={{ xs: 1.5, md: 4 }}>
-              {[
-                { icon: Shield, t: 'Insured trips', d: 'Protection options on every booking.' },
-                { icon: Verified, t: 'Verified hosts', d: 'Profiles and reviews you can trust.' },
-                { icon: Security, t: 'Secure payments', d: 'Stripe test mode — your card stays with Stripe.' },
-                { icon: Key, t: 'Flexible pickup', d: 'City pickup points with clear addresses across the PH.' },
-              ].map(({ icon: Icon, t, d }) => (
-                <Grid item xs={12} sm={6} md={3} key={t}>
-                  <Stack
-                    direction={{ xs: 'row', sm: 'column' }}
-                    spacing={1.5}
-                    alignItems={{ xs: 'flex-start', sm: 'flex-start' }}
-                    sx={{
-                      p: { xs: 2, sm: 2.5 },
-                      borderRadius: { xs: 2.5, sm: 3 },
-                      height: '100%',
-                      border: '1px solid',
-                      borderColor: { xs: 'divider', sm: 'transparent' },
-                      bgcolor: { xs: 'background.paper', sm: 'transparent' },
-                      transition: 'background-color 0.2s ease, border-color 0.2s ease',
-                      '@media (hover: hover)': {
-                        '&:hover': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          borderColor: alpha(theme.palette.primary.main, 0.12),
-                        },
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: { xs: 44, sm: 48 },
-                        height: { xs: 44, sm: 48 },
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        bgcolor: 'primary.light',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'primary.main',
-                      }}
-                    >
-                      <Icon fontSize="small" />
-                    </Box>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>
-                        {t}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, mt: 0.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                        {d}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Grid>
-              ))}
-            </Grid>
-          </motion.div>
-        </Container>
-      </Box>
-      <LandingMapFab />
     </Box>
   )
 }

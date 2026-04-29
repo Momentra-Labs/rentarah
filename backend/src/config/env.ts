@@ -42,4 +42,9 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL,
   /** Comma-separated allowed origins; if unset, CORS reflects the request origin (fine for local dev). */
   corsOrigin: process.env.CORS_ORIGIN,
+  /**
+   * Firebase project id (e.g. `rentarah`) — passed to Admin SDK if set.
+   * Local dev also needs `GOOGLE_APPLICATION_CREDENTIALS` pointing at a service account JSON.
+   */
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
 } as const
