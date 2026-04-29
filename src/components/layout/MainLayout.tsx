@@ -42,6 +42,12 @@ export default function MainLayout() {
   const hideFooterOnMap = location.pathname === '/map'
   /** Bottom nav is fixed; map should extend edge-to-edge without a dead white strip from main padding. */
   const immersiveMapMobile = hideFooterOnMap
+
+  /** On small screens only: footer is rendered inside `main` after the routed page so it sits above the fixed tab bar in scroll order. */
+  const mobileFooterInMain =
+    isMobile &&
+    !hideFooterOnMessages &&
+    !hideFooterOnMap
   const navigate = useNavigate()
   const logout = useAuthStore((s) => s.logout)
   const user = useAuthStore((s) => s.user)
@@ -195,11 +201,18 @@ export default function MainLayout() {
                       sm: 'env(safe-area-inset-bottom, 0px)',
                       md: 'env(safe-area-inset-bottom, 0px)',
                     }
-                  : {
-                      xs: MOBILE_BOTTOM_NAV_SX_PB,
-                      sm: MOBILE_BOTTOM_NAV_SX_PB,
-                      md: 'max(12px, env(safe-area-inset-bottom))',
-                    },
+                  : mobileFooterInMain
+                    ? /** Footer clears the fixed bar; avoid stacking this reserve on top of the footer bottom padding. */
+                      {
+                        xs: 'max(8px, env(safe-area-inset-bottom, 0px))',
+                        sm: 'max(8px, env(safe-area-inset-bottom, 0px))',
+                        md: 'max(12px, env(safe-area-inset-bottom))',
+                      }
+                    : {
+                        xs: MOBILE_BOTTOM_NAV_SX_PB,
+                        sm: MOBILE_BOTTOM_NAV_SX_PB,
+                        md: 'max(12px, env(safe-area-inset-bottom))',
+                      },
             }}
           >
             <AnimatePresence mode="wait">
@@ -225,10 +238,11 @@ export default function MainLayout() {
                 <Outlet />
               </motion.div>
             </AnimatePresence>
+            {mobileFooterInMain ? <Footer /> : null}
           </Box>
         </Box>
       </Box>
-      {!hideFooterOnMessages && !hideFooterOnMap ? <Footer /> : null}
+      {!mobileFooterInMain && !hideFooterOnMessages && !hideFooterOnMap ? <Footer /> : null}
       {!immersiveMobileMessageThread && !hideFooterOnMap ? (
         <MobileBottomNav onAuthOpen={handleAuthOpen} />
       ) : null}

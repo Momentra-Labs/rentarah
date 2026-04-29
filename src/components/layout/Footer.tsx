@@ -1,6 +1,6 @@
 import FacebookOutlined from '@mui/icons-material/FacebookOutlined'
 import Instagram from '@mui/icons-material/Instagram'
-import { Box, Container, Divider, Link, Stack, Typography } from '@mui/material'
+import { Box, Container, Link, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
@@ -27,19 +27,17 @@ const SOCIAL = [
 
 const linkSx = {
   typography: 'body2',
-  fontWeight: 600,
-  fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-  color: 'text.primary',
+  fontWeight: 500,
+  fontSize: '0.8125rem',
+  color: 'text.secondary',
   textDecoration: 'none',
   letterSpacing: '-0.01em',
-  transition: 'color 0.2s ease, text-underline-offset 0.2s ease',
-  textUnderlineOffset: 4,
-  opacity: 0.88,
+  transition: 'color 0.2s ease',
   whiteSpace: 'nowrap',
   '&:hover': {
     color: 'primary.main',
-    opacity: 1,
     textDecoration: 'underline',
+    textUnderlineOffset: 3,
   },
 } as const
 
@@ -156,14 +154,10 @@ function MobileFooterStrip() {
             lineHeight: 1.45,
             color: 'text.secondary',
             fontWeight: 500,
-            maxWidth: 400,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical' as const,
-            overflow: 'hidden',
+            maxWidth: 360,
           }}
         >
-          Rent vehicles easily in the Philippines.
+          Philippines rentals — book cars &amp; two-wheelers.
         </Typography>
 
         <Box
@@ -202,7 +196,7 @@ function MobileFooterStrip() {
             scrollMarginBottom: { xs: 4, md: 0 },
           }}
         >
-          © {year} Rentara · Demo · PHP
+          © {year} Rentara · demo
         </Typography>
       </Stack>
     </Box>
@@ -210,7 +204,7 @@ function MobileFooterStrip() {
 }
 
 /**
- * Site footer — compact app-like strip on small screens; full brand + link card on md+.
+ * Site footer — compact strip on mobile; desktop: single row (logo + links + social) and a thin legal line.
  */
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -231,29 +225,12 @@ export default function Footer() {
         },
         borderTop: '1px solid',
         borderColor: 'divider',
-        bgcolor: (t) => alpha(t.palette.grey[50], 0.98),
-        pt: { xs: 2, md: 5 },
+        bgcolor: 'background.default',
+        pt: { xs: 2, md: 2.5 },
         pb: {
           xs: (t) =>
             `calc(${t.spacing(2)} + ${MOBILE_TAB_BAR_INSET_PX + MOBILE_FOOTER_ADDITIONAL_CLEAR_PX}px + env(safe-area-inset-bottom, 0px))`,
-          md: 5,
-        },
-        backgroundImage: {
-          xs: 'none',
-          md: (t) =>
-            `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.04)} 0%, transparent 42%, ${alpha(t.palette.grey[100], 0.35)} 100%)`,
-        },
-        '&::before': {
-          content: '""',
-          display: { xs: 'none', md: 'block' },
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 3,
-          background: (t) =>
-            `linear-gradient(90deg, ${alpha(t.palette.primary.main, 0.2)}, ${alpha(t.palette.primary.main, 0.06)}, transparent)`,
-          pointerEvents: 'none',
+          md: 2.5,
         },
       }}
     >
@@ -261,120 +238,69 @@ export default function Footer() {
         <MobileFooterStrip />
 
         <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-          <Stack
-            direction="row"
-            spacing={2}
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Stack spacing={1.5} sx={{ maxWidth: 340, flexShrink: 0 }}>
+          <Stack spacing={2}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              flexWrap="wrap"
+              rowGap={1.5}
+              columnGap={2}
+            >
               <Box
                 component={RouterLink}
                 to="/"
                 sx={{
                   display: 'inline-block',
-                  maxWidth: 228,
-                  overflow: 'hidden',
+                  maxWidth: 200,
                   lineHeight: 0,
                   textDecoration: 'none',
                   color: 'inherit',
-                  transition: 'transform 0.22s ease, opacity 0.2s ease',
-                  '&:hover': { opacity: 0.92, transform: 'translateY(-1px)' },
+                  flexShrink: 0,
                   '&:focus-visible': {
                     outline: '2px solid',
                     outlineColor: 'primary.main',
-                    outlineOffset: 4,
+                    outlineOffset: 3,
                     borderRadius: 1,
                   },
                 }}
               >
                 <RentaraLogoMark variant="navLockup" size="sm" showTextFallback />
               </Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  lineHeight: 1.65,
-                  fontSize: '0.9375rem',
-                  fontWeight: 500,
-                  color: 'text.secondary',
-                  maxWidth: 360,
-                }}
-              >
-                Rent vehicles easily — anytime, anywhere in the Philippines.
-              </Typography>
-            </Stack>
 
-            <Box
-              sx={{
-                flex: '1 1 auto',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                minWidth: 0,
-              }}
-            >
               <Stack
-                spacing={1.75}
-                alignItems="flex-end"
-                sx={{
-                  maxWidth: 520,
-                  px: 2.5,
-                  py: 2,
-                  borderRadius: 2.5,
-                  border: '1px solid',
-                  borderColor: (t) => alpha(t.palette.primary.main, 0.1),
-                  bgcolor: (t) => alpha(t.palette.common.white, 0.65),
-                  boxShadow: (t) => `0 1px 0 ${alpha(t.palette.common.black, 0.04)}`,
-                  backdropFilter: 'blur(8px)',
-                }}
+                direction="row"
+                alignItems="center"
+                flexWrap="wrap"
+                justifyContent="flex-end"
+                columnGap={0}
+                rowGap={0.5}
+                component="nav"
+                aria-label="Footer"
+                sx={{ flex: '1 1 auto', minWidth: 0 }}
               >
-                <Stack
-                  component="nav"
-                  aria-label="Footer"
-                  direction="row"
-                  flexWrap="wrap"
-                  useFlexGap
-                  spacing={1}
-                  columnGap={1.25}
-                  rowGap={1}
-                  justifyContent="flex-end"
-                  alignItems="center"
+                {FOOTER_LINKS.map((item, i) => (
+                  <Box key={'to' in item ? item.to : item.href} sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {i > 0 ? (
+                      <Box
+                        component="span"
+                        aria-hidden
+                        sx={{ color: 'text.disabled', fontSize: '0.65rem', px: 1, userSelect: 'none' }}
+                      >
+                        ·
+                      </Box>
+                    ) : null}
+                    <FooterNavLink item={item} />
+                  </Box>
+                ))}
+                <Box
+                  component="span"
+                  aria-hidden
+                  sx={{ color: 'text.disabled', fontSize: '0.65rem', px: 1, userSelect: 'none' }}
                 >
-                  {FOOTER_LINKS.map((item, i) => (
-                    <Box key={'to' in item ? item.to : item.href} component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                      {i > 0 ? (
-                        <Box
-                          component="span"
-                          aria-hidden
-                          sx={{
-                            color: 'text.disabled',
-                            fontSize: '0.65rem',
-                            lineHeight: 1,
-                            userSelect: 'none',
-                            opacity: 0.65,
-                            mx: 0.5,
-                          }}
-                        >
-                          ●
-                        </Box>
-                      ) : null}
-                      <FooterNavLink item={item} />
-                    </Box>
-                  ))}
-                </Stack>
-
-                <Stack
-                  direction="row"
-                  spacing={0.25}
-                  justifyContent="flex-end"
-                  alignItems="center"
-                  sx={{
-                    width: '100%',
-                    pt: 0.25,
-                    borderTop: '1px solid',
-                    borderColor: (t) => alpha(t.palette.divider, 0.85),
-                  }}
-                >
+                  ·
+                </Box>
+                <Stack direction="row" spacing={0.25} alignItems="center" component="span">
                   {SOCIAL.map(({ label, href, Icon }) => (
                     <Link
                       key={label}
@@ -384,17 +310,11 @@ export default function Footer() {
                       aria-label={label}
                       sx={{
                         display: 'inline-flex',
-                        p: 0.85,
-                        borderRadius: 1.5,
-                        color: 'text.primary',
-                        opacity: 0.75,
-                        transition: 'color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease',
-                        '&:hover': {
-                          color: 'primary.main',
-                          opacity: 1,
-                          bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                          transform: 'translateY(-2px)',
-                        },
+                        p: 0.5,
+                        borderRadius: 1,
+                        color: 'text.secondary',
+                        transition: 'color 0.2s ease',
+                        '&:hover': { color: 'primary.main' },
                         '&:focus-visible': {
                           outline: '2px solid',
                           outlineColor: 'primary.main',
@@ -402,49 +322,32 @@ export default function Footer() {
                         },
                       }}
                     >
-                      <Icon sx={{ fontSize: 22 }} />
+                      <Icon sx={{ fontSize: 20 }} />
                     </Link>
                   ))}
                 </Stack>
               </Stack>
-            </Box>
-          </Stack>
+            </Stack>
 
-          <Divider
-            sx={{
-              my: 3.5,
-              borderColor: (t) => alpha(t.palette.divider, 0.9),
-            }}
-          />
-
-          <Stack
-            direction="row"
-            spacing={4}
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography
-              variant="body2"
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              flexWrap="wrap"
+              gap={1}
               sx={{
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: 'text.primary',
-                opacity: 0.85,
+                pt: 1.5,
+                borderTop: '1px solid',
+                borderColor: (t) => alpha(t.palette.divider, 0.65),
               }}
             >
-              © {year} Rentara. All rights reserved.
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                fontWeight: 500,
-                fontSize: '0.75rem',
-                letterSpacing: '0.02em',
-              }}
-            >
-              Demo marketplace · PHP · Simulated bookings &amp; listings
-            </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.75rem' }}>
+                © {year} Rentara
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', fontWeight: 500 }}>
+                Demo · PHP · mock data
+              </Typography>
+            </Stack>
           </Stack>
         </Box>
       </Container>

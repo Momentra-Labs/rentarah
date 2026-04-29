@@ -120,15 +120,29 @@ function SocialGoogleLogin({
    */
   onSignedIn: () => Promise<void> | void
 }) {
+  const theme = useTheme()
   const [loading, setLoading] = useState(false)
+  /** Google brand palette — cohesive button without heavy rainbow chrome. */
+  const gBlue = '#4285F4'
+  const gBlueSoft = alpha(gBlue, theme.palette.mode === 'light' ? 0.12 : 0.22)
+  const gGradient = `linear-gradient(135deg,
+    ${alpha('#4285F4', theme.palette.mode === 'light' ? 0.2 : 0.35)} 0%,
+    ${alpha('#34A853', theme.palette.mode === 'light' ? 0.12 : 0.2)} 34%,
+    ${alpha('#FBBC04', theme.palette.mode === 'light' ? 0.14 : 0.18)} 67%,
+    ${alpha('#EA4335', theme.palette.mode === 'light' ? 0.12 : 0.22)} 100%)`
 
   return (
     <Box
       className="mt-3 rounded-xl px-3 py-2.5 sm:mt-4 sm:rounded-2xl sm:p-4 border"
       sx={{
-        borderColor: 'divider',
+        borderColor: alpha(gBlue, theme.palette.mode === 'light' ? 0.22 : 0.35),
         borderStyle: 'solid',
-        bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.03 : 0.08),
+        bgcolor: gBlueSoft,
+        backgroundImage: gGradient,
+        boxShadow:
+          theme.palette.mode === 'light'
+            ? `0 1px 0 ${alpha(theme.palette.common.black, 0.04)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.6)}`
+            : `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.06)}`,
       }}
     >
       <Stack spacing={1.5}>
@@ -142,17 +156,45 @@ function SocialGoogleLogin({
         <Button
           type="button"
           fullWidth
-          variant="outlined"
-          color="inherit"
+          variant="contained"
           disabled={loading}
           className="min-h-touch rounded-2xl"
-          startIcon={loading ? undefined : <Google />}
+          startIcon={loading ? undefined : <Google sx={{ color: '#fff', fontSize: 22 }} />}
           sx={{
-            borderColor: 'divider',
-            color: 'text.primary',
-            py: 1.2,
+            py: 1.25,
             borderRadius: 2,
-            bgcolor: 'background.paper',
+            textTransform: 'none',
+            fontWeight: 800,
+            fontSize: '0.9975rem',
+            letterSpacing: '-0.01em',
+            backgroundColor: gBlue,
+            backgroundImage: `linear-gradient(180deg,
+              ${alpha('#ffffff', theme.palette.mode === 'light' ? 0.22 : 0.08)} 0%,
+              ${alpha('#000000', theme.palette.mode === 'light' ? 0 : 0.08)} 100%)`,
+            border: `1px solid ${alpha(gBlue, theme.palette.mode === 'light' ? 0.55 : 0.65)}`,
+            boxShadow:
+              theme.palette.mode === 'light'
+                ? `0 4px 14px ${alpha(gBlue, 0.42)}, inset 0 1px 0 ${alpha('#fff', 0.35)}`
+                : `0 4px 16px ${alpha(gBlue, 0.55)}, inset 0 1px 0 ${alpha('#fff', 0.08)}`,
+            transition: 'transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease',
+            '&:hover': {
+              backgroundColor: '#5a94f5',
+              backgroundImage: `linear-gradient(180deg,
+                ${alpha('#ffffff', theme.palette.mode === 'light' ? 0.28 : 0.12)} 0%,
+                ${alpha('#000000', theme.palette.mode === 'light' ? 0 : 0.06)} 100%)`,
+              filter: 'none',
+              boxShadow: `0 6px 20px ${alpha(gBlue, 0.52)}`,
+              borderColor: alpha(gBlue, 0.95),
+            },
+            '&:active': {
+              transform: 'scale(0.99)',
+            },
+            '&.Mui-disabled': {
+              color: alpha('#fff', 0.76),
+              background: alpha(theme.palette.grey[500], theme.palette.mode === 'light' ? 0.18 : 0.42),
+              borderColor: alpha(theme.palette.divider, 0.5),
+              boxShadow: 'none',
+            },
           }}
           onClick={() => {
             void (async () => {
@@ -165,9 +207,9 @@ function SocialGoogleLogin({
             })()
           }}
         >
-          {loading ? (
+            {loading ? (
             <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-              <CircularProgress size={22} color="primary" thickness={5} />
+              <CircularProgress size={22} sx={{ color: alpha('#ffffff', 0.95) }} thickness={5} />
               <span>Connecting…</span>
             </Stack>
           ) : (
