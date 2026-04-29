@@ -5,9 +5,9 @@
 # (dev only); production lives in dist/ after `npm run build`.
 #
 # Settings → Pages → Source: GitHub Actions (pick this workflow).
-# Optional (Actions → Secrets and variables → Actions):
-# VITE_FIREBASE_* — Firebase web SDK (same names as `.env.local`)
-# Without them, Firebase may be unset in the production bundle depending on fallback env.
+# Settings → Secrets: use EITHER repository secrets, OR secrets on the same environment
+# as this workflow (see build job below). Environment-scoped secrets are NOT visible to jobs
+# that don't set `jobs.<id>.environment` to that name.
 
 name: Deploy to GitHub Pages
 
@@ -28,6 +28,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Required so Firebase VITE_* from Settings → Secrets → github-pages resolve at build time.
+    environment: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
