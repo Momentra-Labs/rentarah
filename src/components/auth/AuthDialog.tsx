@@ -106,9 +106,21 @@ const strengthBarValue = (level: PasswordStrengthLevel) => {
 /** Outlined inputs: Rentara rings; optional compact tier for thumb-friendly 44px min height + denser gutters. */
 function authOutlinedFieldSx(theme: Theme, compact?: boolean) {
   return {
+    overflow: 'visible',
+    /**
+     * MUI sets InputLabel `overflow: hidden` + shrink `transform`; same-node overflow clips transformed text.
+     * Double-`&` raises specificity so this wins over styled defaults + responsiveFontSizes on body1.
+     */
+    '&& .MuiInputLabel-root': {
+      overflow: 'visible',
+      textOverflow: 'clip',
+      lineHeight: 1.5,
+      pointerEvents: 'auto',
+    },
     '& .MuiOutlinedInput-root': {
       borderRadius: compact ? 2 : 2.5,
       minHeight: compact ? 44 : undefined,
+      alignItems: 'center',
       transition: 'box-shadow 0.2s ease',
       '&:hover fieldset': { borderColor: alpha(theme.palette.primary.main, 0.45) },
       '&.Mui-focused': {
@@ -594,31 +606,45 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
           overflowX: 'hidden',
         }}
       >
-        <IconButton
-          aria-label="Close"
-          onClick={onClose}
-          size="small"
-          className="min-h-touch min-w-touch absolute right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[2] sm:right-3 sm:top-3"
+        <Stack
+          direction="row"
+          alignItems="flex-start"
+          justifyContent="space-between"
+          spacing={1}
+          sx={{ mb: { xs: 1.5, sm: 2 } }}
         >
-          <Close />
-        </IconButton>
-        {/** Only the top heading needs inset so it doesn’t run under the floating close control. */}
-        <Box className="mb-1.5 pr-11 sm:mb-3 sm:pr-14">
-          <Typography
-            variant="h6"
-            className={`font-extrabold tracking-tight ${tab === 'register' ? 'text-base leading-snug sm:text-fluid-heading' : 'text-fluid-heading'}`}
+          <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
+            <Typography
+              variant="h6"
+              className={`font-extrabold tracking-tight ${tab === 'register' ? 'text-base leading-snug sm:text-fluid-heading' : 'text-fluid-heading'}`}
+            >
+              {tab === 'login' ? 'Welcome back' : 'Create your account'}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600, display: 'block', mt: 0.2 }}
+              className={`${tab === 'register' ? 'text-[0.65rem] sm:text-[0.75rem]' : 'text-[0.7rem] sm:text-[0.75rem]'}`}
+            >
+              Rentara — Philippines rentals
+            </Typography>
+          </Box>
+          <IconButton
+            aria-label="Close dialog"
+            onClick={onClose}
+            size="small"
+            className="min-h-touch min-w-touch -mt-0.5 shrink-0 sm:mt-0"
+            sx={{
+              color: 'text.secondary',
+              borderRadius: 2,
+              '&:hover': {
+                bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'light' ? 0.06 : 0.12),
+              },
+            }}
           >
-            {tab === 'login' ? 'Welcome back' : 'Create your account'}
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ fontWeight: 600, display: 'block', mt: 0.2 }}
-            className={`${tab === 'register' ? 'text-[0.65rem] sm:text-[0.75rem]' : 'text-[0.7rem] sm:text-[0.75rem]'}`}
-          >
-            Rentara — Philippines rentals
-          </Typography>
-        </Box>
+            <Close />
+          </IconButton>
+        </Stack>
         <Typography
           variant="body2"
           color="text.secondary"
@@ -677,9 +703,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       </DialogTitle>
 
       <DialogContent
-        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-0 sm:px-8 sm:pb-6"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:px-8 sm:pb-6 sm:pt-3"
         sx={{
           WebkitOverflowScrolling: 'touch',
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
         {tab === 'login' ? (
@@ -688,7 +716,11 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
             spacing={compactAuthFields ? 1.25 : 2}
             onSubmit={onLogin}
             noValidate
-            sx={{ width: '100%' }}
+            sx={{
+              width: '100%',
+              /** Sign-in has no wizard header unlike Register — shrink labels sit above the input; reserve space so they aren't clipped by DialogContent overflow (registration fields sit lower naturally). */
+              pt: { xs: 2.75, sm: 2 },
+            }}
           >
             {lf.formState.errors.root && (
               <Alert severity="error" icon={<ErrorOutlineRounded />} sx={{ borderRadius: 2 }}>

@@ -2,7 +2,7 @@ import NotificationsNoneOutlined from '@mui/icons-material/NotificationsNoneOutl
 import { Box, Stack, Typography } from '@mui/material'
 import { motion } from 'framer-motion'
 
-const MotionStack = motion(Stack)
+const MotionStack = motion.create(Stack)
 
 export type NotificationEmptyStateProps = {
   /** e.g. when a filter has no results */

@@ -177,6 +177,15 @@ const baseTheme = createTheme({
         },
       },
     },
+    /** Default is overflow:hidden + textOverflow:ellipsis; with shrink transforms that clips the tops of labels (esp. after responsiveFontSizes on body1). */
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          overflow: 'visible',
+          textOverflow: 'clip',
+        },
+      },
+    },
     MuiTextField: {
       defaultProps: {
         variant: 'outlined',

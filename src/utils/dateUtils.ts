@@ -24,6 +24,39 @@ export function withDefaultDropoffTime(d: Dayjs): Dayjs {
     .millisecond(0)
 }
 
+export function snapToNearestHalfHourFromMidnight(totalMins: number): number {
+  const rounded = Math.round(totalMins / 30) * 30
+  return Math.min(23 * 60 + 30, Math.max(0, rounded))
+}
+
+/** Minutes from midnight for `d` snapped to nearest 30 minutes. */
+export function minutesFromMidnightSnappedHalfHour(d: Dayjs): number {
+  return snapToNearestHalfHourFromMidnight(d.hour() * 60 + d.minute())
+}
+
+/** Labels for all 48 half-hour slots in a day (12-hour clock). */
+export function formatMinutesFromMidnightLabel(totalMins: number): string {
+  const h = Math.floor(totalMins / 60)
+  const m = totalMins % 60
+  return dayjs().startOf('day').hour(h).minute(m).format('h:mm A')
+}
+
+/** Enumerate `[0, 30, …, 23×60+30]` for select menus. */
+export function halfHourMinutesFromMidnightOptions(): readonly number[] {
+  const out: number[] = []
+  for (let mins = 0; mins <= 23 * 60 + 30; mins += 30) {
+    out.push(mins)
+  }
+  return out
+}
+
+/** Apply minutes-from-midnight to the calendar day of `base` (hour/minute only). */
+export function applyMinutesFromMidnightToDay(base: Dayjs, totalMins: number): Dayjs {
+  const h = Math.floor(totalMins / 60)
+  const m = totalMins % 60
+  return base.hour(h).minute(m).second(0).millisecond(0)
+}
+
 /** `YYYY-MM-DDTHH:mm` for URL query params (local, no timezone shift). */
 export function formatSearchDateTimeParam(d: Dayjs): string {
   return d.format('YYYY-MM-DDTHH:mm')

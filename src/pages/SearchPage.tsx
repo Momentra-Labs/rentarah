@@ -151,7 +151,7 @@ export default function SearchPage() {
         <Container
           maxWidth="lg"
           sx={{
-            py: { xs: 1.5, md: 2 },
+            py: { xs: 1, md: 2 },
             ...containerGutters,
           }}
         >

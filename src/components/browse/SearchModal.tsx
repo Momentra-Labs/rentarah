@@ -1,10 +1,13 @@
 import CloseRounded from '@mui/icons-material/CloseRounded'
 import { Stack, TextField } from '@mui/material'
+import type { TextFieldProps } from '@mui/material/TextField'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { Dayjs } from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+
+import { pickerFocusOutlineSx } from '../../styles/pickerFocus'
 
 const MOCK_LOCATIONS = [
   'Manila',
@@ -135,7 +138,7 @@ export default function SearchModal({
             transition={{ type: 'spring', stiffness: 380, damping: 34 }}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-neutral-100 px-4 py-3 sm:px-5">
+            <div className="flex shrink-0 items-center justify-between border-b border-neutral-100 px-4 py-3 sm:px-5">
               <h2 id="browse-search-title" className="text-base font-semibold text-neutral-900">
                 Find a car
               </h2>
@@ -145,11 +148,12 @@ export default function SearchModal({
                 className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100"
                 aria-label="Close"
               >
-                <CloseRounded />
+                <CloseRounded aria-hidden />
               </button>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:space-y-4 sm:px-5 sm:py-5">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:space-y-4 sm:px-5 sm:py-5 pb-2">
               <div
                 className={[
                   'relative rounded-2xl border-2 px-4 py-3 transition-colors duration-150',
@@ -172,7 +176,7 @@ export default function SearchModal({
                     setLocationQueryActive(true)
                   }}
                   onFocus={() => setActiveSection('location')}
-                  className="mt-1 w-full border-0 bg-transparent p-0 text-sm font-medium text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-0"
+                  className="mt-1 w-full border-0 bg-transparent p-0 text-sm font-medium text-neutral-900 placeholder:text-neutral-400 outline-none focus:ring-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A56DB]"
                 />
                 {activeSection === 'location' && locationQueryActive && suggestions.length > 0 && (
                   <ul
@@ -204,49 +208,67 @@ export default function SearchModal({
                 <DateTimePicker
                   ampm
                   views={['year', 'month', 'day', 'hours', 'minutes']}
+                  minutesStep={30}
+                  inputFormat="MM/DD/YYYY hh:mm A"
                   label="Pick-up date & time"
                   value={pickup}
                   onChange={handlePickupChange}
                   minDate={minPickup}
                   onOpen={() => setActiveSection('pickup')}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      onFocus={() => setActiveSection('pickup')}
-                      sx={{
-                        ...(params.sx ?? {}),
-                        ...(activeSection === 'pickup'
-                          ? {
-                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
-                            }
-                          : {}),
-                      }}
-                    />
-                  )}
+                  renderInput={(params) => {
+                    const sectionSx =
+                      activeSection === 'pickup'
+                        ? {
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
+                          }
+                        : {}
+                    const merged = [
+                      pickerFocusOutlineSx,
+                      params.sx ?? {},
+                      sectionSx,
+                    ] as TextFieldProps['sx']
+                    return (
+                      <TextField
+                        {...params}
+                        onFocus={() => setActiveSection('pickup')}
+                        InputLabelProps={{ ...params.InputLabelProps, sx: { fontWeight: 600 } }}
+                        sx={merged}
+                      />
+                    )
+                  }}
                 />
                 <DateTimePicker
                   ampm
                   views={['year', 'month', 'day', 'hours', 'minutes']}
+                  minutesStep={30}
+                  inputFormat="MM/DD/YYYY hh:mm A"
                   label="Return date & time"
                   value={dropoff}
                   onChange={onDropoffChange}
                   minDate={dropoffMin}
                   disabled={!pickup}
                   onOpen={() => setActiveSection('return')}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      onFocus={() => setActiveSection('return')}
-                      sx={{
-                        ...(params.sx ?? {}),
-                        ...(activeSection === 'return'
-                          ? {
-                              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
-                            }
-                          : {}),
-                      }}
-                    />
-                  )}
+                  renderInput={(params) => {
+                    const sectionSx =
+                      activeSection === 'return'
+                        ? {
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
+                          }
+                        : {}
+                    const merged = [
+                      pickerFocusOutlineSx,
+                      params.sx ?? {},
+                      sectionSx,
+                    ] as TextFieldProps['sx']
+                    return (
+                      <TextField
+                        {...params}
+                        onFocus={() => setActiveSection('return')}
+                        InputLabelProps={{ ...params.InputLabelProps, sx: { fontWeight: 600 } }}
+                        sx={merged}
+                      />
+                    )
+                  }}
                 />
               </Stack>
               <p className="text-xs leading-snug text-neutral-500">
@@ -254,14 +276,15 @@ export default function SearchModal({
               </p>
             </div>
 
-            <div className="border-t border-neutral-100 px-4 py-3 sm:px-5 sm:py-4">
+            <div className="sticky bottom-0 z-[2] shrink-0 border-t border-neutral-100 bg-white px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,0,0,0.06)] sm:px-5 sm:pb-4">
               <button
                 type="button"
                 onClick={onSearch}
-                className="w-full rounded-xl bg-[#1A56DB] py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1748b8] active:scale-[0.99]"
+                className="w-full rounded-xl bg-[#1A56DB] py-3.5 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(26,86,219,0.35)] transition hover:bg-[#1748b8] active:scale-[0.99]"
               >
-                Search
+                Search listings
               </button>
+            </div>
             </div>
           </motion.div>
         </motion.div>

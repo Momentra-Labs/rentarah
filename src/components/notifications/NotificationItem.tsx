@@ -6,7 +6,7 @@ import { formatNotificationTime } from '../../utils/notificationTime'
 import type { AppNotification } from '../../types'
 import { colorSx, getNotificationMeta } from './notificationMeta'
 
-const MotionBox = motion(Box)
+const MotionBox = motion.create(Box)
 
 export type NotificationItemProps = {
   notification: AppNotification

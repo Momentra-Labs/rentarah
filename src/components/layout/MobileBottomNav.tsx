@@ -6,7 +6,7 @@ import MapOutlined from '@mui/icons-material/MapOutlined'
 import SearchOutlined from '@mui/icons-material/SearchOutlined'
 import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import { Badge, BottomNavigation, BottomNavigationAction, Box, Paper } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -94,6 +94,9 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
         pb: 'env(safe-area-inset-bottom, 0px)',
         displayPrint: 'none',
         overflow: 'visible',
+        bgcolor: alpha(theme.palette.background.paper, 0.86),
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
       }}
     >
       <Box sx={{ position: 'relative', overflow: 'visible' }}>
@@ -131,10 +134,19 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             },
           }}
         >
-          <BottomNavigationAction label="Home" icon={<HomeOutlined fontSize="small" />} />
-          <BottomNavigationAction label="Browse" icon={<SearchOutlined fontSize="small" />} />
+          <BottomNavigationAction
+            label="Home"
+            aria-label="Home — go to the home page"
+            icon={<HomeOutlined fontSize="small" aria-hidden />}
+          />
+          <BottomNavigationAction
+            label="Browse"
+            aria-label="Browse — search vehicles"
+            icon={<SearchOutlined fontSize="small" aria-hidden />}
+          />
           <BottomNavigationAction
             label="Map"
+            aria-label="Map — explore rentals on the map"
             icon={
               <Box
                 component="span"
@@ -143,31 +155,33 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: 50,
-                  height: 50,
+                  width: 54,
+                  height: 54,
                   borderRadius: '50%',
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
-                  boxShadow: 3,
+                  boxShadow: (t) =>
+                    `0 8px 28px ${alpha(t.palette.primary.dark, 0.45)}, 0 2px 12px ${alpha(t.palette.common.black, 0.12)}`,
                   /** Less lift than -2.75 so the bubble encroaches less on scrollable content. */
-                  mt: -2,
+                  mt: -2.35,
                   mb: 0.25,
                   border: 2,
                   borderColor: 'background.paper',
                 }}
               >
-                <MapOutlined sx={{ fontSize: 26 }} />
+                <MapOutlined sx={{ fontSize: 28 }} />
               </Box>
             }
             sx={(t) => ({
               color: 'text.secondary',
-              minWidth: 64,
+              minWidth: 68,
               '&.Mui-selected': { color: t.palette.primary.main },
             })}
           />
           {user ? (
             <BottomNavigationAction
               label="Chat"
+              aria-label="Chat — messages"
               icon={
                 <Badge
                   color="error"
@@ -182,7 +196,7 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
                     component="span"
                     sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24 }}
                   >
-                    <ChatBubbleOutline fontSize="small" />
+                    <ChatBubbleOutline fontSize="small" aria-hidden />
                   </Box>
                 </Badge>
               }
@@ -190,12 +204,14 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
           ) : (
             <BottomNavigationAction
               label="Host"
-              icon={<StorefrontOutlined fontSize="small" />}
+              aria-label="Host — become a host"
+              icon={<StorefrontOutlined fontSize="small" aria-hidden />}
             />
           )}
           <BottomNavigationAction
             label={user ? 'Account' : 'Sign in'}
-            icon={user ? <AccountCircleOutlined fontSize="small" /> : <LoginOutlined fontSize="small" />}
+            aria-label={user ? 'Account' : 'Sign in'}
+            icon={user ? <AccountCircleOutlined fontSize="small" aria-hidden /> : <LoginOutlined fontSize="small" aria-hidden />}
           />
         </BottomNavigation>
       </Box>

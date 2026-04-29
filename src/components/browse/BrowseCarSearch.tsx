@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { DEFAULT_SEARCH_LOCATION } from '../../constants/geo'
 import { useSearchStore } from '../../store/useSearchStore'
 import { withDefaultDropoffTime } from '../../utils/dateUtils'
+import { formatSearchSummaryLine } from '../../utils/tripSummaryFormat'
 import SearchBar from './SearchBar'
 import SearchModal from './SearchModal'
 
@@ -100,11 +101,17 @@ export default function BrowseCarSearch() {
 
   const showMidDot = Boolean(storeLocation.trim() && formatDateRange(pickup, dropoff))
 
+  const compactSummaryLine = useMemo(() => {
+    const locUse = storeLocation.trim() ? storeLocation : DEFAULT_SEARCH_LOCATION
+    return formatSearchSummaryLine(locUse, pickup, dropoff)
+  }, [storeLocation, pickup, dropoff])
+
   return (
     <>
       <SearchBar
         locationLabel={locationLabel}
         datesLabel={datesLabel}
+        compactSummaryLine={compactSummaryLine}
         onOpen={handleOpen}
         modalOpen={open}
         showMidDot={showMidDot}
