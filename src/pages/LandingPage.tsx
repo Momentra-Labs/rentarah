@@ -19,7 +19,6 @@ import {
   Button,
   Chip,
   Container,
-  Divider,
   Grid,
   Link,
   Paper,
@@ -375,7 +374,8 @@ export default function LandingPage() {
                   elevation={0}
                   sx={{
                     height: '100%',
-                    p: { xs: 2.25, sm: 3.25 },
+                    /** 16px inset @ xs — 8px grid, compact without feeling cramped */
+                    p: { xs: 2, sm: 3.25 },
                     borderRadius: { xs: 2.5, md: 3 },
                     border: '1px solid',
                     borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
@@ -389,36 +389,76 @@ export default function LandingPage() {
                     },
                   }}
                 >
-                  <Stack spacing={{ xs: 2.25, sm: 2.75 }}>
-                    <Box>
+                  <Stack spacing={{ xs: 1.75, md: 2.75 }}>
+                    <Box component="header">
                       <Typography
                         variant="overline"
                         color="primary"
-                        sx={{ fontWeight: 700, letterSpacing: { xs: '0.1em', sm: '0.08em' }, fontSize: { xs: '0.65rem', sm: '0.7rem' } }}
+                        sx={{
+                          fontWeight: 700,
+                          letterSpacing: { xs: '0.1em', sm: '0.08em' },
+                          fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                          lineHeight: 1.2,
+                        }}
                       >
                         Plan a trip
                       </Typography>
                       <Typography
                         variant="h6"
                         component="h2"
-                        sx={{ mt: 0.5, fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.15rem', sm: '1.35rem' }, lineHeight: 1.25 }}
+                        sx={{
+                          mt: 0.5,
+                          fontWeight: 800,
+                          letterSpacing: '-0.02em',
+                          fontSize: { xs: '1.0625rem', sm: '1.35rem' },
+                          lineHeight: { xs: 1.25, sm: 1.2 },
+                        }}
                       >
                         Where & when?
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.55, fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}>
-                        Choose an area, then set pick-up and return <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>date and time</Box> so listings match your plan.
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          mt: { xs: 0, sm: 0.75 },
+                          lineHeight: 1.5,
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          display: { xs: 'none', sm: 'block' },
+                        }}
+                      >
+                        Choose an area, then set pick-up and return{' '}
+                        <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                          date and time
+                        </Box>{' '}
+                        so listings match your plan.
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          mt: 1,
+                          display: { xs: 'block', sm: 'none' },
+                          lineHeight: 1.45,
+                          fontSize: '0.71875rem',
+                          letterSpacing: '0.01em',
+                          maxWidth: 320,
+                        }}
+                      >
+                        Pick area, then dates & times — listings match your plan.
                       </Typography>
                     </Box>
 
-                    <Stack spacing={1.25}>
+                    <Stack component="section" spacing={1} aria-labelledby="landing-location-heading">
                       <Typography
+                        id="landing-location-heading"
                         variant="overline"
+                        component="h3"
                         sx={{
                           fontWeight: 800,
-                          letterSpacing: '0.14em',
-                          fontSize: '0.65rem',
+                          letterSpacing: '0.12em',
+                          fontSize: { xs: '0.625rem', sm: '0.65rem' },
                           color: 'text.secondary',
-                          lineHeight: 1.2,
+                          lineHeight: 1.25,
                         }}
                       >
                         Location
@@ -442,25 +482,36 @@ export default function LandingPage() {
                         renderInput={(params) => (
                           <TextField
                             {...params}
+                            size={isMobile ? 'small' : 'medium'}
                             label="Pick-up area"
                             placeholder="e.g. Makati, Cebu City"
                             inputProps={{ ...params.inputProps, 'aria-label': 'Pick-up area' }}
+                            InputLabelProps={{ sx: { fontWeight: 600, fontSize: isMobile ? '0.875rem' : undefined } }}
                           />
                         )}
                       />
                     </Stack>
 
-                    <Divider sx={{ borderColor: alpha(theme.palette.divider, 0.85) }} />
+                    <Box
+                      role="presentation"
+                      sx={{
+                        height: 1,
+                        alignSelf: 'stretch',
+                        bgcolor: alpha(theme.palette.divider, 0.95),
+                      }}
+                    />
 
-                    <Stack spacing={1.25}>
+                    <Stack component="section" spacing={1} aria-labelledby="landing-schedule-heading">
                       <Typography
+                        id="landing-schedule-heading"
                         variant="overline"
+                        component="h3"
                         sx={{
                           fontWeight: 800,
-                          letterSpacing: '0.14em',
-                          fontSize: '0.65rem',
+                          letterSpacing: '0.12em',
+                          fontSize: { xs: '0.625rem', sm: '0.65rem' },
                           color: 'text.secondary',
-                          lineHeight: 1.2,
+                          lineHeight: 1.25,
                         }}
                       >
                         Schedule
@@ -473,7 +524,8 @@ export default function LandingPage() {
                           setDropoff(d)
                         }}
                         minDate={dayjs()}
-                        spacing={2}
+                        spacing={isMobile ? 1.25 : 2}
+                        size={isMobile ? 'small' : 'medium'}
                         stacked
                         showPolicyCaption={false}
                         pickupLabel="Pick-up"
@@ -496,7 +548,7 @@ export default function LandingPage() {
                       />
                       <Box
                         sx={{
-                          display: 'flex',
+                          display: { xs: 'none', sm: 'flex' },
                           gap: 1.25,
                           alignItems: 'flex-start',
                           p: 1.5,
@@ -506,39 +558,65 @@ export default function LandingPage() {
                           borderColor: alpha(theme.palette.primary.main, 0.14),
                         }}
                       >
-                        <AccessTime sx={{ fontSize: 20, color: 'primary.main', mt: 0.2, flexShrink: 0, opacity: 0.95 }} />
+                        <AccessTime sx={{ fontSize: 20, color: 'primary.main', mt: 0.2, flexShrink: 0, opacity: 0.95 }} aria-hidden />
                         <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.55, fontSize: '0.75rem' }}>
-                          Times help hosts coordinate hand-offs. Your rate still uses <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>calendar days</Box> between pick-up and return dates.
+                          Times help hosts coordinate hand-offs. Your rate still uses{' '}
+                          <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                            calendar days
+                          </Box>{' '}
+                          between pick-up and return dates.
                         </Typography>
                       </Box>
                     </Stack>
 
-                    <Button
-                      variant="contained"
-                      size="large"
-                      fullWidth
-                      onClick={search}
-                      endIcon={<ArrowForward />}
+                    <Stack
+                      spacing={1}
                       sx={{
-                        py: { xs: 1.2, sm: 1.35 },
-                        minHeight: { xs: 50, sm: 48 },
-                        borderRadius: { xs: 2.5, sm: 2 },
-                        fontSize: { xs: '0.95rem', sm: '1rem' },
-                        fontWeight: 700,
-                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.3)}`,
-                        '&:hover': {
-                          boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
+                        pt: { xs: 1.5, sm: 1 },
+                        mt: { xs: 0.25, sm: 0 },
+                        borderTop: {
+                          xs: `1px solid ${alpha(theme.palette.divider, 0.95)}`,
+                          sm: 'none',
                         },
                       }}
                     >
-                      Search available vehicles
-                    </Button>
-
-                    <Typography variant="body2" textAlign="center" color="text.secondary">
-                      <Link component={RouterLink} to="/search" underline="hover" fontWeight={600} color="primary">
-                        Skip dates — browse all vehicles
-                      </Link>
-                    </Typography>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        onClick={search}
+                        endIcon={<ArrowForward />}
+                        sx={{
+                          py: { xs: 1.125, sm: 1.35 },
+                          minHeight: { xs: 44, sm: 48 },
+                          borderRadius: { xs: 2.25, sm: 2 },
+                          fontSize: { xs: '0.921875rem', sm: '1rem' },
+                          fontWeight: 700,
+                          letterSpacing: '0.01em',
+                          boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.3)}`,
+                          '&:hover': {
+                            boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
+                          },
+                        }}
+                      >
+                        Search available vehicles
+                      </Button>
+                      <Typography variant="body2" component="div" textAlign="center" color="text.secondary" sx={{ lineHeight: 1.35 }}>
+                        <Link
+                          component={RouterLink}
+                          to="/search"
+                          underline="always"
+                          fontWeight={600}
+                          color="primary"
+                          sx={{
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                            textUnderlineOffset: 3,
+                          }}
+                        >
+                          Skip dates — browse all vehicles
+                        </Link>
+                      </Typography>
+                    </Stack>
                   </Stack>
                 </Paper>
               </motion.div>
