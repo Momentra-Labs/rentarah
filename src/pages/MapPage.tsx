@@ -96,9 +96,10 @@ export default function MapPage() {
   const [desktopMapSidebarCollapsed, setDesktopMapSidebarCollapsed] = useState(false)
 
   /**
-   * Map-only overlays must stay **below** `theme.zIndex.drawer` (1200). Leaflet uses ~500–650;
-   * App bar / tab bar use 1100. Previous values (1250–1500) painted hints and the peek above
-   * bottom sheets, which broke the filter UI.
+   * Leaflet stays ~400–650. Map chrome sits at mobileStepper + n (~1005–1015).
+   * The **filters** drawer uses the default MUI drawer layer (~1200) so it stays above chrome.
+   * The **listings** sheet is intentionally lowered so sticky Navbar (appBar ~1100) and the search /
+   * type toolbar stay above it (see listings `ModalProps`).
    */
   const zMap = useMemo(
     () => ({
@@ -618,42 +619,52 @@ export default function MapPage() {
           sx={{ flex: 1 }}
         />
       </Stack>
-      <Slider
-        size="medium"
-        value={priceRange}
-        min={priceExtent[0]}
-        max={priceExtent[1]}
-        step={100}
-        onChange={(_, v) => setPriceRange(v as [number, number])}
-        valueLabelDisplay="auto"
-        valueLabelFormat={(v) => formatPesoShort(v)}
-        disableSwap
-        sx={(t) => ({
-          '& .MuiSlider-thumb': {
-            width: { xs: 18, md: 14 },
-            height: { xs: 18, md: 14 },
-            bgcolor: 'common.white',
-            border: '1px solid',
-            borderColor: alpha(t.palette.grey[500], 0.45),
-            boxShadow: '0 2px 6px rgba(15,23,42,0.12)',
-            transition: t.transitions.create(['box-shadow', 'border-color'], { duration: 160 }),
-            '&:hover, &.Mui-focusVisible, &.Mui-active': {
-              boxShadow: '0 2px 10px rgba(15,23,42,0.18)',
-              borderColor: alpha(t.palette.primary.main, 0.55),
+      <Box
+        sx={{
+          width: '100%',
+          overflow: 'hidden',
+          /** Room for range thumbs without widening the drawer / clipping at edges */
+          px: { xs: 0.75, md: 0 },
+        }}
+      >
+        <Slider
+          size="medium"
+          value={priceRange}
+          min={priceExtent[0]}
+          max={priceExtent[1]}
+          step={100}
+          onChange={(_, v) => setPriceRange(v as [number, number])}
+          valueLabelDisplay="auto"
+          valueLabelFormat={(v) => formatPesoShort(v)}
+          disableSwap
+          sx={(t) => ({
+            width: '100%',
+            '& .MuiSlider-thumb': {
+              width: { xs: 18, md: 14 },
+              height: { xs: 18, md: 14 },
+              bgcolor: 'common.white',
+              border: '1px solid',
+              borderColor: alpha(t.palette.grey[500], 0.45),
+              boxShadow: '0 2px 6px rgba(15,23,42,0.12)',
+              transition: t.transitions.create(['box-shadow', 'border-color'], { duration: 160 }),
+              '&:hover, &.Mui-focusVisible, &.Mui-active': {
+                boxShadow: '0 2px 10px rgba(15,23,42,0.18)',
+                borderColor: alpha(t.palette.primary.main, 0.55),
+              },
             },
-          },
-          '& .MuiSlider-track': {
-            height: { xs: 6, md: 4 },
-            borderRadius: 2,
-            border: 'none',
-          },
-          '& .MuiSlider-rail': {
-            height: { xs: 6, md: 4 },
-            borderRadius: 2,
-            opacity: { xs: 0.35, md: 0.28 },
-          },
-        })}
-      />
+            '& .MuiSlider-track': {
+              height: { xs: 6, md: 4 },
+              borderRadius: 2,
+              border: 'none',
+            },
+            '& .MuiSlider-rail': {
+              height: { xs: 6, md: 4 },
+              borderRadius: 2,
+              opacity: { xs: 0.35, md: 0.28 },
+            },
+          })}
+        />
+      </Box>
     </Stack>
   )
 
@@ -1188,7 +1199,8 @@ export default function MapPage() {
                 sx: {
                   borderTopLeftRadius: 20,
                   borderTopRightRadius: 20,
-                  maxHeight: 'min(72dvh, 560px)',
+                  maxHeight: 'min(78dvh, 560px)',
+                  /** Avoid tiny overflow from slider thumbs / fractional layout that forces a scrollbar. */
                   pb: 'max(16px, env(safe-area-inset-bottom, 0px))',
                   px: 2,
                   pt: 1,
@@ -1196,6 +1208,16 @@ export default function MapPage() {
                   borderColor: 'divider',
                   borderBottom: 'none',
                   boxShadow: (t) => `0 -16px 48px ${alpha(t.palette.common.black, 0.16)}`,
+                  overflowX: 'hidden',
+                  overflowY: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  '&::-webkit-scrollbar': {
+                    width: 0,
+                    height: 0,
+                    display: 'none',
+                  },
                 },
               }}
             >
@@ -1249,7 +1271,11 @@ export default function MapPage() {
                 keepMounted: true,
                 disableScrollLock: true,
                 /** Let taps reach the map + Leaflet popups outside the sheet (see Paper `pointerEvents: 'auto'`). */
-                sx: { pointerEvents: 'none' },
+                sx: {
+                  pointerEvents: 'none',
+                  /** Default drawer z (~1200) sits above Navbar + filter bar; tuck sheet under chrome. */
+                  zIndex: theme.zIndex.mobileStepper - 50,
+                },
               }}
               SlideProps={{
                 easing: theme.transitions.easing.easeOut,

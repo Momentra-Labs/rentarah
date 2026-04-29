@@ -28,7 +28,6 @@ import {
   InputAdornment,
   LinearProgress,
   Link,
-  Paper,
   Stack,
   TextField,
   ToggleButton,
@@ -49,15 +48,30 @@ import {
   loginSchema,
   type LoginFormValues,
   registerFullSchema,
-  registerStep0Schema,
-  registerStep1Schema,
+  registerStepEmailSchema,
+  registerStepPasswordSchema,
+  registerStepRoleSchema,
   type RegisterFormValues,
 } from './authSchemas'
 import { getPasswordStrength, type PasswordStrengthLevel } from './passwordStrength'
 
 const REMEMBER_EMAIL_KEY = 'rentara-remember-email'
 
-const REGISTER_STEP_LABELS = ['Account', 'About you', 'How you’ll use Rentara'] as const
+/** Persists role + email across tab changes / refresh while in the same browser session. Cleared on successful signup. */
+const REGISTRATION_SESSION_KEY = 'rentara-registration-draft'
+
+const REGISTER_STEP_LABELS = ['Your role', 'Email', 'Password', 'About you'] as const
+const REGISTER_LAST_STEP_INDEX = REGISTER_STEP_LABELS.length - 1
+
+const REGISTER_FORM_DEFAULTS: RegisterFormValues = {
+  email: '',
+  password: '',
+  confirmPassword: '',
+  firstName: '',
+  lastName: '',
+  phone: '',
+  accountRole: '',
+}
 
 const strengthColor = (level: PasswordStrengthLevel, theme: Theme) => {
   switch (level) {
@@ -125,6 +139,7 @@ function SocialLoginPlaceholder() {
           <Divider sx={{ flex: 1 }} />
         </Stack>
         <Button
+          type="button"
           fullWidth
           variant="outlined"
           color="inherit"
@@ -151,65 +166,118 @@ function SocialLoginPlaceholder() {
 }
 
 function RoleCard({
-  selected,
-  icon,
   title,
   description,
-  onSelect,
+  icon,
+  selected,
+  radioName,
+  radioValue,
+  onCommitted,
+  onBlurInput,
 }: {
-  selected: boolean
-  icon: ReactNode
   title: string
   description: string
-  onSelect: () => void
+  icon: ReactNode
+  selected: boolean
+  radioName: string
+  radioValue: string
+  onCommitted: () => void
+  /** RHF blur for touched state on the role field */
+  onBlurInput?: () => void
 }) {
   const theme = useTheme()
+  const isNarrowPhone = useMediaQuery(theme.breakpoints.down('sm'))
+  const inputId = `rentara-role-radio-${radioValue}`
+
   return (
-    <Paper
-      variant="outlined"
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onSelect()
-        }
-      }}
-      role="radio"
-      aria-checked={selected}
-      tabIndex={0}
+    <Box
+      component="label"
+      htmlFor={inputId}
+      className="block cursor-pointer overflow-hidden rounded-2xl"
       sx={{
-        p: 2.25,
-        cursor: 'pointer',
-        borderRadius: 2.5,
-        borderWidth: 2,
-        borderColor: selected ? 'primary.main' : 'divider',
-        bgcolor: selected ? alpha(theme.palette.primary.main, 0.06) : 'background.paper',
-        transition: 'border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease',
+        display: 'block',
+        px: { xs: 2, sm: 2.25 },
+        py: { xs: 2, sm: 2.25 },
         outline: 'none',
-        '&:hover': {
-          borderColor: alpha(theme.palette.primary.main, 0.5),
-          boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.08)}`,
+        transition: 'box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease',
+        borderRadius: '16px',
+        borderWidth: selected ? '2px' : '1px',
+        borderStyle: 'solid',
+        borderColor: selected ? 'primary.main' : alpha(theme.palette.divider, theme.palette.mode === 'light' ? 0.12 : 0.22),
+        boxShadow: selected
+          ? `0 10px 28px ${alpha(theme.palette.primary.main, 0.12)}`
+          : `0 1px 4px ${alpha(theme.palette.common.black, 0.055)}`,
+        bgcolor: selected
+          ? alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.04 : 0.1)
+          : 'background.paper',
+        '&:focus-within': {
+          boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.2)}`,
         },
-        '&:focus-visible': {
-          boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.35)}`,
+        '@media (hover: hover)': {
+          '&:hover': !selected
+            ? {
+                bgcolor: alpha(theme.palette.grey[50], theme.palette.mode === 'light' ? 1 : 0.06),
+              }
+            : {},
         },
       }}
     >
-      <Stack direction="row" spacing={1.5} alignItems="flex-start">
-        <Box sx={{ color: selected ? 'primary.main' : 'text.secondary', pt: 0.25 }}>{icon}</Box>
-        <Box>
-          <Typography fontWeight={700}>{title}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.45 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: 1.5,
+          width: '100%',
+        }}
+      >
+        <Box sx={{ pt: isNarrowPhone ? 0.15 : 0.25, color: selected ? 'primary.main' : 'text.secondary', flexShrink: 0 }}>
+          {icon}
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            component="span"
+            fontWeight={800}
+            sx={{
+              display: 'block',
+              fontSize: isNarrowPhone ? '0.9375rem' : '1rem',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.25,
+              color: 'text.primary',
+            }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            component="span"
+            variant="body2"
+            sx={{
+              display: 'block',
+              mt: 0.5,
+              lineHeight: 1.45,
+              fontWeight: selected ? 600 : 500,
+              fontSize: isNarrowPhone ? '0.78rem' : '0.8125rem',
+              color: selected ? 'text.primary' : 'text.secondary',
+              opacity: selected ? 0.95 : 0.98,
+            }}
+          >
             {description}
           </Typography>
         </Box>
-        {selected ? (
-          <CheckCircleRounded sx={{ ml: 'auto', color: 'primary.main', fontSize: 22 }} aria-hidden />
-        ) : (
-          <Box sx={{ ml: 'auto', width: 22, height: 22, borderRadius: '50%', border: '2px solid', borderColor: 'divider' }} aria-hidden />
-        )}
-      </Stack>
-    </Paper>
+        <input
+          id={inputId}
+          name={radioName}
+          type="radio"
+          value={radioValue}
+          checked={selected}
+          className="mt-1 h-5 w-5 shrink-0 cursor-pointer"
+          style={{ accentColor: theme.palette.primary.main }}
+          onChange={() => onCommitted()}
+          onBlur={onBlurInput}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </Box>
+    </Box>
   )
 }
 
@@ -238,6 +306,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
   }, [])
   const [tab, setTab] = useState<'login' | 'register'>(defaultTab)
   const [registerStep, setRegisterStep] = useState(0)
+  const registerWizardStepRef = useRef(0)
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [showRegConfirm, setShowRegConfirm] = useState(false)
@@ -253,43 +322,82 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     defaultValues: { email: '', password: '', rememberMe: true },
     mode: 'onChange',
   })
+  const { reset: resetLoginForm } = lf
 
   const rf = useForm<RegisterFormValues>({
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      accountRole: 'renter',
-    },
+    defaultValues: { ...REGISTER_FORM_DEFAULTS },
     mode: 'onChange',
   })
+  const { reset: resetRegisterForm } = rf
+
+  /** Track dialog sessions so `reset*` identity cannot re-trigger a mid-flow wizard reset. */
+  const authDialogWasOpenRef = useRef(false)
+  const prevDefaultTabForWizardRef = useRef(defaultTab)
 
   const regPassword = useWatch({ control: rf.control, name: 'password' })
   const strength = getPasswordStrength(regPassword ?? '')
+  const regDraft = useWatch({ control: rf.control })
 
   useEffect(() => {
-    if (!open) return
+    registerWizardStepRef.current = registerStep
+  }, [registerStep])
+
+  const persistRegRole = useWatch({ control: rf.control, name: 'accountRole' })
+  const persistRegEmail = useWatch({ control: rf.control, name: 'email' })
+  useEffect(() => {
+    if (!open || tab !== 'register') return
+    try {
+      sessionStorage.setItem(
+        REGISTRATION_SESSION_KEY,
+        JSON.stringify({ accountRole: persistRegRole ?? '', email: persistRegEmail ?? '' }),
+      )
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [open, tab, persistRegRole, persistRegEmail])
+
+  useEffect(() => {
+    if (!open) {
+      authDialogWasOpenRef.current = false
+      return
+    }
+
+    const isOpeningIntoSession = !authDialogWasOpenRef.current
+    authDialogWasOpenRef.current = true
+
+    const defaultTabUpdatedFromOutside = prevDefaultTabForWizardRef.current !== defaultTab
+    prevDefaultTabForWizardRef.current = defaultTab
+
+    if (!isOpeningIntoSession && !defaultTabUpdatedFromOutside) return
+
     setTab(defaultTab)
     setRegisterStep(0)
     const remembered = localStorage.getItem(REMEMBER_EMAIL_KEY)
-    lf.reset({
+    resetLoginForm({
       email: remembered ?? '',
       password: '',
       rememberMe: Boolean(remembered),
     })
-    rf.reset({
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      accountRole: 'renter',
-    })
-  }, [open, defaultTab, lf, rf])
+    let registrationMerged: RegisterFormValues = { ...REGISTER_FORM_DEFAULTS }
+    try {
+      const draftRaw = sessionStorage.getItem(REGISTRATION_SESSION_KEY)
+      if (draftRaw) {
+        const draft = JSON.parse(draftRaw) as Partial<Pick<RegisterFormValues, 'accountRole' | 'email'>>
+        const role = draft.accountRole
+        if (role === 'renter' || role === 'host' || role === 'both' || role === '') {
+          registrationMerged = { ...registrationMerged, accountRole: role === '' ? '' : role }
+        }
+        if (typeof draft.email === 'string') {
+          registrationMerged = { ...registrationMerged, email: draft.email }
+        }
+      }
+    } catch {
+      registrationMerged = { ...REGISTER_FORM_DEFAULTS }
+    }
+    resetRegisterForm(registrationMerged)
+    /** Only [open] + prop defaultTab trigger a session/tab reset — not unstable RHF reset() identities mid-dialog. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resetLoginForm/resetRegisterForm intentionally omitted from deps (see guard above).
+  }, [open, defaultTab])
 
   const applyZodIssues = useCallback(
     (issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey>; message: string }>) => {
@@ -307,11 +415,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     rf.clearErrors()
     if (registerStep === 0) {
       const v = rf.getValues()
-      const parsed = registerStep0Schema.safeParse({
-        email: v.email,
-        password: v.password,
-        confirmPassword: v.confirmPassword,
-      })
+      const parsed = registerStepRoleSchema.safeParse({ accountRole: v.accountRole })
       if (!parsed.success) {
         applyZodIssues(parsed.error.issues)
         return
@@ -321,18 +425,45 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     }
     if (registerStep === 1) {
       const v = rf.getValues()
-      const parsed = registerStep1Schema.safeParse({
-        firstName: v.firstName,
-        lastName: v.lastName,
-        phone: v.phone,
-      })
+      const parsed = registerStepEmailSchema.safeParse({ email: v.email.trim() })
       if (!parsed.success) {
         applyZodIssues(parsed.error.issues)
         return
       }
       setRegisterStep(2)
+      return
+    }
+    if (registerStep === 2) {
+      const v = rf.getValues()
+      const parsed = registerStepPasswordSchema.safeParse({
+        password: v.password,
+        confirmPassword: v.confirmPassword,
+      })
+      if (!parsed.success) {
+        applyZodIssues(parsed.error.issues)
+        return
+      }
+      setRegisterStep(3)
     }
   }
+
+  const canProceedCurrentStep = useMemo(() => {
+    if (!regDraft) return false
+    switch (registerStep) {
+      case 0:
+        return registerStepRoleSchema.safeParse({ accountRole: regDraft.accountRole ?? '' }).success
+      case 1:
+        return registerStepEmailSchema.safeParse({ email: (regDraft.email ?? '').trim() }).success
+      case 2:
+        return registerStepPasswordSchema
+          .safeParse({ password: regDraft.password, confirmPassword: regDraft.confirmPassword })
+          .success
+      default:
+        return false
+    }
+  }, [registerStep, regDraft])
+
+  const canSubmitRegistration = useMemo(() => registerFullSchema.safeParse(regDraft).success, [regDraft])
 
   const goRegisterBack = () => {
     rf.clearErrors()
@@ -362,7 +493,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     }
   })
 
-  const onRegister = rf.handleSubmit(async (data) => {
+  const finalizeRegisterSubmit = rf.handleSubmit(async (data) => {
     const parsed = registerFullSchema.safeParse(data)
     if (!parsed.success) {
       applyZodIssues(parsed.error.issues)
@@ -373,11 +504,16 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
       registerAction({
         firstName: data.firstName,
         lastName: data.lastName,
-        email: data.email,
+        email: data.email.trim().toLowerCase(),
         password: data.password,
         phone: data.phone,
         accountRole: data.accountRole as RegisterAccountRole,
       })
+      try {
+        sessionStorage.removeItem(REGISTRATION_SESSION_KEY)
+      } catch {
+        /* noop */
+      }
       const u = useAuthStore.getState().user
       showSuccess(u ? `Welcome, ${u.firstName}!` : 'Account created')
       onAuthenticated?.()
@@ -452,7 +588,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
     >
       <DialogTitle
         id="auth-dialog-title"
-        className="relative shrink-0 overflow-x-hidden px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-8 sm:pb-3 sm:pt-6"
+        className="relative shrink-0 overflow-x-hidden px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:pb-3 sm:pt-6"
         sx={{
           position: 'relative',
           overflowX: 'hidden',
@@ -467,23 +603,31 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
           <Close />
         </IconButton>
         {/** Only the top heading needs inset so it doesn’t run under the floating close control. */}
-        <Box className="mb-2 pr-12 sm:mb-3 sm:pr-14">
-          <Typography variant="h6" className="text-fluid-heading font-extrabold tracking-tight">
+        <Box className="mb-1.5 pr-11 sm:mb-3 sm:pr-14">
+          <Typography
+            variant="h6"
+            className={`font-extrabold tracking-tight ${tab === 'register' ? 'text-base leading-snug sm:text-fluid-heading' : 'text-fluid-heading'}`}
+          >
             {tab === 'login' ? 'Welcome back' : 'Create your account'}
           </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mt: 0.25 }} className="text-[0.7rem] sm:text-[0.75rem]">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontWeight: 600, display: 'block', mt: 0.2 }}
+            className={`${tab === 'register' ? 'text-[0.65rem] sm:text-[0.75rem]' : 'text-[0.7rem] sm:text-[0.75rem]'}`}
+          >
             Rentara — Philippines rentals
           </Typography>
         </Box>
         <Typography
           variant="body2"
           color="text.secondary"
-          className="mb-3 hidden text-fluid leading-snug sm:mb-5 sm:block"
+          className="mb-2.5 hidden text-fluid leading-snug sm:mb-5 sm:block"
           sx={{ lineHeight: 1.55 }}
         >
           {tab === 'login'
             ? 'Sign in to book vehicles, manage trips, and message hosts — all in one place.'
-            : 'Three quick steps: secure your account, tell us about you, then choose how you’ll use Rentara.'}
+            : 'Four guided steps: choose your role, verify your email, set a password, then add your profile.'}
         </Typography>
         <ToggleButtonGroup
           exclusive
@@ -640,12 +784,18 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                 'Sign in'
               )}
             </Button>
-            <SocialLoginPlaceholder />
           </Stack>
         ) : (
           <Stack
             component="form"
-            onSubmit={onRegister}
+            aria-label="Registration form"
+            onSubmit={(e) => {
+              if (registerWizardStepRef.current !== REGISTER_LAST_STEP_INDEX) {
+                e.preventDefault()
+                return
+              }
+              void finalizeRegisterSubmit(e)
+            }}
             noValidate
             spacing={compactAuthFields ? 1.25 : 2}
             sx={{ width: '100%' }}
@@ -663,21 +813,26 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                 variant="determinate"
                 value={((registerStep + 1) / REGISTER_STEP_LABELS.length) * 100}
                 sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  bgcolor: alpha(theme.palette.primary.main, 0.12),
-                  '& .MuiLinearProgress-bar': { borderRadius: 4 },
+                  height: 6,
+                  borderRadius: 999,
+                  bgcolor: alpha(theme.palette.grey[400], theme.palette.mode === 'light' ? 0.2 : 0.25),
+                  boxShadow: `inset 0 1px 1px ${alpha(theme.palette.common.black, 0.05)}`,
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 999,
+                    bgcolor: 'primary.main',
+                    boxShadow: `0 1px 4px ${alpha(theme.palette.primary.main, 0.35)}`,
+                  },
                 }}
               />
-              <Stack direction="row" spacing={0.75} justifyContent="center" sx={{ mt: 1.25 }}>
+              <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center" sx={{ mt: 1 }}>
                 {REGISTER_STEP_LABELS.map((label, i) => (
                   <Box
                     key={label}
                     sx={{
-                      width: i === registerStep ? 22 : 8,
-                      height: 8,
-                      borderRadius: 4,
-                      bgcolor: i <= registerStep ? 'primary.main' : alpha(theme.palette.primary.main, 0.2),
+                      width: i === registerStep ? 16 : 5,
+                      height: 6,
+                      borderRadius: 999,
+                      bgcolor: i <= registerStep ? 'primary.main' : alpha(theme.palette.grey[600], theme.palette.mode === 'light' ? 0.2 : 0.35),
                       transition: 'width 0.25s ease, background-color 0.2s ease',
                     }}
                     aria-hidden
@@ -692,11 +847,133 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
               </Alert>
             )}
 
-            <Box className="relative min-h-[min(38dvh,220px)] sm:min-h-[260px]" sx={{ position: 'relative' }}>
+            <Box
+              className={
+                registerStep === 0
+                  ? 'relative min-h-0 py-1 sm:min-h-[260px]'
+                  : 'relative min-h-[min(38dvh,220px)] sm:min-h-[260px]'
+              }
+              sx={{ position: 'relative' }}
+            >
               <AnimatePresence mode="wait" initial={false}>
                 {registerStep === 0 && (
                   <motion.div
-                    key="reg0"
+                    key="reg-role"
+                    initial={{ opacity: 0, x: 18 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -14 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    style={slideSx}
+                  >
+                    <Controller
+                      name="accountRole"
+                      control={rf.control}
+                      rules={{
+                        validate: (value) => {
+                          const raw = typeof value === 'string' ? value : ''
+                          const r = registerStepRoleSchema.safeParse({
+                            accountRole: raw as RegisterFormValues['accountRole'],
+                          })
+                          return r.success ? true : r.error.issues[0]?.message ?? 'Please select your role to continue.'
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormControl component="fieldset" variant="standard" error={!!rf.formState.errors.accountRole} sx={{ width: '100%' }}>
+                          <FormLabel id="account-role-label" component="legend" sx={{ fontWeight: 700, color: 'text.primary', mb: { xs: 1, sm: 1.25 }, fontSize: '0.875rem' }}>
+                            Choose your role
+                          </FormLabel>
+                          <Stack role="radiogroup" aria-labelledby="account-role-label" spacing={{ xs: 1, sm: 1.5 }}>
+                            <RoleCard
+                              radioName={field.name}
+                              radioValue="host"
+                              selected={field.value === 'host'}
+                              icon={<StorefrontOutlined sx={{ fontSize: 26 }} />}
+                              title="Host"
+                              description="List vehicles you own, manage bookings, and earn when others rent your fleet."
+                              onCommitted={() => {
+                                field.onChange('host')
+                                rf.clearErrors('accountRole')
+                              }}
+                              onBlurInput={field.onBlur}
+                            />
+                            <RoleCard
+                              radioName={field.name}
+                              radioValue="renter"
+                              selected={field.value === 'renter'}
+                              icon={<PersonOutline sx={{ fontSize: 26 }} />}
+                              title="Renter"
+                              description="Browse cars and motorcycles, book trips, and message hosts—all in one place."
+                              onCommitted={() => {
+                                field.onChange('renter')
+                                rf.clearErrors('accountRole')
+                              }}
+                              onBlurInput={field.onBlur}
+                            />
+                            <RoleCard
+                              radioName={field.name}
+                              radioValue="both"
+                              selected={field.value === 'both'}
+                              icon={<DirectionsCarOutlined sx={{ fontSize: 26 }} />}
+                              title="Both"
+                              description="Rent when you travel and host when you’re not using your vehicles."
+                              onCommitted={() => {
+                                field.onChange('both')
+                                rf.clearErrors('accountRole')
+                              }}
+                              onBlurInput={field.onBlur}
+                            />
+                          </Stack>
+                          {rf.formState.errors.accountRole && (
+                            <FormHelperText error sx={{ mx: 0, mt: 1.25 }}>
+                              {rf.formState.errors.accountRole.message}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
+                      )}
+                    />
+                  </motion.div>
+                )}
+
+                {registerStep === 1 && (
+                  <motion.div
+                    key="reg-email"
+                    initial={{ opacity: 0, x: 18 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -14 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    style={slideSx}
+                  >
+                    <Stack spacing={1}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                        Verified email
+                      </Typography>
+                      <TextField
+                        size="small"
+                        label="Email"
+                        type="email"
+                        autoComplete="email"
+                        fullWidth
+                        margin="none"
+                        {...rf.register('email', {
+                          validate: (value) => {
+                            const r = registerStepEmailSchema.safeParse({ email: String(value ?? '').trim() })
+                            return r.success ? true : r.error.issues[0]?.message ?? 'Use a valid email address'
+                          },
+                          onChange: () => rf.clearErrors('email'),
+                        })}
+                        error={!!rf.formState.errors.email}
+                        helperText={
+                          rf.formState.errors.email?.message ?? 'We’ll send booking updates and receipts to this address.'
+                        }
+                        sx={compactFieldSx}
+                      />
+                    </Stack>
+                  </motion.div>
+                )}
+
+                {registerStep === 2 && (
+                  <motion.div
+                    key="reg-password"
                     initial={{ opacity: 0, x: 18 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -14 }}
@@ -705,81 +982,65 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                   >
                     <Stack spacing={2}>
                       <TextField
-              size="small"
-                        label="Email"
-                        type="email"
-                        autoComplete="email"
+                        size="small"
+                        label="Password"
+                        type={showRegPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         fullWidth
                         margin="none"
-                        {...rf.register('email', {
-                          onChange: () => rf.clearErrors('email'),
+                        {...rf.register('password', {
+                          onChange: () => {
+                            rf.clearErrors('password')
+                            rf.clearErrors('confirmPassword')
+                          },
                         })}
-                        error={!!rf.formState.errors.email}
-                        helperText={rf.formState.errors.email?.message ?? 'Used for bookings and receipts.'}
+                        error={!!rf.formState.errors.password}
+                        helperText={rf.formState.errors.password?.message ?? 'At least 8 characters.'}
                         sx={compactFieldSx}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label={showRegPassword ? 'Hide password' : 'Show password'}
+                                onClick={() => setShowRegPassword((p) => !p)}
+                                edge="end"
+                                size="small"
+                                className="min-h-touch min-w-touch rounded-lg"
+                              >
+                                {showRegPassword ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }}
                       />
-                      <Box>
-                        <TextField
-              size="small"
-                          label="Password"
-                          type={showRegPassword ? 'text' : 'password'}
-                          autoComplete="new-password"
-                          fullWidth
-                          margin="none"
-                          {...rf.register('password', {
-                            onChange: () => {
-                              rf.clearErrors('password')
-                              rf.clearErrors('confirmPassword')
-                            },
-                          })}
-                          error={!!rf.formState.errors.password}
-                          helperText={rf.formState.errors.password?.message ?? 'At least 8 characters.'}
-                          sx={compactFieldSx}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton
-                                  aria-label={showRegPassword ? 'Hide password' : 'Show password'}
-                                  onClick={() => setShowRegPassword((p) => !p)}
-                                  edge="end"
-                                  size="small"
-                                  className="min-h-touch min-w-touch rounded-lg"
-                                >
-                                  {showRegPassword ? <VisibilityOff /> : <Visibility />}
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        {regPassword && (
-                          <Stack spacing={0.75} sx={{ mt: 1 }}>
-                            <LinearProgress
-                              variant="determinate"
-                              value={strengthBarValue(strength.level)}
-                              sx={{
-                                height: 5,
+                      {regPassword ? (
+                        <Stack spacing={0.75}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={strengthBarValue(strength.level)}
+                            sx={{
+                              height: 5,
+                              borderRadius: 2,
+                              bgcolor: alpha(theme.palette.divider, 0.35),
+                              '& .MuiLinearProgress-bar': {
                                 borderRadius: 2,
-                                bgcolor: alpha(theme.palette.divider, 0.35),
-                                '& .MuiLinearProgress-bar': {
-                                  borderRadius: 2,
-                                  bgcolor: strengthColor(strength.level, theme),
-                                },
-                              }}
-                            />
-                            <Stack direction="row" spacing={0.5} alignItems="center">
-                              {strength.level !== 'empty' && strength.level !== 'weak' && (
-                                <CheckCircleRounded sx={{ fontSize: 16, color: 'success.main' }} />
-                              )}
-                              {strength.level === 'weak' && <WarningAmberRounded sx={{ fontSize: 16, color: 'warning.main' }} />}
-                              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
-                                {strength.label}
-                              </Typography>
-                            </Stack>
+                                bgcolor: strengthColor(strength.level, theme),
+                              },
+                            }}
+                          />
+                          <Stack direction="row" spacing={0.5} alignItems="center">
+                            {strength.level !== 'empty' && strength.level !== 'weak' && (
+                              <CheckCircleRounded sx={{ fontSize: 16, color: 'success.main' }} />
+                            )}
+                            {strength.level === 'weak' && <WarningAmberRounded sx={{ fontSize: 16, color: 'warning.main' }} />}
+                            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }}>
+                              {strength.label}
+                            </Typography>
                           </Stack>
-                        )}
-                      </Box>
+                        </Stack>
+                      ) : null}
                       <TextField
-              size="small"
+                        size="small"
                         label="Confirm password"
                         type={showRegConfirm ? 'text' : 'password'}
                         autoComplete="new-password"
@@ -811,9 +1072,9 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                   </motion.div>
                 )}
 
-                {registerStep === 1 && (
+                {registerStep === 3 && (
                   <motion.div
-                    key="reg1"
+                    key="reg-profile"
                     initial={{ opacity: 0, x: 18 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -14 }}
@@ -821,9 +1082,12 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                     style={slideSx}
                   >
                     <Stack spacing={2}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                        Your details
+                      </Typography>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                         <TextField
-              size="small"
+                          size="small"
                           label="First name"
                           autoComplete="given-name"
                           fullWidth
@@ -834,7 +1098,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                           sx={compactFieldSx}
                         />
                         <TextField
-              size="small"
+                          size="small"
                           label="Last name"
                           autoComplete="family-name"
                           fullWidth
@@ -846,7 +1110,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                         />
                       </Stack>
                       <TextField
-              size="small"
+                        size="small"
                         label="Mobile number"
                         placeholder="+63 9xx xxx xxxx"
                         autoComplete="tel"
@@ -862,70 +1126,6 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                     </Stack>
                   </motion.div>
                 )}
-
-                {registerStep === 2 && (
-                  <motion.div
-                    key="reg2"
-                    initial={{ opacity: 0, x: 18 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -14 }}
-                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                    style={slideSx}
-                  >
-                    <Controller
-                      name="accountRole"
-                      control={rf.control}
-                      render={({ field }) => (
-                        <FormControl component="fieldset" variant="standard" error={!!rf.formState.errors.accountRole} sx={{ width: '100%' }}>
-                          <FormLabel id="account-role-label" component="legend" sx={{ fontWeight: 700, color: 'text.primary', mb: 1, fontSize: '0.875rem' }}>
-                            How do you want to use Rentara?
-                          </FormLabel>
-                          <Stack
-                            role="radiogroup"
-                            aria-labelledby="account-role-label"
-                            spacing={1.5}
-                          >
-                            <RoleCard
-                              selected={field.value === 'renter'}
-                              icon={<PersonOutline />}
-                              title="I’m renting"
-                              description="Find cars and two-wheelers for trips. You can become a host anytime from your profile."
-                              onSelect={() => {
-                                field.onChange('renter')
-                                rf.clearErrors('accountRole')
-                              }}
-                            />
-                            <RoleCard
-                              selected={field.value === 'host'}
-                              icon={<StorefrontOutlined />}
-                              title="I’m hosting"
-                              description="List vehicles you own and manage bookings. Perfect if you’re focused on earning from your fleet."
-                              onSelect={() => {
-                                field.onChange('host')
-                                rf.clearErrors('accountRole')
-                              }}
-                            />
-                            <RoleCard
-                              selected={field.value === 'both'}
-                              icon={<DirectionsCarOutlined />}
-                              title="Both rent & host"
-                              description="Book when you travel and list vehicles when you’re not using them."
-                              onSelect={() => {
-                                field.onChange('both')
-                                rf.clearErrors('accountRole')
-                              }}
-                            />
-                          </Stack>
-                          {rf.formState.errors.accountRole && (
-                            <FormHelperText error sx={{ mx: 0 }}>
-                              {rf.formState.errors.accountRole.message}
-                            </FormHelperText>
-                          )}
-                        </FormControl>
-                      )}
-                    />
-                  </motion.div>
-                )}
               </AnimatePresence>
             </Box>
 
@@ -936,18 +1136,39 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                     Back
                   </Button>
                 )}
-                {registerStep < 2 ? (
+                {registerStep < REGISTER_LAST_STEP_INDEX ? (
                   <Button
                     type="button"
-                    variant="contained"
-                    onClick={goRegisterNext}
+                    variant={canProceedCurrentStep ? 'contained' : 'outlined'}
+                    color={canProceedCurrentStep ? 'primary' : 'inherit'}
+                    disabled={!canProceedCurrentStep || registerSubmitting}
+                    onClick={() => void goRegisterNext()}
+                    className="min-h-touch flex-[2] rounded-2xl font-bold"
                     sx={{
                       flex: 2,
                       py: 1.2,
                       fontWeight: 700,
                       borderRadius: 2,
-                      transition: 'transform 0.15s ease',
-                      '@media (hover: hover)': { '&:hover': { transform: 'translateY(-1px)' } },
+                      textTransform: 'none',
+                      transition: 'background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease',
+                      ...(canProceedCurrentStep
+                        ? {
+                            boxShadow: `0 10px 24px ${alpha(theme.palette.primary.main, 0.32)}`,
+                            '&:hover': { boxShadow: `0 14px 30px ${alpha(theme.palette.primary.main, 0.38)}` },
+                          }
+                        : {
+                            borderColor: alpha(theme.palette.divider, 0.85),
+                            color: alpha(theme.palette.text.secondary, 0.65),
+                            bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === 'light' ? 0.65 : 0.4),
+                            backdropFilter: 'blur(8px)',
+                            '&.Mui-disabled': {
+                              opacity: 1,
+                              borderColor: alpha(theme.palette.divider, 0.75),
+                              color: alpha(theme.palette.text.disabled, 0.75),
+                              bgcolor: alpha(theme.palette.grey[500], theme.palette.mode === 'light' ? 0.09 : 0.12),
+                              boxShadow: 'none',
+                            },
+                          }),
                     }}
                   >
                     Continue
@@ -956,7 +1177,7 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                   <Button
                     type="submit"
                     variant="contained"
-                    disabled={registerSubmitting}
+                    disabled={!canSubmitRegistration || registerSubmitting}
                     sx={{
                       flex: 1,
                       py: 1.2,
@@ -977,10 +1198,10 @@ export default function AuthDialog({ open, onClose, onAuthenticated, defaultTab 
                 )}
               </Stack>
             </DialogActions>
-
-            <SocialLoginPlaceholder />
           </Stack>
         )}
+
+        <SocialLoginPlaceholder />
 
         <Box
           sx={{
