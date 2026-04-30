@@ -1,3 +1,4 @@
+import { lazy } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import GlobalSnackbar from './components/layout/GlobalSnackbar'
@@ -5,22 +6,24 @@ import MainLayout from './components/layout/MainLayout'
 import BookingTrustGate from './components/layout/BookingTrustGate'
 import HostTrustGate from './components/layout/HostTrustGate'
 import ProtectedRoute from './components/layout/ProtectedRoute'
-import BookingPage from './pages/BookingPage'
-import CarDetailPage from './pages/CarDetailPage'
-import ChatPage from './pages/ChatPage'
-import CompleteProfilePage from './pages/CompleteProfilePage'
-import DashboardPage from './pages/DashboardPage'
-import HostDashboardPage from './pages/HostDashboardPage'
-import HostInvitePage from './pages/HostInvitePage'
+
 import LandingPage from './pages/LandingPage'
-import MapPage from './pages/MapPage'
-import NotificationsPage from './pages/NotificationsPage'
-import SearchPage from './pages/SearchPage'
-import VehicleModelSearchPage from './pages/VehicleModelSearchPage'
-import LegalPrivacyPage from './pages/legal/LegalPrivacyPage'
-import LegalTermsPage from './pages/legal/LegalTermsPage'
-import TrustOnboardingPage from './pages/TrustOnboardingPage'
-import VerifyIdentityPage from './pages/VerifyIdentityPage'
+
+const BookingPage = lazy(() => import('./pages/BookingPage'))
+const CarDetailPage = lazy(() => import('./pages/CarDetailPage'))
+const ChatPage = lazy(() => import('./pages/ChatPage'))
+const CompleteProfilePage = lazy(() => import('./pages/CompleteProfilePage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const HostDashboardPage = lazy(() => import('./pages/HostDashboardPage'))
+const HostInvitePage = lazy(() => import('./pages/HostInvitePage'))
+const MapPage = lazy(() => import('./pages/MapPage'))
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const SearchPage = lazy(() => import('./pages/SearchPage'))
+const VehicleModelSearchPage = lazy(() => import('./pages/VehicleModelSearchPage'))
+const LegalPrivacyPage = lazy(() => import('./pages/legal/LegalPrivacyPage'))
+const LegalTermsPage = lazy(() => import('./pages/legal/LegalTermsPage'))
+const TrustOnboardingPage = lazy(() => import('./pages/TrustOnboardingPage'))
+const VerifyIdentityPage = lazy(() => import('./pages/VerifyIdentityPage'))
 
 function NotFoundPage() {
   return <Navigate to="/" replace />

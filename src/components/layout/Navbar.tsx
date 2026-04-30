@@ -4,7 +4,6 @@ import MyLocation from '@mui/icons-material/MyLocation'
 import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
 import {
   AppBar,
-  Avatar,
   Badge,
   Box,
   Button,
@@ -25,6 +24,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEventHandler } from
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
+import UserAvatar from '../common/UserAvatar'
 import NotificationPanelContent from '../notifications/NotificationPanelContent'
 import AppNavigationList from './AppNavigationList'
 import GeolocationShareDialog from './GeolocationShareDialog'
@@ -232,18 +232,16 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                   aria-label="Open account menu"
                   sx={{ ml: 0 }}
                 >
-                  <Avatar
+                  <UserAvatar
+                    avatar={user.avatar}
+                    firstName={user.firstName}
+                    lastName={user.lastName}
+                    size={40}
                     sx={{
-                      bgcolor: 'primary.main',
-                      width: 40,
-                      height: 40,
-                      fontSize: 15,
-                      fontWeight: 700,
-                      boxShadow: (t) => `0 0 0 2px ${t.palette.background.paper}, 0 0 0 3px ${alpha(t.palette.primary.main, 0.4)}`,
+                      boxShadow: (t) =>
+                        `0 0 0 2px ${t.palette.background.paper}, 0 0 0 3px ${alpha(t.palette.primary.main, 0.4)}`,
                     }}
-                  >
-                    {user.avatar}
-                  </Avatar>
+                  />
                 </IconButton>
                 <Menu
                   anchorEl={anchor}
@@ -281,17 +279,12 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                     }}
                   >
                     <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar
-                        sx={{
-                          width: 44,
-                          height: 44,
-                          fontSize: 16,
-                          fontWeight: 700,
-                          bgcolor: 'primary.main',
-                        }}
-                      >
-                        {user.avatar}
-                      </Avatar>
+                      <UserAvatar
+                        avatar={user.avatar}
+                        firstName={user.firstName}
+                        lastName={user.lastName}
+                        size={44}
+                      />
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography variant="subtitle2" fontWeight={800} noWrap letterSpacing="-0.02em">
                           {user.firstName} {user.lastName}

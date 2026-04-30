@@ -3,9 +3,9 @@ import CheckCircleOutline from '@mui/icons-material/CheckCircleOutline'
 import FavoriteBorder from '@mui/icons-material/FavoriteBorder'
 import HistoryOutlined from '@mui/icons-material/HistoryOutlined'
 import PersonOutline from '@mui/icons-material/PersonOutline'
+import PhotoCameraOutlined from '@mui/icons-material/PhotoCameraOutlined'
 import RateReviewOutlined from '@mui/icons-material/RateReviewOutlined'
 import {
-  Avatar,
   Box,
   Button,
   Card,
@@ -24,15 +24,17 @@ import {
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import dayjs from 'dayjs'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
+import UserAvatar from '../components/common/UserAvatar'
 import PhilippineDriversLicenseTextField from '../components/auth/PhilippineDriversLicenseTextField'
 import PhilippineNationalMobileTextField from '../components/auth/PhilippineNationalMobileTextField'
 import PageHeader from '../components/layout/PageHeader'
 import { formatBookingStoredDate } from '../utils/dateUtils'
 import { useAuthStore } from '../store/useAuthStore'
+import { compressAvatarImageFileToJpegDataUrl } from '../lib/compressIdentityImage'
 import {
   e164ToNationalMobileDigits,
   formatPhilippineDriversLicenseInput,
@@ -40,6 +42,10 @@ import {
   nationalMobileDigitsToE164,
   normalizePhilippineDriversLicense,
 } from '../lib/philippineContact'
+import {
+  isProfilePhotoAvatar,
+  resolveAvatarAfterRemovePhoto,
+} from '../lib/userAvatarUtils'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
@@ -117,6 +123,36 @@ export default function DashboardPage() {
   const past = mine.filter((b) => dayjs(b.dropoff).isBefore(dayjs(), 'day') || b.status === 'cancelled')
   const savedCars = useMemo(() => cars.filter((c) => savedIds.includes(c.id)), [cars, savedIds])
 
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+
+  const pickAvatarPhoto = () => avatarInputRef.current?.click()
+
+  const onAvatarFileChange = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file || !user) return
+      setAvatarBusy(true)
+      try {
+        const jpeg = await compressAvatarImageFileToJpegDataUrl(file)
+        updateProfile({ avatar: jpeg })
+        showSuccess('Profile photo updated')
+      } catch (err) {
+        showError(err instanceof Error ? err.message : 'Could not use that photo. Try JPG or PNG.')
+      } finally {
+        setAvatarBusy(false)
+      }
+    },
+    [showError, showSuccess, updateProfile, user],
+  )
+
+  const removeAvatarPhoto = useCallback(() => {
+    if (!user) return
+    updateProfile({ avatar: resolveAvatarAfterRemovePhoto(user) })
+    showSuccess('Photo removed')
+  }, [showSuccess, updateProfile, user])
+
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 }, ...containerGutters }}>
@@ -141,19 +177,16 @@ export default function DashboardPage() {
           <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ sm: 'center' }}>
               <Box sx={{ position: 'relative', alignSelf: { xs: 'center', sm: 'flex-start' } }}>
-                <Avatar
+                <UserAvatar
+                  avatar={user?.avatar}
+                  firstName={user?.firstName}
+                  lastName={user?.lastName}
+                  size={72}
                   sx={{
-                    width: 72,
-                    height: 72,
-                    fontSize: 22,
-                    fontWeight: 700,
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    boxShadow: (t) => `0 0 0 3px ${t.palette.background.paper}, 0 0 0 5px ${alpha(t.palette.primary.main, 0.35)}`,
+                    boxShadow: (t) =>
+                      `0 0 0 3px ${t.palette.background.paper}, 0 0 0 5px ${alpha(t.palette.primary.main, 0.35)}`,
                   }}
-                >
-                  {user?.avatar}
-                </Avatar>
+                />
               </Box>
               <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
                 <Typography
@@ -265,6 +298,66 @@ export default function DashboardPage() {
               </Typography>
             </Box>
             <Stack spacing={2.5} alignItems="stretch" sx={{ width: '100%' }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                sx={{ width: '100%' }}
+              >
+                <UserAvatar
+                  avatar={user?.avatar}
+                  firstName={user?.firstName}
+                  lastName={user?.lastName}
+                  size={88}
+                  sx={{
+                    flexShrink: 0,
+                    boxShadow: (t) =>
+                      `0 0 0 2px ${t.palette.background.paper}, 0 0 0 3px ${alpha(t.palette.primary.main, 0.25)}`,
+                  }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: '-0.02em', color: 'text.primary' }}>
+                    Profile photo
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5, lineHeight: 1.5 }}>
+                    JPG or PNG — shown on your account, nav menu, and new listings you publish.
+                  </Typography>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    hidden
+                    aria-label="Upload profile photo"
+                    onChange={onAvatarFileChange}
+                  />
+                  <Stack direction="row" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      size="small"
+                      startIcon={<PhotoCameraOutlined />}
+                      disabled={avatarBusy || !user}
+                      onClick={pickAvatarPhoto}
+                      sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                    >
+                      {avatarBusy ? 'Processing…' : 'Upload photo'}
+                    </Button>
+                    {user && isProfilePhotoAvatar(user.avatar) ? (
+                      <Button
+                        type="button"
+                        variant="text"
+                        size="small"
+                        color="inherit"
+                        disabled={avatarBusy}
+                        onClick={removeAvatarPhoto}
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Remove photo
+                      </Button>
+                    ) : null}
+                  </Stack>
+                </Box>
+              </Stack>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
                 <TextField
                   label="First name"

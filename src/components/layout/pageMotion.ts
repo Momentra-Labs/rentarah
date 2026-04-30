@@ -8,4 +8,5 @@ export const pageMotionVariants = {
   exit: { opacity: 0 },
 }
 
-export const pageMotionTransition = { duration: 0.25, ease: 'easeOut' as const }
+/** Slightly faster than default so route changes feel lighter (still respects reduced-motion path in MainLayout). */
+export const pageMotionTransition = { duration: 0.18, ease: 'easeOut' as const }

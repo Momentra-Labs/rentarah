@@ -25,6 +25,7 @@ import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-r
 import DateRangePicker from '../components/common/DateRangePicker'
 import PriceBreakdown from '../components/common/PriceBreakdown'
 import StarRating from '../components/common/StarRating'
+import UserAvatar from '../components/common/UserAvatar'
 import AvailabilityCalendar from '../components/detail/AvailabilityCalendar'
 import ReviewsList from '../components/detail/ReviewsList'
 import CarDetailSkeleton from '../components/skeletons/CarDetailSkeleton'
@@ -68,6 +69,12 @@ export default function CarDetailPage() {
   const setSearchDates = useSearchStore((s) => s.setDates)
   const cars = useCarsStore((s) => s.cars)
   const car = cars.find((c) => c.id === id)
+
+  const hostNameParts = useMemo(() => {
+    if (!car) return { first: '', last: '' }
+    const parts = car.hostName.trim().split(/\s+/)
+    return { first: parts[0] ?? '', last: parts.slice(1).join(' ') }
+  }, [car])
   useOfferGeoPrompt('car-detail', Boolean(car))
   const user = useAuthStore((s) => s.user)
   const initBooking = useBookingStore((s) => s.initBooking)
@@ -358,21 +365,14 @@ export default function CarDetailPage() {
               </Typography>
               <Divider sx={{ my: 2 }} />
               <Stack direction="row" spacing={2} alignItems="center">
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: '50%',
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                  }}
-                >
-                  {car.hostAvatar}
-                </Box>
+                <UserAvatar
+                  avatar={car.hostAvatar}
+                  firstName={hostNameParts.first}
+                  lastName={hostNameParts.last}
+                  alt={car.hostName}
+                  size={48}
+                  sx={{ flexShrink: 0 }}
+                />
                 <Box>
                   <Typography fontWeight={700}>{car.hostName}</Typography>
                   <Typography variant="caption" color="text.secondary">

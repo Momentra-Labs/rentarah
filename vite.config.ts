@@ -8,4 +8,19 @@ const base = process.env.VITE_BASE ?? '/'
 export default defineConfig({
   plugins: [react()],
   base,
+  build: {
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string): string | undefined {
+          if (!id.includes('node_modules')) return undefined
+          if (id.includes('framer-motion')) return 'motion'
+          if (id.includes('firebase')) return 'firebase'
+          if (id.includes('leaflet') || id.includes('react-leaflet')) return 'leaflet'
+          if (id.includes('@mui') || id.includes('@emotion')) return 'mui'
+          return undefined
+        },
+      },
+    },
+  },
 })

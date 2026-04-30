@@ -49,7 +49,8 @@ export default function CarCard({
   const isXs = useMediaQuery(theme.breakpoints.down('sm'))
   const lightMotion = useMobileLightMotion()
   const toggleSaved = useCarsStore((s) => s.toggleSaved)
-  const savedIds = useCarsStore((s) => s.savedCarIds)
+  const carIdForSaved = car?.id
+  const saved = useCarsStore((s) => !!(carIdForSaved && s.savedCarIds.includes(carIdForSaved)))
 
   const primaryImage = car?.images[0] ?? ''
   const [imageFailed, setImageFailed] = useState(!primaryImage)
@@ -64,7 +65,6 @@ export default function CarCard({
   const image = primaryImage
   const title = `${car.year} ${car.make} ${car.model}`
   const unavailable = car.available === false
-  const saved = savedIds.includes(car.id)
 
   const handleCardClick = () => onNavigate?.(car)
 

@@ -1,6 +1,6 @@
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import LoadingScreen from '../brand/LoadingScreen'
@@ -10,6 +10,7 @@ import { AppNavSidebar } from './AppNavigationList'
 import Footer from './Footer'
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_SX_PB } from './MobileBottomNav'
 import Navbar from './Navbar'
+import RouteFallback from './RouteFallback'
 import { pageMotionTransition, pageMotionVariants } from './pageMotion'
 import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -22,8 +23,8 @@ import type { AuthLocationState } from '../../types/authFlow'
 import { isAuthProfileComplete } from '../../lib/authProfile'
 import { canProceedToBookingCheckout, isLegalAndSafetyOnboardingComplete } from '../../lib/trustOnboarding'
 
-/** Short beat so the brand mark registers without blocking return visits. */
-const MIN_LOADING_SCREEN_MS = 800
+/** Short beat so the brand registers; keep tighter so repeat navigations feel snappy. */
+const MIN_LOADING_SCREEN_MS = 520
 
 /** Easing: fast start, gentle settle as the sheet clears the viewport */
 const loadingExitEase = [0.33, 1, 0.68, 1] as const
@@ -248,7 +249,9 @@ export default function MainLayout() {
                   width: '100%',
                 }}
               >
-                <Outlet />
+                <Suspense fallback={<RouteFallback />}>
+                  <Outlet />
+                </Suspense>
               </motion.div>
             </AnimatePresence>
             {mobileFooterInMain ? <Footer /> : null}

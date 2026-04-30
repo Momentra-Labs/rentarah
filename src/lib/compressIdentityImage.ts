@@ -31,3 +31,8 @@ export async function compressImageFileToJpegDataUrl(file: File, maxWidth = 1400
 
   return canvas.toDataURL('image/jpeg', quality)
 }
+
+/** Small JPEG for persisted profile avatar (balanced for localStorage + listing cards). */
+export async function compressAvatarImageFileToJpegDataUrl(file: File): Promise<string> {
+  return compressImageFileToJpegDataUrl(file, 512, 0.86)
+}

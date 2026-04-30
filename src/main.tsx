@@ -10,8 +10,6 @@ import faviconUrl from './assets/rentarah_lockup.svg'
 import { FirebaseAuthSync } from './components/auth/FirebaseAuthSync'
 import { theme } from './theme'
 
-import 'leaflet/dist/leaflet.css'
-import 'react-leaflet-markercluster/styles'
 import './index.css'
 
 function applyFavicon(url: string): void {

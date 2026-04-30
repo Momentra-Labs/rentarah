@@ -1,3 +1,6 @@
+import 'leaflet/dist/leaflet.css'
+import 'react-leaflet-markercluster/styles'
+
 import { Box, Button, Stack, Typography } from '@mui/material'
 import L from 'leaflet'
 import {

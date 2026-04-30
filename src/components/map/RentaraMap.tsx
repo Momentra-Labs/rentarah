@@ -1,3 +1,5 @@
+import 'leaflet/dist/leaflet.css'
+
 import MyLocation from '@mui/icons-material/MyLocation'
 import Place from '@mui/icons-material/Place'
 import { Box, Button, Paper, Stack, Typography } from '@mui/material'

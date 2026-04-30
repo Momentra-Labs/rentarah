@@ -2,6 +2,7 @@ import { GoogleAuthProvider, sendEmailVerification, signInWithPopup, signOut, ty
 
 import type { AuthUser } from '../types'
 import { getFirebaseAuth, isFirebaseConfigured } from './firebase'
+import { isProfilePhotoAvatar } from './userAvatarUtils'
 
 /**
  * Signs in with Google (OAuth popup).
@@ -37,11 +38,13 @@ export function mergeFirebaseUserIntoPartialAuthUser(previous: AuthUser | null |
     firstName: mapped.firstName,
     lastName: mapped.lastName,
     avatar:
-      typeof mapped.avatar === 'string' && mapped.avatar.startsWith('http')
-        ? mapped.avatar
-        : typeof previous.avatar === 'string' && previous.avatar.startsWith('http')
-          ? previous.avatar
-          : mapped.avatar,
+      typeof previous.avatar === 'string' && previous.avatar.startsWith('data:image/')
+        ? previous.avatar
+        : isProfilePhotoAvatar(mapped.avatar)
+          ? mapped.avatar
+          : isProfilePhotoAvatar(previous.avatar)
+            ? previous.avatar
+            : mapped.avatar,
     phone,
     licenseNumber: prevLicense.length >= 3 ? previous.licenseNumber : mapped.licenseNumber,
     isHost: previous.isHost,
