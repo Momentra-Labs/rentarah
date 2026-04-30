@@ -1,9 +1,6 @@
-import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded'
-import CalendarTodayRounded from '@mui/icons-material/CalendarTodayRounded'
 import {
   Box,
   FormControl,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
@@ -21,7 +18,6 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import type { ReactNode } from 'react'
 import { useMemo } from 'react'
 
 import { pickerFocusOutlineSx } from '../../styles/pickerFocus'
@@ -49,22 +45,17 @@ function mergeTimeKeepDate(base: Dayjs | null, newTime: Dayjs | null): Dayjs | n
   return base.hour(newTime.hour()).minute(newTime.minute()).second(0).millisecond(0)
 }
 
-function pickerInputWithLeadingIcon(params: TextFieldProps, icon: ReactNode): TextFieldProps {
+export function mergePickerInputLabelProps(il: TextFieldProps['InputLabelProps']): TextFieldProps['InputLabelProps'] {
+  const p = il ?? {}
+  const sxIn =
+    typeof p === 'object' && p && 'sx' in p ? (p as { sx?: object | readonly object[] }).sx : undefined
+  const flatSx =
+    sxIn != null ? (Array.isArray(sxIn) ? Object.assign({}, ...sxIn.filter((x) => x != null && typeof x === 'object')) : sxIn) : {}
   return {
-    ...params,
-    InputProps: {
-      ...params.InputProps,
-      startAdornment: (
-        <>
-          {icon}
-          {params.InputProps?.startAdornment}
-        </>
-      ),
-    },
+    ...(typeof p === 'object' ? p : {}),
+    sx: { fontWeight: 600, ...(typeof flatSx === 'object' && flatSx ? flatSx : {}) },
   }
 }
-
-const labelProps600 = { sx: { fontWeight: 600 } } as const
 
 export interface DateRangePickerProps {
   pickup: Dayjs | null
@@ -90,6 +81,13 @@ export interface DateRangePickerProps {
   }
   /** Show plain-language pickup / return lines under the fields (recommended for booking-style UIs). */
   showHumanReadableSummary?: boolean
+  /** Narrower paddings inside the pickup/return recap (e.g. landing trip planner). */
+  denseSummary?: boolean
+  /**
+   * Touch devices default to MUI Mobile* pickers (full-screen dialog, no trailing field icon).
+   * Set true to keep desktop pickers so the calendar/clock affordance stays visible in the input.
+   */
+  preferDesktopPickers?: boolean
 }
 
 const INPUT_RADIUS_SPLIT = '12px'
@@ -112,9 +110,13 @@ export default function DateRangePicker({
   timeGranularity = 'native',
   showPolicyCaption = true,
   showHumanReadableSummary = true,
+  denseSummary = false,
+  preferDesktopPickers = false,
 }: DateRangePickerProps) {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
+
+  const desktopPickerProps = preferDesktopPickers ? { desktopModeMediaQuery: '@media (min-width: 0px)' } : {}
 
   const now = dayjs()
   const halfHourOptions = useMemo(() => [...halfHourMinutesFromMidnightOptions()], [])
@@ -187,32 +189,26 @@ export default function DateRangePicker({
   const fieldSxBase: SxProps<Theme> = {
     '& .MuiOutlinedInput-root': {
       borderRadius: outlineRadius,
+      overflow: 'visible',
     },
     '& .MuiOutlinedInput-input': {
-      paddingRight: '2.5rem',
+      minWidth: 0,
+      paddingRight: { xs: '3rem', sm: '2.75rem', md: '2.5rem' },
+    },
+    '& .MuiInputAdornment-positionEnd': {
+      flexShrink: 0,
     },
     ...pickerFocusOutlineSx,
   }
 
-  const pickupSxMerged = [fieldSxBase, tfCommonSx, pickupSx].filter(Boolean) as SxProps<Theme>
-  const dropoffSxMerged = [fieldSxBase, tfCommonSx, dropoffSx].filter(Boolean) as SxProps<Theme>
+  /** Consumer `sx` first; core chrome last so outline radius/padding survive theme overrides */
+  const pickupSxMerged = [tfCommonSx, pickupSx, fieldSxBase].filter(Boolean) as SxProps<Theme>
+  const dropoffSxMerged = [tfCommonSx, dropoffSx, fieldSxBase].filter(Boolean) as SxProps<Theme>
 
   const selectFormSx = {
     ...fieldSxBase,
     '& .MuiOutlinedInput-notchedOutline': { borderRadius: outlineRadius },
   } as SxProps<Theme>
-
-  const dateAdornment = (
-    <InputAdornment position="start">
-      <CalendarTodayRounded sx={{ fontSize: size === 'small' ? 17 : 18, opacity: 0.72 }} aria-hidden />
-    </InputAdornment>
-  )
-
-  const timeAdornment = (
-    <InputAdornment position="start">
-      <AccessTimeRounded sx={{ fontSize: size === 'small' ? 17 : 18, opacity: 0.72 }} aria-hidden />
-    </InputAdornment>
-  )
 
   const handlePickupDate = (d: Dayjs | null) => {
     if (d == null) {
@@ -319,6 +315,7 @@ export default function DateRangePicker({
 
     return (
       <TimePicker
+        {...desktopPickerProps}
         label="Time"
         value={base}
         onChange={role === 'pickup' ? handlePickupTime : handleDropoffTime}
@@ -330,10 +327,11 @@ export default function DateRangePicker({
         disableMaskedInput
         renderInput={(params) => (
           <TextField
-            {...pickerInputWithLeadingIcon(params, timeAdornment)}
+            {...params}
+            margin="none"
             {...tfCommonRest}
             {...(role === 'pickup' ? pickupRest : dropoffRest)}
-            InputLabelProps={labelProps600}
+            InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
             size={size}
             fullWidth
             disabled={disabled}
@@ -357,6 +355,7 @@ export default function DateRangePicker({
       <Stack direction={{ xs: 'column', md: compactToolbar ? 'row' : 'row' }} spacing={1} sx={{ '& > .MuiBox-root, & > .MuiFormControl-root': { minWidth: 0 } }}>
         <Box sx={{ flex: { xs: 'none', md: compactToolbar ? '2 1 0%' : '2 1 0%' }, width: { xs: '100%', sm: 'auto' } }}>
           <DatePicker
+            {...desktopPickerProps}
             label="Date"
             value={pickup}
             onChange={handlePickupDate}
@@ -365,10 +364,11 @@ export default function DateRangePicker({
             disableMaskedInput
             renderInput={(params) => (
               <TextField
-                {...pickerInputWithLeadingIcon(params, dateAdornment)}
+                {...params}
+                margin="none"
                 {...tfCommonRest}
                 {...pickupRest}
-                InputLabelProps={labelProps600}
+                InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
                 size={size}
                 fullWidth
                 sx={pickupSxMerged}
@@ -405,6 +405,7 @@ export default function DateRangePicker({
       <Stack direction={{ xs: 'column', md: compactToolbar ? 'row' : 'row' }} spacing={1}>
         <Box sx={{ flex: { xs: 'none', sm: '2 1 0%' }, width: { xs: '100%', sm: 'auto' }, minWidth: 0 }}>
           <DatePicker
+            {...desktopPickerProps}
             label="Date"
             value={dropoff}
             onChange={handleDropoffDate}
@@ -414,10 +415,11 @@ export default function DateRangePicker({
             disableMaskedInput
             renderInput={(params) => (
               <TextField
-                {...pickerInputWithLeadingIcon(params, dateAdornment)}
+                {...params}
+                margin="none"
                 {...tfCommonRest}
                 {...dropoffRest}
-                InputLabelProps={labelProps600}
+                InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
                 size={size}
                 fullWidth
                 disabled={dis}
@@ -461,29 +463,29 @@ export default function DateRangePicker({
         role="status"
         aria-live="polite"
         aria-label="Pick-up time, return time, and total rent duration"
-        spacing={0.35}
+        spacing={denseSummary ? 0.2 : 0.35}
         sx={{
           width: '100%',
-          px: 1,
-          py: 0.75,
+          px: denseSummary ? 0.65 : 1,
+          py: denseSummary ? 0.45 : 0.75,
           mt: compactToolbar && isMdUp ? 0.25 : 0,
-          borderRadius: 1,
+          borderRadius: denseSummary ? 0.85 : 1,
           bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'light' ? 0.04 : 0.08),
           border: '1px solid',
           borderColor: alpha(theme.palette.divider, theme.palette.mode === 'light' ? 0.9 : 0.45),
         }}
       >
         {pickup?.isValid() ? (
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45 }}>
-            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: 0.75 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: denseSummary ? 1.38 : 1.45 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: denseSummary ? 0.5 : 0.75 }}>
               Pick-up
             </Box>
             {formatTripDateTimeHuman(pickup)}
           </Typography>
         ) : null}
         {dropoff?.isValid() ? (
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45 }}>
-            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: 0.75 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: denseSummary ? 1.38 : 1.45 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: denseSummary ? 0.5 : 0.75 }}>
               Return
             </Box>
             {formatTripDateTimeHuman(dropoff)}
@@ -494,14 +496,14 @@ export default function DateRangePicker({
             variant="caption"
             color="text.secondary"
             sx={{
-              lineHeight: 1.45,
-              pt: 0.5,
-              mt: 0.15,
+              lineHeight: denseSummary ? 1.38 : 1.45,
+              pt: denseSummary ? 0.35 : 0.5,
+              mt: denseSummary ? 0.08 : 0.15,
               borderTop: '1px dashed',
               borderColor: alpha(theme.palette.divider, theme.palette.mode === 'light' ? 0.75 : 0.5),
             }}
           >
-            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: 0.65 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: denseSummary ? 0.5 : 0.65 }}>
               Rent time
             </Box>
             {spanSentence}
@@ -533,7 +535,7 @@ export default function DateRangePicker({
               }
             : {
                 width: 1,
-                height: { xs: 18, sm: 22 },
+                height: denseSummary ? { xs: 12, sm: 16 } : { xs: 18, sm: 22 },
                 bgcolor: alpha(theme.palette.grey[400], theme.palette.mode === 'light' ? 0.45 : 0.35),
                 borderRadius: 1,
               }
@@ -623,6 +625,7 @@ export default function DateRangePicker({
         }}
       >
         <DateTimePicker
+          {...desktopPickerProps}
           ampm
           views={['year', 'month', 'day', 'hours', 'minutes']}
           minutesStep={30}
@@ -634,12 +637,10 @@ export default function DateRangePicker({
           renderInput={(params) => (
             <TextField
               {...params}
+              margin="none"
               {...tfCommonRest}
               {...pickupRest}
-              InputLabelProps={{
-                ...(params.InputLabelProps ?? {}),
-                sx: { fontWeight: 600, ...(params.InputLabelProps as { sx?: object } | undefined)?.sx },
-              }}
+              InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
               size={size}
               fullWidth
               sx={pickupSxMerged}
@@ -647,6 +648,7 @@ export default function DateRangePicker({
           )}
         />
         <DateTimePicker
+          {...desktopPickerProps}
           ampm
           views={['year', 'month', 'day', 'hours', 'minutes']}
           minutesStep={30}
@@ -658,12 +660,10 @@ export default function DateRangePicker({
           renderInput={(params) => (
             <TextField
               {...params}
+              margin="none"
               {...tfCommonRest}
               {...dropoffRest}
-              InputLabelProps={{
-                ...(params.InputLabelProps ?? {}),
-                sx: { fontWeight: 600, ...(params.InputLabelProps as { sx?: object } | undefined)?.sx },
-              }}
+              InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
               size={size}
               fullWidth
               sx={dropoffSxMerged}

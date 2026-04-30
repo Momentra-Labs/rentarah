@@ -20,6 +20,8 @@ type LandingListingCarouselProps = {
   children: ReactNode
   trackSx?: SxProps<Theme>
   showNavigation?: boolean
+  /** Renders below carousel hints inside the same horizontal rail as the track (aligned “Show more”, etc.). */
+  exploreCta?: ReactNode
 }
 
 const SCROLL_EDGE_EPSILON = 2
@@ -108,6 +110,7 @@ export function LandingListingCarousel({
   children,
   trackSx,
   showNavigation = true,
+  exploreCta,
 }: LandingListingCarouselProps) {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
@@ -227,6 +230,24 @@ export function LandingListingCarousel({
     },
   }
 
+  /** Same horizontal inset as `.carouselRowSxBase` (track) so captions + “Show more” match listing bounds. */
+  const captionRailSx: SxProps<Theme> = {
+    mx: { xs: 0, md: -3 },
+    px: { xs: 0, md: 3 },
+  }
+
+  /** Same gap under the listing track whether the row scrolls or not (avoids Motorcycle vs Top picks mismatch on md). */
+  const captionRailAfterTrackSx: SxProps<Theme> = {
+    mt: { xs: 1.25, md: 1 },
+    pb: 0,
+    pt: 0,
+  }
+
+  const exploreCtaSlot =
+    exploreCta != null ? (
+      <Box sx={{ mt: { xs: 1.125, sm: 1.25, md: 1.5 }, width: '100%', minWidth: 0 }}>{exploreCta}</Box>
+    ) : null
+
   const sectionShellSx: SxProps<Theme> = useMemo(() => {
     const floaterTransitions = '.22s ease'
     const baseFloaterOpacity = () => ({
@@ -336,12 +357,10 @@ export function LandingListingCarousel({
 
       {showNavigation && needsScroll ? (
         <Box
-          sx={{
-            mx: { xs: 0, md: -3 },
-            px: { xs: 0, md: 3 },
-            mt: { xs: 1.25, md: 1.75 },
-            pb: { xs: 0, md: 0 },
-          }}
+          sx={[
+            captionRailSx,
+            captionRailAfterTrackSx,
+          ]}
         >
           <Typography
             component="span"
@@ -383,9 +402,15 @@ export function LandingListingCarousel({
               Hover this row to show arrow buttons
             </Typography>
           ) : null}
+          {exploreCtaSlot}
         </Box>
       ) : showNavigation ? (
-        <Box sx={{ mx: { xs: 0, md: -3 }, px: { xs: 0, md: 3 }, mt: { xs: 1.25, md: 1 }, pb: { xs: 0, md: 0 }, pt: 0 }}>
+        <Box
+          sx={[
+            captionRailSx,
+            captionRailAfterTrackSx,
+          ]}
+        >
           <Typography
             variant="caption"
             color="text.secondary"
@@ -400,6 +425,16 @@ export function LandingListingCarousel({
           >
             All {childCount} listing{childCount === 1 ? '' : 's'} visible in this view
           </Typography>
+          {exploreCtaSlot}
+        </Box>
+      ) : exploreCta != null ? (
+        <Box
+          sx={[
+            captionRailSx,
+            captionRailAfterTrackSx,
+          ]}
+        >
+          {exploreCta}
         </Box>
       ) : null}
     </Box>
@@ -418,6 +453,15 @@ export function LandingCarouselSlide({ children }: PropsWithChildren<object>) {
         },
         minWidth: 0,
         scrollSnapAlign: 'start',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        '& > *': {
+          width: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box',
+        },
       }}
     >
       {children}
@@ -428,13 +472,19 @@ export function LandingCarouselSlide({ children }: PropsWithChildren<object>) {
 export type LandingExploreListingHintProps = {
   listHref: string
   variant?: 'default' | 'motorcycles'
+  /** Set when this is passed as `LandingListingCarousel` exploreCta (same horizontal rail as the track). */
+  embedded?: boolean
 }
 
 /**
  * Compact foot for listing carousels: one dominant CTA to the search surface (fleet or motorcycles).
  * Prose hints were replaced with this pattern — clearer hierarchy, larger tap targets, predictable journey.
  */
-export function LandingExploreListingHint({ listHref, variant = 'default' }: LandingExploreListingHintProps): ReactElement {
+export function LandingExploreListingHint({
+  listHref,
+  variant = 'default',
+  embedded = false,
+}: LandingExploreListingHintProps): ReactElement {
   const theme = useTheme()
   const ariaLabel =
     variant === 'motorcycles'
@@ -442,7 +492,20 @@ export function LandingExploreListingHint({ listHref, variant = 'default' }: Lan
       : 'Show more rentals — opens full marketplace search'
 
   return (
-    <Box component="aside" sx={{ mt: { xs: 1.125, sm: 1.35, md: 1.75 }, width: '100%' }}>
+    <Box
+      component="aside"
+      sx={{
+        width: '100%',
+        minWidth: 0,
+        ...(embedded
+          ? { mt: 0 }
+          : {
+              mt: { xs: 1.125, sm: 1.35, md: 1.75 },
+              mx: { xs: 0, md: -3 },
+              px: { xs: 0, md: 3 },
+            }),
+      }}
+    >
       <Button
         component={RouterLink}
         to={listHref}

@@ -333,6 +333,7 @@ export default function CarDetailPage() {
                   minDate={dayjs()}
                   pickupLabel="Pick-up date & time"
                   dropoffLabel="Return date & time"
+                  preferDesktopPickers
                 />
               </Box>
               {conflict && (

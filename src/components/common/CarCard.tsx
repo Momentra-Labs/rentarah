@@ -413,7 +413,7 @@ function CarCard({
   }
 
   const gridCard = (
-    <Card variant="outlined" onClick={handleCardClick} sx={{ ...cardSx }}>
+    <Card variant="outlined" onClick={handleCardClick} sx={{ ...cardSx, width: '100%', minWidth: 0 }}>
       <Stack sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {mediaBox}
         {body}
@@ -423,7 +423,7 @@ function CarCard({
   )
 
   return (
-    <Box sx={{ height: '100%' }}>{gridCard}</Box>
+    <Box sx={{ height: '100%', width: '100%', minWidth: 0 }}>{gridCard}</Box>
   )
 }
 
