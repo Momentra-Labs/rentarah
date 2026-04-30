@@ -1,4 +1,6 @@
 import AccessTime from '@mui/icons-material/AccessTime'
+import ExploreOutlined from '@mui/icons-material/ExploreOutlined'
+import MapOutlined from '@mui/icons-material/MapOutlined'
 import AirportShuttle from '@mui/icons-material/AirportShuttle'
 import ArrowForward from '@mui/icons-material/ArrowForward'
 import Bolt from '@mui/icons-material/Bolt'
@@ -31,7 +33,7 @@ import {
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
 import { prefetchPath } from '../lib/routePrefetch'
@@ -169,9 +171,9 @@ export default function LandingPage() {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          background: `linear-gradient(165deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${theme.palette.background.default} 42%, ${alpha(theme.palette.grey[50], 1)} 100%)`,
-          pt: { xs: 2, md: 8 },
-          pb: { xs: 4, md: 9 },
+          background: `linear-gradient(168deg, ${alpha(theme.palette.primary.main, 0.078)} 0%, ${theme.palette.background.default} 38%, ${alpha(theme.palette.grey[50], 1)} 92%)`,
+          pt: { xs: 2.25, md: 9 },
+          pb: { xs: 4.5, md: 10 },
         }}
       >
         <HeroAmbientBackground />
@@ -181,133 +183,217 @@ export default function LandingPage() {
               <Box component="div">
                 <Stack
                   data-onboarding="hero"
-                  spacing={{ xs: 2.25, sm: 2.5, md: 4 }}
+                  spacing={{ xs: 2.5, sm: 2.75, md: 3.25 }}
                   sx={{
-                    /** Cap width on small screens only; full column above sm so Trust tiles stay readable */
-                    maxWidth: { xs: 560 },
+                    maxWidth: { xs: '100%', sm: 620, md: 640 },
                     width: '100%',
                     pr: { md: 0.5 },
                   }}
                 >
                   <Chip
-                    label="Available across the Philippines"
-                    color="primary"
+                    icon={
+                      <ExploreOutlined
+                        sx={{
+                          fontSize: '1.05rem !important',
+                          color: `${theme.palette.primary.main} !important`,
+                        }}
+                      />
+                    }
+                    label="Available Luzon to Mindanao"
                     size="small"
                     sx={{
                       alignSelf: 'flex-start',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       borderRadius: '999px',
-                      px: { xs: 1, sm: 0.5 },
-                      py: 0.25,
-                      fontSize: { xs: '0.71875rem', sm: '0.8125rem' },
-                      height: { xs: 28, sm: 32 },
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      px: { xs: 0.5, sm: 0.75 },
+                      py: 0.375,
+                      height: { xs: 30, sm: 34 },
+                      fontSize: { xs: '0.6875rem', sm: '0.75rem' },
+                      letterSpacing: '0.02em',
+                      bgcolor: alpha(theme.palette.primary.main, 0.09),
                       color: 'primary.dark',
                       border: '1px solid',
-                      borderColor: alpha(theme.palette.primary.main, 0.2),
+                      borderColor: alpha(theme.palette.primary.main, 0.22),
+                      '& .MuiChip-icon': { ml: 0.5 },
+                      '& .MuiChip-label': { px: 0.5 },
                     }}
                   />
+
                   <Typography
+                    component="h1"
                     variant="h1"
                     sx={{
-                      letterSpacing: '-0.03em',
-                      lineHeight: { xs: 1.11, sm: 1.08 },
-                      fontSize: { xs: '1.7rem', sm: '2.125rem', md: theme.typography.h1.fontSize },
+                      letterSpacing: '-0.035em',
+                      lineHeight: { xs: 1.12, sm: 1.06, md: 1.05 },
+                      fontSize: { xs: '1.85rem', sm: '2.25rem', md: 'clamp(2.25rem, 3.4vw, 2.85rem)' },
                       fontWeight: 800,
-                      whiteSpace: 'pre-line',
                       textWrap: 'balance',
+                      fontFeatureSettings: '"ss01"',
                     }}
                   >
-                    {'Rent the right ride—\ncars and motorcycles\nfor trips anywhere in the PH.'}
+                    <Box component="span" sx={{ display: 'block', color: 'text.primary' }}>
+                      Rent the right ride,
+                    </Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'block',
+                        color: 'primary.main',
+                        fontWeight: 900,
+                        mt: { xs: 0.25, sm: 0.35 },
+                      }}
+                    >
+                      cars & motorcycles
+                    </Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'block',
+                        color: 'text.primary',
+                        fontWeight: 800,
+                        mt: { xs: 0.25, sm: 0.35 },
+                        fontSize: { xs: '0.92em', sm: '0.94em', md: '0.95em' },
+                        opacity: 0.98,
+                      }}
+                    >
+                      nationwide — transparent PHP, verified hosts.
+                    </Box>
                   </Typography>
+
                   <Typography
                     variant="body1"
                     color="text.secondary"
                     sx={{
-                      fontSize: { xs: '0.9375rem', sm: '1rem', md: '1.0625rem' },
-                      lineHeight: { xs: 1.58, sm: 1.65, md: 1.62 },
-                      maxWidth: { xs: '100%', md: '38em' },
+                      fontSize: { xs: '0.9375rem', sm: '1.05rem', md: '1.0625rem' },
+                      lineHeight: { xs: 1.62, sm: 1.68 },
+                      maxWidth: { xs: '100%', md: '36em' },
+                      fontWeight: 500,
                     }}
                   >
-                    Transparent pricing in PHP, verified hosts, and pickup from Luzon to Mindanao — from sedans to sport
-                    bikes, book in minutes and ride with confidence.
+                    From city errands to long highway runs, pick dates and a pickup area — matched listings with clear
+                    nightly rates, no surprise line items.
                   </Typography>
 
                   <Box
                     sx={{
                       width: '100%',
-                      borderRadius: { xs: 2.5, sm: 0 },
-                      border: { xs: '1px solid', sm: 'none' },
-                      borderColor: { xs: alpha(theme.palette.divider, 0.88), sm: 'transparent' },
-                      bgcolor: { xs: alpha(theme.palette.background.paper, 0.92), sm: 'transparent' },
-                      backdropFilter: { xs: 'none', sm: 'none' },
-                      WebkitBackdropFilter: { xs: 'none', sm: 'none' },
-                      boxShadow: { xs: `0 4px 24px ${alpha('#000', 0.04)}`, sm: 'none' },
+                      borderRadius: 3,
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                      bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.06 : 0.92),
+                      boxShadow: `0 14px 42px ${alpha(theme.palette.primary.main, 0.07)}, 0 2px 8px ${alpha('#000', 0.04)}`,
                       overflow: 'hidden',
+                      mt: { xs: 0.25, md: 0.5 },
                     }}
                   >
                     <Box
                       sx={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                        alignItems: 'center',
-                        columnGap: { xs: 'clamp(10px, 3vw, 16px)', sm: 2.75, md: 3.5 },
-                        rowGap: 0,
-                        borderTop: { xs: 'none', sm: '1px solid' },
-                        borderColor: 'divider',
-                        pt: { xs: 1.375, sm: 2.25, md: 2.5 },
-                        pb: { xs: 1.375, sm: 0, md: 0 },
-                        px: { xs: 2, sm: 0 },
-                        mt: { xs: 0, md: 0.25 },
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'stretch' },
                         width: '100%',
                       }}
                     >
-                      {HERO_TRUST_NUMBERS.map((s) => (
-                        <Stack
+                      {HERO_TRUST_NUMBERS.map((s, i) => (
+                        <Box
                           key={s.k}
-                          spacing={{ xs: 0.375, sm: 0.35, md: 0.45 }}
-                          alignItems={{ xs: 'center', sm: 'flex-start' }}
-                          sx={{ minWidth: 0 }}
+                          sx={{
+                            flex: 1,
+                            minWidth: 0,
+                            px: { xs: 2, sm: 2.25, md: 2.75 },
+                            py: { xs: 1.65, sm: 1.85, md: 2 },
+                            textAlign: { xs: 'center', sm: 'left' },
+                            borderTop: {
+                              xs: i > 0 ? `1px solid ${alpha(theme.palette.divider, 0.85)}` : undefined,
+                              sm: 'none',
+                            },
+                            borderLeft: {
+                              xs: 'none',
+                              sm: i > 0 ? `1px solid ${alpha(theme.palette.divider, 0.85)}` : undefined,
+                            },
+                            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.03 : 0.02),
+                          }}
                         >
                           <Typography
                             component="span"
-                            variant="subtitle2"
-                            fontWeight={800}
+                            variant="h6"
                             sx={{
                               display: 'block',
-                              width: '100%',
-                              textAlign: { xs: 'center', sm: 'left' },
-                              margin: 0,
+                              fontWeight: 900,
                               fontVariantNumeric: 'tabular-nums',
-                              lineHeight: 1.2,
-                              fontSize: { xs: '0.84375rem', sm: '0.9375rem', md: '1rem' },
-                              letterSpacing: '-0.02em',
+                              lineHeight: 1.15,
+                              fontSize: { xs: '1.05rem', sm: '1.2rem', md: '1.25rem' },
+                              letterSpacing: '-0.03em',
+                              color: 'text.primary',
                             }}
                           >
                             {s.k}
                           </Typography>
                           <Typography
                             component="span"
-                            variant="caption"
+                            variant="body2"
                             color="text.secondary"
                             sx={{
                               display: 'block',
-                              width: '100%',
-                              textAlign: { xs: 'center', sm: 'left' },
-                              margin: 0,
-                              fontSize: { xs: '0.65625rem', sm: '0.71875rem', md: '0.75rem' },
-                              lineHeight: 1.35,
-                              letterSpacing: { xs: '0.01em', sm: '0.012em' },
-                              opacity: { xs: 0.92, sm: 1 },
+                              mt: 0.5,
+                              fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                              lineHeight: 1.45,
+                              fontWeight: 600,
                             }}
                           >
                             {s.l}
                           </Typography>
-                        </Stack>
+                        </Box>
                       ))}
                     </Box>
                   </Box>
 
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                    useFlexGap
+                    sx={{ pt: { xs: 0.25, sm: 0.5 }, alignItems: { xs: 'stretch', sm: 'center' }, flexWrap: 'wrap' }}
+                  >
+                    <Button
+                      component={RouterLink}
+                      to="/map"
+                      variant="contained"
+                      color="primary"
+                      size="medium"
+                      startIcon={<MapOutlined />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        borderRadius: 2.25,
+                        py: 1.125,
+                        px: 2,
+                        boxShadow: `0 8px 22px ${alpha(theme.palette.primary.main, 0.28)}`,
+                      }}
+                    >
+                      Explore the map
+                    </Button>
+                    <Button
+                      component={RouterLink}
+                      to="/search"
+                      variant="outlined"
+                      color="inherit"
+                      size="medium"
+                      startIcon={<SearchRounded />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        borderRadius: 2.25,
+                        py: 1.125,
+                        borderColor: alpha(theme.palette.text.primary, 0.14),
+                        bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.12 : 0.55),
+                        '&:hover': {
+                          borderColor: alpha(theme.palette.primary.main, 0.5),
+                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                        },
+                      }}
+                    >
+                      Browse fleet
+                    </Button>
+                  </Stack>
                   <Box
                     id="how"
                     component="section"
@@ -422,48 +508,59 @@ export default function LandingPage() {
                       boxShadow: { xs: `inset 0 1px 0 ${alpha('#fff', 0.65)}`, sm: 'none' },
                     }}
                   >
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="primary"
+                    <Box sx={{ width: '100%', maxWidth: '100%', mx: 0 }}>
+                      <Box sx={{ mb: { xs: 1.25, sm: 1.5 } }}>
+                        <Typography
+                          variant="caption"
+                          color="primary"
+                          sx={{
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            fontSize: { xs: '0.6375rem', sm: '0.65rem', md: '0.6875rem' },
+                          }}
+                        >
+                          Why renters choose us
+                        </Typography>
+                        <Typography
+                          id="landing-trust-heading"
+                          variant="subtitle1"
+                          component="h2"
+                          sx={{
+                            fontWeight: 800,
+                            letterSpacing: '-0.02em',
+                            lineHeight: 1.28,
+                            mt: { xs: 0.35, md: 0.5 },
+                            fontSize: { xs: '1.0125rem', sm: '1.0625rem', md: '1.125rem' },
+                          }}
+                        >
+                          Trust built into every trip
+                        </Typography>
+                      </Box>
+                      <Box
                         sx={{
-                          fontWeight: 700,
-                          letterSpacing: '0.08em',
-                          fontSize: { xs: '0.6375rem', sm: '0.65rem', md: '0.6875rem' },
+                          display: 'grid',
+                          gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(2, minmax(0, 1fr))',
+                          },
+                          gap: { xs: 0, sm: 1.5, md: 2 },
+                          width: '100%',
+                          alignItems: 'stretch',
                         }}
                       >
-                        Why renters choose us
-                      </Typography>
-                      <Typography
-                        id="landing-trust-heading"
-                        variant="subtitle1"
-                        component="h2"
-                        sx={{
-                          fontWeight: 800,
-                          letterSpacing: '-0.02em',
-                          lineHeight: 1.28,
-                          mt: { xs: 0.35, md: 0.5 },
-                          fontSize: { xs: '1.0125rem', sm: '1.0625rem', md: '1.125rem' },
-                        }}
-                      >
-                        Trust built into every trip
-                      </Typography>
-                    </Box>
-                    <Grid container spacing={{ xs: 0, sm: 1.5, md: 2.5 }}>
-                      {HERO_WHY_COMPACT.map(({ Icon, title, line }, idx) => {
-                        const isLast = idx === HERO_WHY_COMPACT.length - 1
-                        return (
-                          <Grid item xs={12} sm={6} md={6} lg={6} xl={3} key={title}>
-                            <Stack
-                              direction="row"
-                              spacing={{ xs: 1.5, sm: 1.25 }}
-                              alignItems="flex-start"
+                        {HERO_WHY_COMPACT.map(({ Icon, title, line }, idx) => {
+                          const isLastMobile = idx === HERO_WHY_COMPACT.length - 1
+                          return (
+                            <Box
+                              key={title}
                               sx={{
-                                height: { xs: 'auto', sm: '100%' },
-                                p: { xs: 0, sm: 1.5, md: 2 },
-                                pb: { xs: isLast ? 0 : 1.5, sm: 0 },
+                                minWidth: 0,
+                                pb: {
+                                  xs: isLastMobile ? 0 : 1.375,
+                                  sm: 0,
+                                },
                                 borderBottom: {
-                                  xs: isLast ? 'none' : `1px solid ${alpha(theme.palette.divider, 0.55)}`,
+                                  xs: isLastMobile ? 'none' : `1px solid ${alpha(theme.palette.divider, 0.55)}`,
                                   sm: 'none',
                                 },
                                 borderRadius: { xs: 0, sm: 2 },
@@ -479,55 +576,60 @@ export default function LandingPage() {
                                   xs: 'none',
                                   sm: `0 2px 12px ${alpha('#000', 0.035)}`,
                                 },
+                                px: { xs: 0, sm: 1.25, md: 1.5 },
+                                py: { xs: 0, sm: 1.25, md: 1.5 },
                               }}
                             >
-                            <Box
-                              sx={{
-                                width: { xs: 36, sm: 32, md: 36 },
-                                height: { xs: 36, sm: 32, md: 36 },
-                                borderRadius: '50%',
-                                flexShrink: 0,
-                                bgcolor: alpha(theme.palette.primary.main, 0.11),
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'primary.main',
-                              }}
-                            >
-                              <Icon sx={{ fontSize: { xs: 18, sm: 16, md: 17 } }} aria-hidden />
+                              <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ width: '100%' }}>
+                                <Box
+                                  sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    flexShrink: 0,
+                                    bgcolor: alpha(theme.palette.primary.main, 0.11),
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'primary.main',
+                                    mt: 0.125,
+                                  }}
+                                >
+                                  <Icon sx={{ fontSize: 17 }} aria-hidden />
+                                </Box>
+                                <Box sx={{ minWidth: 0, flex: 1, pt: 0 }}>
+                                  <Typography
+                                    variant="body2"
+                                    fontWeight={700}
+                                    sx={{
+                                      fontSize: { xs: '0.875rem', sm: '0.84375rem', md: '0.90625rem' },
+                                      lineHeight: { xs: 1.33, md: 1.35 },
+                                      letterSpacing: '-0.015em',
+                                    }}
+                                  >
+                                    {title}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                      display: 'block',
+                                      mt: { xs: 0.35, sm: 0.3, md: 0.45 },
+                                      fontSize: { xs: '0.75rem', sm: '0.75rem', md: '0.8125rem' },
+                                      lineHeight: { xs: 1.5, md: 1.55 },
+                                      overflowWrap: 'break-word',
+                                      wordBreak: 'normal',
+                                    }}
+                                  >
+                                    {line}
+                                  </Typography>
+                                </Box>
+                              </Stack>
                             </Box>
-                            <Box sx={{ minWidth: 0, flex: 1, pt: { xs: 0.125, md: 0.125 } }}>
-                              <Typography
-                                variant="body2"
-                                fontWeight={700}
-                                sx={{
-                                  fontSize: { xs: '0.875rem', sm: '0.84375rem', md: '0.90625rem' },
-                                  lineHeight: { xs: 1.33, md: 1.35 },
-                                  letterSpacing: '-0.015em',
-                                }}
-                              >
-                                {title}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{
-                                  display: 'block',
-                                  mt: { xs: 0.375, sm: 0.25, md: 0.5 },
-                                  fontSize: { xs: '0.75rem', sm: '0.75rem', md: '0.8125rem' },
-                                  lineHeight: { xs: 1.5, md: 1.55 },
-                                  overflowWrap: 'break-word',
-                                  wordBreak: 'normal',
-                                }}
-                              >
-                                {line}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                        </Grid>
-                        )
-                      })}
-                    </Grid>
+                          )
+                        })}
+                      </Box>
+                    </Box>
                   </Stack>
                 </Stack>
               </Box>
@@ -540,14 +642,24 @@ export default function LandingPage() {
                   data-onboarding="search"
                   elevation={0}
                   sx={{
+                    position: 'relative',
+                    overflow: 'hidden',
                     height: '100%',
                     /** 16px inset @ xs — 8px grid, compact without feeling cramped */
                     p: { xs: 2, sm: 3.25, md: 3.5 },
-                    borderRadius: { xs: 2.5, md: 3 },
+                    pt: { xs: 2.25, sm: 3.5, md: 3.75 },
+                    borderRadius: { xs: 2.75, md: 3 },
                     border: '1px solid',
                     borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
                     boxShadow: { xs: `0 1px 0 ${alpha('#000', 0.04)}, 0 8px 24px ${alpha('#000', 0.07)}`, sm: softShadow },
                     transition: 'box-shadow 0.25s ease, border-color 0.2s ease',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      inset: '0 0 auto 0',
+                      height: 4,
+                      background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.light, 0.75)})`,
+                    },
                     '@media (hover: hover)': {
                       '&:hover': {
                         boxShadow: softShadowHover,
@@ -557,62 +669,82 @@ export default function LandingPage() {
                   }}
                 >
                   <Stack spacing={{ xs: 1.75, md: 2.75 }}>
-                    <Box component="header">
-                      <Typography
-                        variant="overline"
-                        color="primary"
-                        sx={{
-                          fontWeight: 700,
-                          letterSpacing: { xs: '0.1em', sm: '0.08em' },
-                          fontSize: { xs: '0.625rem', sm: '0.7rem' },
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        Plan a trip
-                      </Typography>
-                      <Typography
-                        variant="h6"
-                        component="h2"
-                        sx={{
-                          mt: 0.5,
-                          fontWeight: 800,
-                          letterSpacing: '-0.02em',
-                          fontSize: { xs: '1.0625rem', sm: '1.35rem' },
-                          lineHeight: { xs: 1.25, sm: 1.2 },
-                        }}
-                      >
-                        Where & when?
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                          mt: { xs: 0, sm: 0.75 },
-                          lineHeight: 1.5,
-                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                          display: { xs: 'none', sm: 'block' },
-                        }}
-                      >
-                        Choose an area, then set pick-up and return{' '}
-                        <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                          date and time
-                        </Box>{' '}
-                        so listings match your plan.
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{
-                          mt: 1,
-                          display: { xs: 'block', sm: 'none' },
-                          lineHeight: 1.45,
-                          fontSize: '0.71875rem',
-                          letterSpacing: '0.01em',
-                          maxWidth: 320,
-                        }}
-                      >
-                        Pick area, then dates & times — listings match your plan.
-                      </Typography>
+                    <Box component="header" sx={{ pt: { xs: 0.25, sm: 0 } }}>
+                      <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                        <Box
+                          sx={{
+                            width: { xs: 44, sm: 48 },
+                            height: { xs: 44, sm: 48 },
+                            flexShrink: 0,
+                            borderRadius: 2.25,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                            color: 'primary.main',
+                          }}
+                          aria-hidden
+                        >
+                          <DirectionsCar sx={{ fontSize: { xs: 24, sm: 26 } }} />
+                        </Box>
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography
+                            variant="overline"
+                            color="primary"
+                            sx={{
+                              fontWeight: 800,
+                              letterSpacing: { xs: '0.1em', sm: '0.09em' },
+                              fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            Trip planner
+                          </Typography>
+                          <Typography
+                            variant="h6"
+                            component="h2"
+                            sx={{
+                              mt: 0.35,
+                              fontWeight: 800,
+                              letterSpacing: '-0.025em',
+                              fontSize: { xs: '1.1875rem', sm: '1.4rem', md: '1.4375rem' },
+                              lineHeight: { xs: 1.2, sm: 1.15 },
+                            }}
+                          >
+                            Where are you picking up?
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              mt: { xs: 0.5, sm: 0.75 },
+                              lineHeight: 1.57,
+                              fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                              display: { xs: 'none', sm: 'block' },
+                            }}
+                          >
+                            Set area and{' '}
+                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                              dates with times
+                            </Box>{' '}
+                            so results match real availability — pricing uses calendar days between pick-up and return.
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              mt: 1,
+                              display: { xs: 'block', sm: 'none' },
+                              lineHeight: 1.5,
+                              fontSize: '0.75rem',
+                              letterSpacing: '0.01em',
+                              maxWidth: 340,
+                            }}
+                          >
+                            Area + dates & times. Rates use days between pickup and drop-off.
+                          </Typography>
+                        </Box>
+                      </Stack>
                     </Box>
 
                     <Stack component="section" spacing={1} aria-labelledby="landing-location-heading">

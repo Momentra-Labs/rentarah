@@ -7,7 +7,9 @@ import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import EventAvailable from '@mui/icons-material/EventAvailable'
 import Shield from '@mui/icons-material/Shield'
 import Speed from '@mui/icons-material/Speed'
+import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import {
+  alpha,
   Box,
   Button,
   Card,
@@ -18,6 +20,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Fab,
   FormControlLabel,
   Grid,
@@ -33,10 +36,11 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 
+import UserAvatar from '../components/common/UserAvatar'
 import ListingForm from '../components/host/ListingForm'
 import PageHeader from '../components/layout/PageHeader'
 import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
-import EarningsCard, { EarningsPlaceholderChart } from '../components/host/EarningsCard'
+import HostEarningsSection from '../components/host/HostEarningsSection'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
@@ -49,12 +53,21 @@ import {
   dashboardTabsBarWrapSx,
   listRowSurface,
   primaryCtaShadow,
-  softInteractiveSurface,
 } from '../theme/pageStyles'
+
+const HOST_TAB_SECTION_KEYS = ['listings', 'settings', 'earnings', 'bookings'] as const
+
+function hostSectionToTab(section: string | null): number {
+  if (section == null || section === '' || section === 'list' || section === 'listings') return 0
+  if (section === 'settings') return 1
+  if (section === 'earnings') return 2
+  if (section === 'bookings' || section === 'requests') return 3
+  return 0
+}
 
 export default function HostDashboardPage() {
   const theme = useTheme()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const user = useAuthStore((s) => s.user)
   const becomeHost = useAuthStore((s) => s.becomeHost)
   const cars = useCarsStore((s) => s.cars)
@@ -78,10 +91,41 @@ export default function HostDashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (user?.isHost && searchParams.get('section') === 'list') {
+    if (!user?.isHost) return
+    const raw = searchParams.get('section')
+    const recognized =
+      raw == null ||
+      raw === '' ||
+      raw === 'list' ||
+      raw === 'listings' ||
+      raw === 'settings' ||
+      raw === 'earnings' ||
+      raw === 'bookings' ||
+      raw === 'requests'
+    if (!recognized) {
       setTab(0)
+      setSearchParams(
+        (prev) => {
+          const n = new URLSearchParams(prev)
+          n.set('section', 'listings')
+          return n
+        },
+        { replace: true },
+      )
+      return
     }
-  }, [searchParams, user?.isHost])
+    setTab(hostSectionToTab(raw))
+    if (raw == null || raw === '') {
+      setSearchParams(
+        (prev) => {
+          const n = new URLSearchParams(prev)
+          n.set('section', 'listings')
+          return n
+        },
+        { replace: true },
+      )
+    }
+  }, [searchParams, setSearchParams, user?.isHost])
 
   const hostCars = useMemo(() => cars.filter((c) => c.hostId === user?.id), [cars, user?.id])
 
@@ -99,21 +143,30 @@ export default function HostDashboardPage() {
     }
   }, [hostBookings])
 
+  const pendingBookingsCount = useMemo(
+    () => hostBookings.filter((b) => b.status === 'pending').length,
+    [hostBookings],
+  )
+
   if (!user) return null
 
   if (!user.isHost) {
     return (
-      <Box sx={{ bgcolor: 'grey.50', py: { xs: 7, md: 9 } }}>
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: { xs: 7, md: 9 } }}>
         <Container maxWidth="md" sx={containerGutters}>
-          <PageHeader
-            title="Become a host"
-            subtitle="Turn your idle car into income with RentaraH — same polished experience as the renter app."
-            dense
+          <PageHeader overline="Hosting" title="Become a host" dense align="center" />
+          <Typography
+            variant="body2"
+            color="text.secondary"
             align="center"
-          />
-          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 1 }} alignItems="stretch">
+            sx={{ maxWidth: 520, mx: 'auto', mt: -0.75, mb: { xs: 2.5, md: 3 }, lineHeight: 1.65 }}
+          >
+            List a vehicle once, then manage calendars, messages, and requests from one place — aligned with how renters
+            browse in RentaraH.
+          </Typography>
+          <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
             <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
-              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', ...listRowSurface(theme) }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
                 <MonetizationOn sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Earn money
@@ -124,7 +177,7 @@ export default function HostDashboardPage() {
               </Paper>
             </Grid>
             <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
-              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', ...listRowSurface(theme) }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
                 <Speed sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Easy management
@@ -135,7 +188,7 @@ export default function HostDashboardPage() {
               </Paper>
             </Grid>
             <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
-              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', ...listRowSurface(theme) }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
                 <Shield sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
                 <Typography variant="h6" fontWeight={700}>
                   Protection
@@ -159,17 +212,96 @@ export default function HostDashboardPage() {
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: 12, md: 10 }, ...containerGutters }}>
-        <PageHeader
-          overline="Host"
-          title="Host dashboard"
-          subtitle={`Manage listings and driver requests for ${user.firstName}.`}
-          dense
-        />
+        <PageHeader overline="Host" title="Host dashboard" dense />
+
+        <Card
+          elevation={0}
+          sx={{
+            mb: 3,
+            mt: -0.5,
+            borderRadius: 3,
+            border: 1,
+            borderColor: 'divider',
+            overflow: 'hidden',
+            background: (t) =>
+              t.palette.mode === 'light'
+                ? `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.06)} 0%, ${alpha(t.palette.background.paper, 1)} 45%, ${alpha(t.palette.primary.light, 0.12)} 100%)`
+                : `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.14)} 0%, ${t.palette.background.paper} 55%)`,
+            boxShadow: (t) =>
+              `0 1px 0 ${alpha(t.palette.common.black, 0.04)}, 0 12px 40px -12px ${alpha(t.palette.primary.main, 0.12)}`,
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ sm: 'center' }}>
+              <Box sx={{ position: 'relative', alignSelf: { xs: 'center', sm: 'flex-start' } }}>
+                <UserAvatar
+                  avatar={user.avatar}
+                  firstName={user.firstName}
+                  lastName={user.lastName}
+                  size={72}
+                  sx={{
+                    boxShadow: (t) =>
+                      `0 0 0 3px ${t.palette.background.paper}, 0 0 0 5px ${alpha(t.palette.primary.main, 0.35)}`,
+                  }}
+                />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0, textAlign: { xs: 'center', sm: 'left' } }}>
+                <Typography variant="h5" component="h2" sx={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                  {user.firstName} {user.lastName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500, wordBreak: 'break-word' }}>
+                  {user.email}
+                </Typography>
+                <Stack
+                  direction="row"
+                  flexWrap="wrap"
+                  alignItems="center"
+                  justifyContent={{ xs: 'center', sm: 'flex-start' }}
+                  useFlexGap
+                  sx={{ mt: 1.25, gap: 1 }}
+                >
+                  <Chip
+                    size="small"
+                    icon={<StorefrontOutlined sx={{ '&&': { fontSize: 16 } }} />}
+                    label="Host account"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontWeight: 600, borderRadius: 2 }}
+                  />
+                  <Chip
+                    size="small"
+                    icon={<DirectionsCar sx={{ '&&': { fontSize: 16 } }} />}
+                    label={hostCars.length === 1 ? '1 listing' : `${hostCars.length} listings`}
+                    variant="outlined"
+                    sx={{ fontWeight: 600, borderRadius: 2 }}
+                  />
+                  {pendingBookingsCount > 0 ? (
+                    <Chip size="small" label={`${pendingBookingsCount} pending`} color="warning" sx={{ fontWeight: 700, borderRadius: 2 }} />
+                  ) : null}
+                </Stack>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
 
         <Box sx={dashboardTabsBarWrapSx}>
           <Tabs
             value={tab}
-            onChange={(_, v) => setTab(v)}
+            onChange={(_, v) => {
+              setTab(v)
+              setSearchParams(
+                (prev) => {
+                  const n = new URLSearchParams(prev)
+                  const idx = typeof v === 'number' ? v : 0
+                  n.set(
+                    'section',
+                    (HOST_TAB_SECTION_KEYS as readonly string[])[Math.min(HOST_TAB_SECTION_KEYS.length - 1, Math.max(0, idx))] ?? 'listings',
+                  )
+                  return n
+                },
+                { replace: true },
+              )
+            }}
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile
@@ -196,7 +328,43 @@ export default function HostDashboardPage() {
         </Box>
 
       {tab === 0 && (
-        <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
+        <>
+          {hostCars.length > 0 ? (
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              justifyContent="space-between"
+              sx={{ mb: { xs: 2.25, md: 2.75 } }}
+            >
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                  Your listings
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.35, maxWidth: 560, lineHeight: 1.55 }}>
+                  Add another vehicle in a few taps — edits take effect instantly in this demo.
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                sx={{
+                  flexShrink: 0,
+                  alignSelf: { xs: 'stretch', sm: 'center' },
+                  borderRadius: 2,
+                  py: { xs: 1.125, sm: 0.875 },
+                  ...primaryCtaShadow(theme),
+                }}
+                onClick={() => {
+                  setEditingCarId(null)
+                  setListingOpen(true)
+                }}
+              >
+                Add listing
+              </Button>
+            </Stack>
+          ) : null}
+          <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
           {hostCars.map((car) => (
             <Grid item xs={12} md={6} key={car.id} sx={{ display: 'flex' }}>
               <Card
@@ -207,9 +375,7 @@ export default function HostDashboardPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'hidden',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 2.5,
+                  borderRadius: 3,
                   ...listRowSurface(theme),
                 }}
               >
@@ -303,134 +469,205 @@ export default function HostDashboardPage() {
             </Grid>
           ))}
           {hostCars.length === 0 && (
-            <Stack spacing={1.5} alignItems="flex-start" sx={{ py: 1 }}>
-              <Typography color="text.secondary">No listings yet — add a vehicle to appear in search for renters.</Typography>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => {
-                  setEditingCarId(null)
-                  setListingOpen(true)
+            <Grid item xs={12}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: { xs: 3.5, sm: 5 },
+                  textAlign: 'center',
+                  borderRadius: 3,
+                  ...listRowSurface(theme),
                 }}
-                sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}
               >
-                Add listing
-              </Button>
-            </Stack>
+                <DirectionsCar sx={{ fontSize: 52, color: 'text.secondary', opacity: 0.45, mb: 1 }} />
+                <Typography variant="h6" component="p" sx={{ fontWeight: 800, letterSpacing: '-0.02em', m: 0 }}>
+                  No listings yet
+                </Typography>
+                <Typography color="text.secondary" sx={{ mt: 1, maxWidth: 420, mx: 'auto' }}>
+                  Publish a vehicle to appear in Browse and Map. Edit photos, pricing, and availability anytime.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  sx={{ mt: 2.5, borderRadius: 2, ...primaryCtaShadow(theme) }}
+                  onClick={() => {
+                    setEditingCarId(null)
+                    setListingOpen(true)
+                  }}
+                >
+                  Add listing
+                </Button>
+              </Paper>
+            </Grid>
           )}
         </Grid>
+        </>
+      )}
+
+      {tab === 1 && (
+        <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden', border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+          <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2.5, pb: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+              Listing preferences
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+              These controls will mirror host policies once wired to your backend — structured now so the dashboard feels finished.
+            </Typography>
+          </Box>
+          <Divider />
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 } }}>
+            <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
+              Instant Book
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+              Let qualified renters confirm without asking you each time — great when your calendar stays open.
+            </Typography>
+            <Typography variant="caption" color="primary.main" sx={{ mt: 1, fontWeight: 600, display: 'block' }}>
+              Recommended for steady availability · demo stub
+            </Typography>
+          </Box>
+          <Divider />
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 } }}>
+            <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
+              Turnover buffer
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+              Minimum window between drop-off and the next pickup for cleaning or maintenance.
+            </Typography>
+            <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+              Demo · not persisted
+            </Typography>
+          </Box>
+          <Divider />
+          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 } }}>
+            <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
+              Guest verification
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+              Require verified ID and contact details before confirming a reservation.
+            </Typography>
+            <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+              Demo · not persisted
+            </Typography>
+          </Box>
+        </Paper>
       )}
 
       {tab === 2 && (
-        <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
-          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
-            <EarningsCard title="Total earned" value={earningsMock.total} icon="money" />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
-            <EarningsCard title="This month (mock)" value={earningsMock.month} icon="calendar" />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
-            <EarningsCard title="Active bookings" value={String(earningsMock.active)} icon="car" />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex', minWidth: 0 }}>
-            <EarningsCard title="Avg. rating" value="4.9 ★" icon="star" />
-          </Grid>
-          <Grid item xs={12}>
-            <Paper elevation={0} sx={{ p: 2.5, ...softInteractiveSurface(theme, false) }}>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Weekly performance (mock)
-              </Typography>
-              <EarningsPlaceholderChart />
-            </Paper>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body2" color="text.secondary" component="p" sx={{ m: 0 }}>
-              Recent payouts are simulated — connect a real payout method in production.
-            </Typography>
-          </Grid>
-        </Grid>
+        <HostEarningsSection
+          totalEarned={earningsMock.total}
+          monthEarned={earningsMock.month}
+          activeBookings={earningsMock.active}
+          avgRatingLabel="4.9 ★"
+        />
       )}
 
       {tab === 3 && (
         <Stack spacing={2}>
-          {hostBookings.length === 0 && <Typography color="text.secondary">No bookings for your vehicles yet.</Typography>}
-          {hostBookings.map((b) => (
-            <Card key={b.id} elevation={0} sx={{ width: '100%', ...listRowSurface(theme) }}>
-              <CardContent
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  alignItems: { xs: 'stretch', sm: 'center' },
-                  justifyContent: 'space-between',
-                  gap: 2,
-                }}
-              >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography fontWeight={700}>{b.carName}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {b.renterName}
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 0.5 }}>
-                    {formatBookingStoredDate(b.pickup)} → {formatBookingStoredDate(b.dropoff)}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600} sx={{ mt: 0.5 }}>
-                    {formatPeso(b.total)}
-                  </Typography>
-                </Box>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  flexWrap="wrap"
-                  useFlexGap
-                  sx={{ flexShrink: 0, justifyContent: { xs: 'flex-end', sm: 'flex-end' } }}
-                >
-                    <Chip
-                      label={b.status}
-                      color={b.status === 'cancelled' ? 'default' : b.status === 'confirmed' ? 'success' : 'warning'}
-                      size="small"
-                    />
-                    <Button
-                      component={RouterLink}
-                      to={`/messages/${b.id}`}
-                      size="small"
-                      variant="contained"
-                      color="primary"
-                      disabled={b.status === 'cancelled'}
+          {hostBookings.length === 0 ? (
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 3.5, sm: 4 },
+                borderRadius: 3,
+                textAlign: 'center',
+                ...listRowSurface(theme),
+              }}
+            >
+              <EventAvailable sx={{ fontSize: 52, color: 'text.secondary', opacity: 0.45, mb: 1 }} />
+              <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                No booking requests yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: 440, mx: 'auto' }}>
+                Keep listings active and priced competitively — drivers will appear here once they initiate a reservation.
+              </Typography>
+            </Paper>
+          ) : (
+            <>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                Requests & confirmations
+              </Typography>
+              {hostBookings.map((b) => (
+                <Card key={b.id} elevation={0} sx={{ width: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
+                  <CardContent
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: { xs: 'stretch', sm: 'center' },
+                      justifyContent: 'space-between',
+                      gap: 2,
+                      py: 2,
+                      '&:last-child': { pb: 2 },
+                    }}
+                  >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                        {b.carName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {b.renterName}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.75 }}>
+                        {formatBookingStoredDate(b.pickup)} → {formatBookingStoredDate(b.dropoff)}
+                      </Typography>
+                      <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ mt: 0.5 }}>
+                        {formatPeso(b.total)}
+                      </Typography>
+                    </Box>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                      useFlexGap
+                      sx={{ flexShrink: 0, justifyContent: { xs: 'flex-end', sm: 'flex-end' } }}
                     >
-                      Message
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      disabled={b.status === 'cancelled' || b.status === 'confirmed'}
-                      onClick={() => showSuccess('Booking accepted (mock)')}
-                    >
-                      {b.status === 'confirmed' ? 'Confirmed' : 'Accept'}
-                    </Button>
-                    <Button
-                      size="small"
-                      disabled={b.status === 'cancelled'}
-                      onClick={() => {
-                        cancelBooking(b.id)
-                        showInfo('Booking declined / cancelled')
-                      }}
-                    >
-                      Decline
-                    </Button>
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
+                      <Chip
+                        label={b.status}
+                        color={b.status === 'cancelled' ? 'default' : b.status === 'confirmed' ? 'success' : 'warning'}
+                        size="small"
+                        sx={{ fontWeight: 600 }}
+                      />
+                      <Button
+                        component={RouterLink}
+                        to={`/messages/${b.id}`}
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        disabled={b.status === 'cancelled'}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                      >
+                        Message
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        disabled={b.status === 'cancelled' || b.status === 'confirmed'}
+                        onClick={() => showSuccess('Booking accepted (mock)')}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                      >
+                        {b.status === 'confirmed' ? 'Confirmed' : 'Accept'}
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="inherit"
+                        disabled={b.status === 'cancelled'}
+                        onClick={() => {
+                          cancelBooking(b.id)
+                          showInfo('Booking declined / cancelled')
+                        }}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Decline
+                      </Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          )}
         </Stack>
-      )}
-
-      {tab === 1 && (
-        <Paper elevation={0} sx={{ p: 3, ...softInteractiveSurface(theme, false) }}>
-          <Typography variant="body1" color="text.secondary">
-            Listing policies, instant book, and guest requirements would live here — mock only for MVP.
-          </Typography>
-        </Paper>
       )}
 
       <ListingForm open={listingOpen} onClose={closeListingForm} editingCarId={editingCarId} />
