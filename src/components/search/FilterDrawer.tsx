@@ -10,7 +10,7 @@ import {
 } from '@mui/material'
 
 import type { SearchFilters } from '../../types'
-import FilterPanel from './FilterPanel'
+import FilterPanelScrollColumn from './FilterPanelScrollColumn'
 
 interface FilterDrawerProps {
   open: boolean
@@ -76,12 +76,20 @@ export default function FilterDrawer({ open, onClose, filters, onChange, onClear
           </IconButton>
         </Stack>
         <Typography variant="caption" color="text.secondary" sx={{ px: 2, pb: 1, display: 'block', lineHeight: 1.45 }}>
-          Includes quick presets and details below — counts update live.
+          Tap quick presets, then scroll the gray filter list for pricing, seats, transmission, fuel, and more — updates
+          apply live.
         </Typography>
 
-        <Box sx={{ px: 2, overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch', pb: 0.5 }}>
-          <FilterPanel filters={filters} onChange={onChange} onClear={onClear} hasActiveFilters={hasActive} />
-        </Box>
+        <FilterPanelScrollColumn
+          active={open}
+          resetScrollTopOnReveal
+          filters={filters}
+          onChange={onChange}
+          onClear={onClear}
+          hasActiveFilters={hasActive}
+          scrollBoxSx={{ px: 2, pb: 1 }}
+          hintBannerSx={{ px: 2, pt: 0.25, pb: 0.75, justifyContent: 'center' }}
+        />
 
         <Box
           sx={{
@@ -91,6 +99,7 @@ export default function FilterDrawer({ open, onClose, filters, onChange, onClear
             borderTop: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',
+            flexShrink: 0,
           }}
         >
           <Button variant="contained" fullWidth size="large" onClick={onClose} sx={{ minHeight: 46 }}>

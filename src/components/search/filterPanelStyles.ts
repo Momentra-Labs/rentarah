@@ -6,6 +6,9 @@ export function compactSearchToggleSx(theme: Theme): SxProps<Theme> {
   return {
     flexWrap: 'wrap',
     gap: 0.5,
+    width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
     '& .MuiToggleButton-root': {
       py: 0.35,
       px: { xs: 1, sm: 1.15 },

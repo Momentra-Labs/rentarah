@@ -23,7 +23,7 @@ import CarCard from '../components/common/CarCard'
 import EmptyState from '../components/common/EmptyState'
 import CarGridSkeleton from '../components/skeletons/CarGridSkeleton'
 import FilterDrawer from '../components/search/FilterDrawer'
-import FilterPanel from '../components/search/FilterPanel'
+import FilterPanelScrollColumn from '../components/search/FilterPanelScrollColumn'
 import SortBar from '../components/search/SortBar'
 import { useListingSearch } from '../hooks/useListingSearch'
 import { useVehicles } from '../hooks/useVehicles'
@@ -193,11 +193,13 @@ export default function VehicleModelSearchPage() {
                   position: 'sticky',
                   top: belowSearchStickyTop,
                   maxHeight: `calc(100vh - ${belowSearchStickyTop + 16}px)`,
-                  overflowY: 'auto',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
                   ...softInteractiveSurface(theme, false),
                 }}
               >
-                <Stack spacing={0.375} sx={{ mb: 1.5 }}>
+                <Stack spacing={0.375} sx={{ mb: 1.5, flexShrink: 0 }}>
                   <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: '0.65rem' }}>
                     Refine
                   </Typography>
@@ -205,11 +207,13 @@ export default function VehicleModelSearchPage() {
                     Filters
                   </Typography>
                 </Stack>
-                <FilterPanel
+                <FilterPanelScrollColumn
+                  active
                   filters={filters}
                   onChange={setFilter}
                   onClear={handleClear}
                   hasActiveFilters={hasActiveFilters}
+                  scrollBoxSx={{ pb: 0.5 }}
                 />
               </Paper>
             </Grid>
