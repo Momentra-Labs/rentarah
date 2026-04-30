@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useId } from 'react'
 
 /**
- * Vector loading mark inspired by the Rentara lockup: map pin with circular cutout,
+ * Vector loading mark inspired by the RentaraH lockup: map pin with circular cutout,
  * car on the left and motorcycle on the right — animated for the splash screen only.
  */
 export default function RentaraLoadingLogo() {

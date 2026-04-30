@@ -100,7 +100,7 @@ export default function HostDashboardPage() {
         <Container maxWidth="md" sx={containerGutters}>
           <PageHeader
             title="Become a host"
-            subtitle="Turn your idle car into income with Rentara — same polished experience as the renter app."
+            subtitle="Turn your idle car into income with RentaraH — same polished experience as the renter app."
             dense
             align="center"
           />

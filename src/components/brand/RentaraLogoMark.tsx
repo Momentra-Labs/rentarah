@@ -17,7 +17,7 @@ const HEIGHT_PX: Record<RentaraLogoMarkSize, number> = {
 export type RentaraLogoMarkProps = {
   size?: RentaraLogoMarkSize
   /**
-   * `mark` — square icon asset. `navLockup` — wide HD SVG (icon + wordmark) for app bars.
+   * `mark` — compact toolbar lockup. `navLockup` — full horizontal wordmark for app bars.
    */
   variant?: 'mark' | 'navLockup'
   /** When true, shows the wordmark text if the image errors (default: true). */
@@ -26,7 +26,7 @@ export type RentaraLogoMarkProps = {
 }
 
 /**
- * Brand mark: SVG (embedded raster) with graceful degradation to the “Rentara” wordmark.
+ * Brand mark — vector lockup with graceful degradation to the “RentaraH” wordmark.
  */
 export default function RentaraLogoMark({
   size = 'md',
@@ -64,7 +64,7 @@ export default function RentaraLogoMark({
           color: 'text.primary',
         }}
       >
-        Rentara
+        RentaraH
       </Typography>
     )
   }
@@ -92,8 +92,8 @@ export default function RentaraLogoMark({
           md: 520,
         }
       : {
-          xs: size === 'md' ? 190 : 145,
-          sm: size === 'md' ? 210 : 165,
+          xs: size === 'md' ? 'min(92vw, 280px)' : 'min(92vw, 200px)',
+          sm: size === 'md' ? 320 : 240,
         }
 
   const imgSx = {
@@ -106,7 +106,7 @@ export default function RentaraLogoMark({
   }
 
   const img = (
-    <Box component="img" src={src} alt="Rentara" data-rentara-logo onError={onError} className={className} sx={imgSx} />
+    <Box component="img" src={src} alt="RentaraH" data-rentara-logo onError={onError} className={className} sx={imgSx} />
   )
 
   if (!isNavLockup && size !== 'lg') {

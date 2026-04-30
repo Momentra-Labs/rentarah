@@ -13,7 +13,7 @@ export default function LegalTermsPage() {
       </Typography>
       <Stack spacing={2} sx={{ mt: 2 }}>
         <Typography variant="body1">
-          You use Rentara to discover vehicle listings and optionally transact between independent hosts and renters. Nothing here is rental or insurance advice; always follow Philippine road law and licensing.
+          You use RentaraH to discover vehicle listings and optionally transact between independent hosts and renters. Nothing here is rental or insurance advice; always follow Philippine road law and licensing.
         </Typography>
         <Typography variant="subtitle2" fontWeight={800}>Accounts</Typography>
         <Typography variant="body2">Provide accurate identity, licenses, phone numbers, and email. We may suspend misuse, fraud signals, harassment, unsafe vehicles, or policy breaches.</Typography>

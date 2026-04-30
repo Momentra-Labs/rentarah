@@ -250,7 +250,7 @@ export default function ListingForm({ open, onClose, editingCarId = null }: List
       seats: form.seats,
       features: featureList,
       location: form.location.trim() || DEFAULT_SEARCH_LOCATION,
-      description: form.description.trim() || 'Hosted on Rentara.',
+      description: form.description.trim() || 'Hosted on RentaraH.',
       plateNumber: form.plateNumber.trim().toUpperCase() || 'NEW LST',
       ...twoWheelerFields,
     } satisfies Partial<Car>

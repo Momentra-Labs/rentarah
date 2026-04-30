@@ -155,7 +155,7 @@ export default function TrustOnboardingPage() {
     <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 }, pb: { xs: 10, md: 6 }, ...containerGutters }}>
       <PageHeader
         overline={st?.intent === 'host' ? 'Host onboarding' : 'Safety & accountability'}
-        title="Rentara safeguards"
+        title="RentaraH safeguards"
         subtitle="Legal acceptance and straightforward rules — we protect renters, hosts, and the vehicles between you."
       />
 

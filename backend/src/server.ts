@@ -25,7 +25,7 @@ app.use(errorHandler)
 
 app.listen(env.port, () => {
   console.log(
-    `Rentara API [app=${env.appEnv} node=${env.nodeEnv}] http://localhost:${env.port}`,
+    `RentaraH API [app=${env.appEnv} node=${env.nodeEnv}] http://localhost:${env.port}`,
   )
   console.log(`Health check: http://localhost:${env.port}/api/health`)
 })

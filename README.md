@@ -1,4 +1,4 @@
-# Rentara — car rental marketplace
+# RentaraH — car rental marketplace
 
 React + Vite + TypeScript + MUI frontend for a Philippines-focused peer-to-peer vehicle rental experience (cars and two-wheelers). Catalog, search, maps, booking flow, host dashboard, and auth are implemented; **most booking and auth persistence is local** until the backend is fully wired.
 

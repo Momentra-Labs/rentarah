@@ -196,7 +196,7 @@ function MobileFooterStrip() {
             scrollMarginBottom: { xs: 4, md: 0 },
           }}
         >
-          © {year} Rentara · demo
+          © {year} RentaraH · demo
         </Typography>
       </Stack>
     </Box>
@@ -342,7 +342,7 @@ export default function Footer() {
               }}
             >
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.75rem' }}>
-                © {year} Rentara
+                © {year} RentaraH
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', fontWeight: 500 }}>
                 Demo · PHP · mock data

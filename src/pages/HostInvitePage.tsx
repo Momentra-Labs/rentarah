@@ -114,7 +114,7 @@ export default function HostInvitePage() {
                 List your vehicle. Earn in your area.
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: { md: '1.0625rem' }, lineHeight: 1.65, maxWidth: 520 }}>
-                Rentara connects you with drivers and riders looking for cars and two-wheelers where you live — from Metro Manila to Cebu,
+                RentaraH connects you with drivers and riders looking for cars and two-wheelers where you live — from Metro Manila to Cebu,
                 Davao, and beyond. You set the price and pickup details; we keep the experience clear for everyone.
               </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 3 }}>
@@ -286,7 +286,7 @@ export default function HostInvitePage() {
             Ready to host in your area?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 480, mx: 'auto', lineHeight: 1.65 }}>
-            Join Rentara as a host, list your vehicle, and start earning when travelers book trips near you.
+            Join RentaraH as a host, list your vehicle, and start earning when travelers book trips near you.
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="center" alignItems="center">
             <Button variant="contained" size="large" onClick={handlePrimary} endIcon={<ArrowForward />} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>

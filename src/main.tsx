@@ -6,12 +6,25 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { BrowserRouter } from 'react-router-dom'
 
 import App from './App'
+import faviconUrl from './assets/rentarah_lockup.svg'
 import { FirebaseAuthSync } from './components/auth/FirebaseAuthSync'
 import { theme } from './theme'
 
 import 'leaflet/dist/leaflet.css'
 import 'react-leaflet-markercluster/styles'
 import './index.css'
+
+function applyFavicon(url: string): void {
+  let link = document.querySelector<HTMLLinkElement>("link[rel='icon'][type='image/svg+xml']")
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    link.type = 'image/svg+xml'
+    document.head.appendChild(link)
+  }
+  link.href = url
+}
+applyFavicon(faviconUrl)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

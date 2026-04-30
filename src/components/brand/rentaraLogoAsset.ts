@@ -1,9 +1,8 @@
 /** Vite resolves these to versioned URLs in production builds. */
-import rentaraLogoUrl from '../../assets/rentara_logo.svg'
-import rentaraLogoHdUrl from '../../assets/rentara_logo_hd.svg'
+import rentarahLockupUrl from '../../assets/rentarah_lockup.svg'
 
-/** Icon / loading screen asset */
-export const RENTARA_LOGO_SRC = rentaraLogoUrl
+/** Icon bars / splash — horizontal lockup (vector trace of brand PNG, viewBox 2640×660) */
+export const RENTARA_LOGO_SRC = rentarahLockupUrl
 
-/** Full horizontal lockup (icon + wordmark) for navigation rails */
-export const RENTARA_LOGO_NAV_SRC = rentaraLogoHdUrl
+/** Wide lockup for navigation rails */
+export const RENTARA_LOGO_NAV_SRC = rentarahLockupUrl

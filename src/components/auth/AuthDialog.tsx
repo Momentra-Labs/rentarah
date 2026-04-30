@@ -627,7 +627,7 @@ export default function AuthDialog({
               sx={{ fontWeight: 600, display: 'block', mt: 0.2 }}
               className={`${tab === 'register' ? 'text-[0.65rem] sm:text-[0.75rem]' : 'text-[0.7rem] sm:text-[0.75rem]'}`}
             >
-              Rentara — Philippines rentals
+              RentaraH — Philippines rentals
             </Typography>
           </Box>
           <IconButton
@@ -1286,7 +1286,7 @@ export default function AuthDialog({
           }}
         >
           <Typography variant="body2" color="text.secondary" component="span" sx={{ mr: 0.75 }}>
-            {tab === 'login' ? 'New to Rentara?' : 'Already registered?'}
+            {tab === 'login' ? 'New to RentaraH?' : 'Already registered?'}
           </Typography>
           <Link
             component="button"

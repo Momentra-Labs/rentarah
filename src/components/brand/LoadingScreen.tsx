@@ -99,7 +99,7 @@ export default function LoadingScreen() {
                 fontFamily: theme.typography.fontFamily,
               }}
             >
-              Rentara
+              RentaraH
             </Typography>
             <Typography
               variant="caption"

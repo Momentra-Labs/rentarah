@@ -22,7 +22,7 @@ function normalizeType(v: string | undefined | null): VehicleType {
 }
 
 /**
- * Map marker: car vs motorcycle / scooter / big bike glyphs on the Rentara pin.
+ * Map marker: car vs motorcycle / scooter / big bike glyphs on the RentaraH pin.
  */
 export function getRentaraVehiclePinIcon(vehicleType: string | undefined | null, selected: boolean): L.DivIcon {
   const vt = normalizeType(vehicleType)

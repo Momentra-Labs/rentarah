@@ -219,10 +219,10 @@ export default function CompleteProfilePage() {
       <Stack spacing={2.5} component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
         <Stack spacing={0.75}>
           <Typography variant="h5" component="h1" fontWeight={800} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>
-            Complete your Rentara profile
+            Complete your RentaraH profile
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55 }}>
-            Two quick steps — same flow as email registration. Choose how you’ll use Rentara, then add your PH mobile number
+            Two quick steps — same flow as email registration. Choose how you'll use RentaraH, then add your PH mobile number
             and driver&apos;s license.
           </Typography>
         </Stack>

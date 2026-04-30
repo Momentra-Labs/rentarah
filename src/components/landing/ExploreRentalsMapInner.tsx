@@ -888,7 +888,7 @@ function OpenListingPopupOnMapFocus({
 }
 
 /**
- * Leaflet map: Carto Voyager basemap, Rentara price tags + density clusters; styled popups.
+ * Leaflet map: Carto Voyager basemap, RentaraH price tags + density clusters; styled popups.
  * Lazy-loaded by map surfaces (`MapPreview`, `/map`) to defer Leaflet until needed.
  */
 export default function ExploreRentalsMapInner({

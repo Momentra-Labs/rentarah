@@ -60,7 +60,7 @@ export default function GeolocationShareDialog() {
     >
       <DialogTitle id="geo-share-title" sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1 }}>
         <LocationSearching color="primary" />
-        Location for Rentara
+        Location for RentaraH
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
