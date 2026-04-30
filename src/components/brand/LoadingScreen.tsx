@@ -5,16 +5,29 @@ import { motion, useReducedMotion } from 'framer-motion'
 import LoadingRoadScene from './LoadingRoadScene'
 import RentaraLoadingLogo from './RentaraLoadingLogo'
 
+export type LoadingScreenProps = {
+  /** True when splash begins exiting — freezes heavy visuals and blur so opacity fade stays smooth. */
+  freezeDecorations?: boolean
+}
+
 /**
  * Full-viewport splash: native-style safe areas, glass center card, thin indeterminate progress (mobile-app feel).
  */
-export default function LoadingScreen() {
+export default function LoadingScreen({ freezeDecorations = false }: LoadingScreenProps) {
   const theme = useTheme()
   const reduceMotion = useReducedMotion()
   const isXs = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true })
   const primary = theme.palette.primary.main
 
-  const surface = theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.45) : alpha('#fff', 0.78)
+  /** During exit remove blur — fading blurred layers tends to feel “laggy”. */
+  const cardBlurPx = freezeDecorations ? 0 : isXs ? 14 : 22
+  const surface = freezeDecorations
+    ? theme.palette.mode === 'dark'
+      ? alpha(theme.palette.background.paper, 0.92)
+      : alpha('#fff', 0.94)
+    : theme.palette.mode === 'dark'
+      ? alpha(theme.palette.background.paper, 0.45)
+      : alpha('#fff', 0.78)
   const surfaceBorder = alpha(primary, theme.palette.mode === 'dark' ? 0.22 : 0.14)
 
   return (
@@ -31,6 +44,8 @@ export default function LoadingScreen() {
         alignItems: 'stretch',
         justifyContent: 'space-between',
         overflow: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'none',
         // Safe-area: avoid notch / home indicator (PWA / mobile browsers)
         paddingTop: `max(env(safe-area-inset-top, 0px), ${theme.spacing(2)})`,
         paddingBottom: `max(env(safe-area-inset-bottom, 0px), ${theme.spacing(1)})`,
@@ -60,13 +75,19 @@ export default function LoadingScreen() {
 
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
+          initial={
+            freezeDecorations || reduceMotion ? false : { opacity: 0, y: isXs ? 10 : 12, scale: 0.985 }
+          }
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{
-            duration: reduceMotion ? 0 : 0.5,
-            ease: [0.22, 1, 0.36, 1],
+            duration: freezeDecorations || reduceMotion ? 0 : isXs ? 0.4 : 0.34,
+            ease: [0.25, 1, 0.45, 1],
           }}
-          style={{ width: '100%', maxWidth: 340, transformOrigin: 'center top' }}
+          style={{
+            width: '100%',
+            maxWidth: 340,
+            transformOrigin: 'center top',
+          }}
         >
           <Stack
             alignItems="center"
@@ -76,8 +97,12 @@ export default function LoadingScreen() {
               py: { xs: 3, sm: 3.75 },
               borderRadius: { xs: 4, sm: 5 },
               background: surface,
-              backdropFilter: 'blur(22px)',
-              WebkitBackdropFilter: 'blur(22px)',
+              ...(cardBlurPx > 0
+                ? {
+                    backdropFilter: `blur(${cardBlurPx}px)`,
+                    WebkitBackdropFilter: `blur(${cardBlurPx}px)`,
+                  }
+                : {}),
               border: `1px solid ${surfaceBorder}`,
               boxShadow:
                 theme.palette.mode === 'dark'
@@ -85,7 +110,7 @@ export default function LoadingScreen() {
                   : `0 16px 48px -18px ${alpha(theme.palette.grey[900], 0.12)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.92)}`,
             }}
           >
-            <RentaraLoadingLogo />
+            <RentaraLoadingLogo freezeDecorations={freezeDecorations} />
 
             <Typography
               component="span"
@@ -117,7 +142,7 @@ export default function LoadingScreen() {
             </Typography>
 
             <Box sx={{ width: '100%', mt: { xs: 1.75, sm: 2 }, pt: { xs: 0.75, sm: 1 } }}>
-              <LoadingRoadScene />
+              <LoadingRoadScene freezeDecorations={freezeDecorations} />
             </Box>
           </Stack>
         </motion.div>
@@ -127,13 +152,22 @@ export default function LoadingScreen() {
         <LinearProgress
           variant="indeterminate"
           sx={{
-            height: 3,
+            height: isXs ? 2.75 : 3,
             borderRadius: '3px',
             bgcolor: alpha(primary, theme.palette.mode === 'dark' ? 0.15 : 0.1),
-            '& .MuiLinearProgress-bar': {
-              borderRadius: '3px',
-              bgcolor: alpha(primary, theme.palette.mode === 'dark' ? 0.85 : 0.95),
-            },
+            '& .MuiLinearProgress-bar1Indeterminate, & .MuiLinearProgress-bar2Indeterminate':
+              freezeDecorations
+                ? {
+                    animation: 'none',
+                    borderRadius: '3px',
+                    backgroundColor: alpha(primary, theme.palette.mode === 'dark' ? 0.85 : 0.95),
+                  }
+                : {
+                    borderRadius: '3px',
+                    backgroundColor: alpha(primary, theme.palette.mode === 'dark' ? 0.85 : 0.95),
+                    animationDuration: isXs ? `${2.75}s` : `${2.35}s`,
+                    animationTimingFunction: 'cubic-bezier(0.42, 0, 0.58, 1)',
+                  },
           }}
         />
         {!reduceMotion && (

@@ -1,15 +1,21 @@
 import { Box, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useId } from 'react'
+
+export type RentaraLoadingLogoProps = {
+  freezeDecorations?: boolean
+}
 
 /**
  * Vector loading mark inspired by the RentaraH lockup: map pin with circular cutout,
  * car on the left and motorcycle on the right — animated for the splash screen only.
  */
-export default function RentaraLoadingLogo() {
+export default function RentaraLoadingLogo({ freezeDecorations = false }: RentaraLoadingLogoProps) {
   const theme = useTheme()
   const reduceMotion = useReducedMotion()
+  const isCompact = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true })
   const uid = useId().replace(/:/g, '')
   const primary = theme.palette.primary.main
   const primarySoft = alpha(theme.palette.primary.main, 0.22)
@@ -17,7 +23,13 @@ export default function RentaraLoadingLogo() {
   const maskId = `rentara-pin-mask-${uid}`
   const gradId = `rentara-pin-grad-${uid}`
 
-  const floatActive = !reduceMotion
+  const floatActive = !reduceMotion && !freezeDecorations
+
+  /** Tighter drift on phones — reads calmer alongside URL bar motion. */
+  const floatMain = isCompact
+    ? { y: [0, -2.25, -1.75, -3.25, 0], rotate: [0, -0.85, 0.65, -0.45, 0] }
+    : { y: [0, -4, -3, -5, 0], rotate: [0, -1.2, 0.9, -0.6, 0] }
+  const floatPeriod = isCompact ? 4.8 : 4.2
 
   return (
     <Box
@@ -35,16 +47,15 @@ export default function RentaraLoadingLogo() {
             ? {
                 opacity: 1,
                 scale: 1,
-                y: [0, -4, -3, -5, 0],
-                rotate: [0, -1.2, 0.9, -0.6, 0],
+                ...floatMain,
               }
             : { opacity: 1, scale: 1 }
         }
         transition={{
           opacity: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
           scale: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-          y: { duration: 4.2, repeat: Infinity, ease: [0.45, 0, 0.55, 1] },
-          rotate: { duration: 4.2, repeat: Infinity, ease: [0.45, 0, 0.55, 1] },
+          y: { duration: floatPeriod, repeat: Infinity, ease: [0.45, 0, 0.55, 1] },
+          rotate: { duration: floatPeriod, repeat: Infinity, ease: [0.45, 0, 0.55, 1] },
         }}
         style={{ transformOrigin: '50% 65%' }}
       >

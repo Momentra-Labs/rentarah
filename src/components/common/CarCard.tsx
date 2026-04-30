@@ -17,7 +17,7 @@ import {
 } from '@mui/material'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 
 import type { Car } from '../../types'
 import { useMobileLightMotion } from '../../hooks/useMobileLightMotion'
@@ -37,7 +37,7 @@ export interface CarCardProps {
   distanceKm?: number | null
 }
 
-export default function CarCard({
+function CarCard({
   car,
   layout = 'grid',
   onReserve,
@@ -441,3 +441,5 @@ export default function CarCard({
 
   return wrapGrid(gridCard)
 }
+
+export default memo(CarCard)

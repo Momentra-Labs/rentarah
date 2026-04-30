@@ -26,6 +26,8 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import UserAvatar from '../common/UserAvatar'
 import NotificationPanelContent from '../notifications/NotificationPanelContent'
+import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
+import { MOBILE_APP_BAR_TOOLBAR_PX } from '../../constants/mobileShell'
 import AppNavigationList from './AppNavigationList'
 import GeolocationShareDialog from './GeolocationShareDialog'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -141,9 +143,10 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           borderBottom: elevated ? 'none' : '1px solid',
           borderColor: 'divider',
           transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+          pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
         }}
       >
-        <Toolbar sx={{ width: '100%', mx: 'auto', px: { xs: 2, md: 2.5 }, minHeight: { xs: 56, md: 64 } }}>
+        <Toolbar sx={{ width: '100%', mx: 'auto', px: { xs: 2, md: 2.5 }, minHeight: { xs: MOBILE_APP_BAR_TOOLBAR_PX, md: 64 } }}>
           <Stack
             direction="row"
             alignItems="center"
@@ -198,10 +201,20 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
                 >
                   <MyLocation fontSize="small" />
                 </IconButton>
-                <Button variant="text" onClick={() => onAuthOpen()} sx={{ fontWeight: 600 }}>
+                <Button
+                  variant="text"
+                  onPointerEnter={() => prefetchAuthDialogChunk()}
+                  onClick={() => onAuthOpen()}
+                  sx={{ fontWeight: 600 }}
+                >
                   Sign In
                 </Button>
-                <Button variant="contained" onClick={() => onAuthOpen()} sx={{ fontWeight: 600, borderRadius: 2, px: 2.5 }}>
+                <Button
+                  variant="contained"
+                  onPointerEnter={() => prefetchAuthDialogChunk()}
+                  onClick={() => onAuthOpen()}
+                  sx={{ fontWeight: 600, borderRadius: 2, px: 2.5 }}
+                >
                   Get Started
                 </Button>
               </Stack>

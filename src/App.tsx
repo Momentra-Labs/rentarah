@@ -1,6 +1,7 @@
-import { lazy } from 'react'
+import { lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
+import { notifyAppReady } from './webview/nativeBridge'
 import GlobalSnackbar from './components/layout/GlobalSnackbar'
 import MainLayout from './components/layout/MainLayout'
 import BookingTrustGate from './components/layout/BookingTrustGate'
@@ -35,9 +36,17 @@ function CarDetailRoute() {
   return <CarDetailPage key={id} />
 }
 
+function WebViewShellHooks() {
+  useEffect(() => {
+    notifyAppReady()
+  }, [])
+  return null
+}
+
 export default function App() {
   return (
     <>
+      <WebViewShellHooks />
       <GlobalSnackbar />
       <Routes>
         <Route element={<MainLayout />}>

@@ -97,7 +97,7 @@ const baseTheme = createTheme({
     body2: {
       fontSize: '14px',
       fontWeight: 400,
-      lineHeight: 1.5,
+      lineHeight: 1.55,
       color: '#6B7280',
     },
     caption: {
@@ -114,8 +114,13 @@ const baseTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        html: {
+          WebkitTapHighlightColor: 'transparent',
+          overscrollBehaviorX: 'none',
+        },
         body: {
           backgroundColor: '#FFFFFF',
+          WebkitFontSmoothing: 'antialiased',
         },
       },
     },
@@ -128,19 +133,52 @@ const baseTheme = createTheme({
           textTransform: 'none',
           fontWeight: 600,
           borderRadius: '8px',
+          minHeight: 44,
         },
         containedPrimary: {
           backgroundColor: '#1A56DB',
           color: '#FFFFFF',
-          '&:hover': {
-            backgroundColor: '#1748b8',
+          '@media (pointer: fine)': {
+            '&:hover': {
+              backgroundColor: '#1748b8',
+            },
+          },
+          '@media (pointer: coarse)': {
+            '&:active': {
+              backgroundColor: '#1748b8',
+              transform: 'scale(0.985)',
+            },
           },
         },
         outlinedPrimary: {
           borderWidth: '1.5px',
-          '&:hover': {
-            borderWidth: '1.5px',
-            backgroundColor: '#EFF6FF',
+          '@media (pointer: fine)': {
+            '&:hover': {
+              borderWidth: '1.5px',
+              backgroundColor: '#EFF6FF',
+            },
+          },
+          '@media (pointer: coarse)': {
+            '&:active': {
+              borderWidth: '1.5px',
+              transform: 'scale(0.985)',
+              backgroundColor: '#EFF6FF',
+            },
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 10,
+          minWidth: 44,
+          minHeight: 44,
+          '@media (pointer: coarse)': {
+            '&:active': {
+              transform: 'scale(0.96)',
+              transition: 'transform 0.12s ease',
+            },
           },
         },
       },
@@ -152,10 +190,24 @@ const baseTheme = createTheme({
           borderRadius: '16px',
           boxShadow: cardShadow,
           backgroundColor: '#FFFFFF',
-          transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-          '&:hover': {
-            boxShadow: cardShadowHover,
+          transition: 'box-shadow 0.2s ease, transform 0.14s ease',
+          '@media (pointer: fine)': {
+            '&:hover': {
+              boxShadow: cardShadowHover,
+            },
           },
+          '@media (pointer: coarse)': {
+            '&:active': {
+              transform: 'scale(0.993)',
+            },
+          },
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 44,
         },
       },
     },

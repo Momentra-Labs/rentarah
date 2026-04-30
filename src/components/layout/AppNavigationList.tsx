@@ -32,6 +32,7 @@ import { useEffect, useState } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
+import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { VehicleType } from '../../types'
@@ -251,6 +252,7 @@ export default function AppNavigationList({
       const btn = (
         <ListItemButton
           key={row.key}
+          onPointerEnter={() => prefetchAuthDialogChunk()}
           onClick={() => {
             onAuthOpen?.()
             onNavigate?.()
@@ -373,6 +375,7 @@ export default function AppNavigationList({
             const signIn = (
               <ListItemButton
                 key="sign-in"
+                onPointerEnter={() => prefetchAuthDialogChunk()}
                 onClick={() => {
                   onAuthOpen?.()
                   onNavigate?.()
@@ -388,6 +391,7 @@ export default function AppNavigationList({
             const getStarted = (
               <ListItemButton
                 key="get-started"
+                onPointerEnter={() => prefetchAuthDialogChunk()}
                 onClick={() => {
                   onAuthOpen?.()
                   onNavigate?.()

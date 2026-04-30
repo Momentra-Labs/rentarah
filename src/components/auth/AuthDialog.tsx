@@ -28,6 +28,7 @@ import {
   InputAdornment,
   LinearProgress,
   Link,
+  Slide,
   Stack,
   TextField,
   ToggleButton,
@@ -38,12 +39,15 @@ import {
 import { alpha, useTheme } from '@mui/material/styles'
 import type { Theme } from '@mui/material/styles'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 
+import type { SlideProps } from '@mui/material/Slide'
 import type { AccountRole } from '../../types'
+import { MOBILE_APP_MAX_WIDTH_PX } from '../../constants/mobileShell'
 import { isFirebaseConfigured } from '../../lib/firebase'
 import { mergeFirebaseUserIntoPartialAuthUser, signInWithGoogle } from '../../lib/firebaseGoogle'
+import { registerHardwareBackHandler } from '../../webview/nativeBridge'
 import type { RegisterAccountRole } from '../../store/useAuthStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useSnackbarStore } from '../../store/useSnackbarStore'
@@ -69,6 +73,10 @@ const REGISTRATION_SESSION_KEY = 'rentara-registration-draft'
 
 const REGISTER_STEP_LABELS = ['Your role', 'Email', 'Password', 'About you'] as const
 const REGISTER_LAST_STEP_INDEX = REGISTER_STEP_LABELS.length - 1
+
+const AuthBottomSheetSlide = forwardRef(function AuthBottomSheetSlide(props: SlideProps, ref: SlideProps['ref']) {
+  return <Slide direction="up" ref={ref} {...props} />
+})
 
 const REGISTER_FORM_DEFAULTS: RegisterFormValues = {
   email: '',
@@ -254,7 +262,8 @@ export default function AuthDialog({
   registerAccountRolePreset,
 }: AuthDialogProps) {
   const theme = useTheme()
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
+  const isBottomSheet = useMediaQuery(theme.breakpoints.down('md'))
+  const isCompactPhone = useMediaQuery(theme.breakpoints.down('sm'))
   /** `scroll="body"` scrolls the window when the dialog opens — sticky nav appears to jump to the top. */
   const backdropScrollYRef = useRef(0)
 
@@ -306,6 +315,14 @@ export default function AuthDialog({
   useEffect(() => {
     registerWizardStepRef.current = registerStep
   }, [registerStep])
+
+  useEffect(() => {
+    if (!open) return
+    return registerHardwareBackHandler(() => {
+      onClose()
+      return true
+    })
+  }, [open, onClose])
 
   const persistRegRole = useWatch({ control: rf.control, name: 'accountRole' })
   const persistRegEmail = useWatch({ control: rf.control, name: 'email' })
@@ -543,7 +560,7 @@ export default function AuthDialog({
 
   const mqShortViewport = useMediaQuery('(max-height:700px)')
   const mqNarrowWidth = useMediaQuery('(max-width:420px)')
-  const compactAuthFields = fullScreen || mqShortViewport || mqNarrowWidth
+  const compactAuthFields = isCompactPhone || mqShortViewport || mqNarrowWidth
   const compactFieldSx = useMemo(() => authOutlinedFieldSx(theme, compactAuthFields), [theme, compactAuthFields])
 
   const slideSx = { width: '100%' }
@@ -552,14 +569,27 @@ export default function AuthDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-      fullScreen={fullScreen}
+      maxWidth={isBottomSheet ? false : 'sm'}
+      fullWidth={!isBottomSheet}
+      fullScreen={false}
       scroll="paper"
       disableRestoreFocus
       aria-labelledby="auth-dialog-title"
       /** Sit above AppBar (1100) + mobile bottom nav so the page never shows through as “ghost” UI. */
-      sx={{ zIndex: (t) => t.zIndex.modal + 20 }}
+      sx={{
+        zIndex: (t) => t.zIndex.modal + 20,
+        ...(isBottomSheet
+          ? {
+              '& .MuiDialog-container': {
+                alignItems: 'flex-end',
+              },
+              '& .MuiDialog-paper': {
+                marginBottom: 'env(safe-area-inset-bottom, 0px)',
+              },
+            }
+          : {}),
+      }}
+      TransitionComponent={isBottomSheet ? AuthBottomSheetSlide : undefined}
       BackdropProps={{
         sx: {
           backgroundColor: alpha(theme.palette.common.black, 0.58),
@@ -575,27 +605,31 @@ export default function AuthDialog({
       }}
       PaperProps={{
         className:
-          'flex max-h-[min(100dvh,100vh)] flex-col overflow-hidden sm:max-h-none ' +
-          (fullScreen ? 'min-h-[100dvh] w-full max-w-full rounded-none border-0 shadow-none' : 'rounded-3xl'),
+          'flex flex-col overflow-hidden ' +
+          (isBottomSheet ? 'w-full rounded-none sm:rounded-none' : 'max-h-[min(100dvh,100vh)] sm:max-h-none rounded-3xl'),
         sx: {
-          borderRadius: fullScreen ? 0 : 3,
           overflow: 'hidden',
-          border: fullScreen ? 'none' : '1px solid',
-          borderColor: 'divider',
-          boxShadow: fullScreen ? 'none' : `0 24px 48px -12px ${alpha(theme.palette.common.black, 0.2)}`,
           /** Fully opaque surface — gradients with transparent stops let the page show through on some mobile GPUs. */
           bgcolor: 'background.paper',
           backgroundImage: 'none',
-          ...(fullScreen
-            ? {
-                minHeight: '100dvh',
-                maxHeight: '100dvh',
-                width: '100%',
-                maxWidth: '100%',
-                m: 0,
-              }
-            : {}),
           position: 'relative',
+          ...(isBottomSheet
+            ? {
+                m: 0,
+                mx: 'auto',
+                width: '100%',
+                maxWidth: MOBILE_APP_MAX_WIDTH_PX,
+                maxHeight: 'min(92dvh, 920px)',
+                border: `1px solid ${theme.palette.divider}`,
+                borderBottom: 'none',
+                boxShadow: `0 -12px 48px ${alpha(theme.palette.common.black, 0.14)}`,
+              }
+            : {
+                borderRadius: 3,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: `0 24px 48px -12px ${alpha(theme.palette.common.black, 0.2)}`,
+                maxHeight: { xs: 'min(100dvh,100vh)', sm: 'none' },
+              }),
         },
       }}
     >

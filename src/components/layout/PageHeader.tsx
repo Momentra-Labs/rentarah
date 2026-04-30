@@ -1,4 +1,6 @@
 import { Stack, Typography } from '@mui/material'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 
 export type PageHeaderProps = {
   overline?: string
@@ -24,6 +26,9 @@ export default function PageHeader({
   align = 'left',
   variant = 'default',
 }: PageHeaderProps) {
+  const theme = useTheme()
+  const mobileAccent = useMediaQuery(theme.breakpoints.down('md'))
+
   const mapSidebar = variant === 'mapSidebar'
 
   return (
@@ -49,14 +54,26 @@ export default function PageHeader({
           {overline}
         </Typography>
       ) : null}
-      <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          fontSize: mobileAccent ? '1.3125rem' : undefined,
+          lineHeight: mobileAccent ? 1.3 : undefined,
+        }}
+      >
         {title}
       </Typography>
       {subtitle ? (
         <Typography
           variant="body2"
           color="text.secondary"
-          sx={{ lineHeight: 1.65, ...(mapSidebar ? { mt: 1 } : {}) }}
+          sx={{
+            lineHeight: mobileAccent ? 1.6 : 1.65,
+            fontSize: mobileAccent ? '0.9375rem' : undefined,
+            ...(mapSidebar ? { mt: 1 } : {}),
+          }}
         >
           {subtitle}
         </Typography>

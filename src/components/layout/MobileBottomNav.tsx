@@ -10,6 +10,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { AuthUser } from '../../types'
@@ -212,6 +213,9 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             label={user ? 'Account' : 'Sign in'}
             aria-label={user ? 'Account' : 'Sign in'}
             icon={user ? <AccountCircleOutlined fontSize="small" aria-hidden /> : <LoginOutlined fontSize="small" aria-hidden />}
+            onPointerEnter={() => {
+              if (!user) prefetchAuthDialogChunk()
+            }}
           />
         </BottomNavigation>
       </Box>

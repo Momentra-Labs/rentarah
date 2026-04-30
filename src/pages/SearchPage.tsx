@@ -1,6 +1,6 @@
 import FilterAlt from '@mui/icons-material/FilterAlt'
 import { Badge, Box, Container, Fab, Grid, Pagination, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { DEFAULT_SEARCH_LOCATION } from '../constants/geo'
@@ -20,7 +20,7 @@ import VehicleTypeFilterChips from '../components/search/VehicleTypeFilterChips'
 import { useListingSearch } from '../hooks/useListingSearch'
 import { useVehicles } from '../hooks/useVehicles'
 import { useSearchStore } from '../store/useSearchStore'
-import type { SearchFilters } from '../types'
+import type { Car, SearchFilters } from '../types'
 import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
 import { vehicleModelSearchPath } from '../utils/vehicleBrowsePaths'
@@ -74,8 +74,6 @@ export default function SearchPage() {
   /** Measured height of the sticky search strip — drives filter sidebar & mobile secondary sticky offset. */
   const [searchToolbarH, setSearchToolbarH] = useState(108)
 
-  const appBarOffsetPx = isMd ? 56 : 64
-
   useLayoutEffect(() => {
     const el = searchToolbarRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
@@ -91,7 +89,8 @@ export default function SearchPage() {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   }, [])
 
-  const belowSearchStickyTop = appBarOffsetPx + searchToolbarH
+  /** Sidebar filters only render on `md+` (`isMd` = down(md) mobile). Offset is global app chrome + sticky search strip. */
+  const desktopFiltersStickyTop = 64 + searchToolbarH
 
   useEffect(() => {
     const q = new URLSearchParams(routeLocation.search)
@@ -145,10 +144,13 @@ export default function SearchPage() {
     )
   }, [filters])
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     clearFilters()
     setLocation(DEFAULT_SEARCH_LOCATION)
-  }
+  }, [clearFilters, setLocation])
+
+  const handleNavigateToVehicle = useCallback((c: Car) => navigate(vehicleModelSearchPath(c)), [navigate])
+  const handleReserveVehicle = useCallback((c: Car) => navigate(`/cars/${c.id}`), [navigate])
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: { xs: 8, md: 6 } }}>
@@ -173,8 +175,8 @@ export default function SearchPage() {
                 sx={{
                   p: { xs: 2, md: 2.25 },
                   position: 'sticky',
-                  top: belowSearchStickyTop,
-                  maxHeight: `calc(100vh - ${belowSearchStickyTop + 16}px)`,
+                  top: desktopFiltersStickyTop,
+                  maxHeight: `calc(100vh - ${desktopFiltersStickyTop + 16}px)`,
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
@@ -259,8 +261,8 @@ export default function SearchPage() {
                           layout={effectiveViewMode}
                           showDateAvailabilityHint={availabilityApplied && hit.availability.availableForRange}
                           distanceKm={hit.distanceKm}
-                          onNavigate={(c) => navigate(vehicleModelSearchPath(c))}
-                          onReserve={(c) => navigate(`/cars/${c.id}`)}
+                          onNavigate={handleNavigateToVehicle}
+                          onReserve={handleReserveVehicle}
                         />
                       </Box>
                     </Grid>

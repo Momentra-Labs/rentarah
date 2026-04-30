@@ -1,6 +1,8 @@
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 
+import { MOBILE_APP_BAR_TOOLBAR_PX, MOBILE_APP_MAX_WIDTH_PX } from '../constants/mobileShell'
+
 /** Matches landing / marketing cards — soft elevation, no palette change */
 export const softShadow = '0 1px 2px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.06)'
 export const softShadowHover = '0 4px 16px rgba(0,0,0,0.08), 0 20px 48px rgba(0,0,0,0.08)'
@@ -9,14 +11,28 @@ export const containerGutters: SxProps<Theme> = {
   px: { xs: 2, sm: 3 },
 }
 
+/** Narrow centered column under `md`; pair with outlet wrapper in {@link MainLayout}. */
+export const mobileShellColumnSx: SxProps<Theme> = {
+  width: '100%',
+  maxWidth: { xs: MOBILE_APP_MAX_WIDTH_PX, md: 'none' },
+  mx: { xs: 'auto', md: 0 },
+  minHeight: 0,
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignSelf: { xs: 'stretch', md: 'auto' },
+  boxSizing: 'border-box',
+}
+
 /**
  * Sticky toolbar directly below the app bar (search, etc.).
- * `top` must match {@link Navbar} `Toolbar` minHeight: xs 56, md 64.
+ * Mobile `top` = safe-area + toolbar (see {@link MOBILE_APP_BAR_TOOLBAR_PX}).
  */
 export function stickyToolbarPaper(theme: Theme): SxProps<Theme> {
+  const mobileTop = `calc(env(safe-area-inset-top, 0px) + ${MOBILE_APP_BAR_TOOLBAR_PX}px)`
   return {
     position: 'sticky',
-    top: { xs: 56, md: 64 },
+    top: { xs: mobileTop, md: 64 },
     zIndex: theme.zIndex.appBar - 1,
     borderRadius: 0,
     border: 'none',
@@ -36,12 +52,21 @@ export function softInteractiveSurface(theme: Theme, hover = true): SxProps<Them
     borderColor: 'divider',
     bgcolor: 'background.default',
     boxShadow: softShadow,
-    transition: 'box-shadow 0.22s ease, border-color 0.2s ease',
+    transition:
+      'box-shadow 0.22s ease, border-color 0.2s ease, transform 0.14s ease',
     ...(hover
       ? {
-          '&:hover': {
-            boxShadow: softShadowHover,
-            borderColor: alpha(theme.palette.primary.main, 0.15),
+          '@media (pointer: fine)': {
+            '&:hover': {
+              boxShadow: softShadowHover,
+              borderColor: alpha(theme.palette.primary.main, 0.15),
+            },
+          },
+          '@media (pointer: coarse)': {
+            '&:active': {
+              transform: 'scale(0.99)',
+              boxShadow: softShadow,
+            },
           },
         }
       : {}),
@@ -55,18 +80,33 @@ export function listRowSurface(theme: Theme): SxProps<Theme> {
     border: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.default',
-    transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
-    '&:hover': {
-      boxShadow: softShadow,
-      borderColor: alpha(theme.palette.primary.main, 0.1),
+    transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.14s ease',
+    '@media (pointer: fine)': {
+      '&:hover': {
+        boxShadow: softShadow,
+        borderColor: alpha(theme.palette.primary.main, 0.1),
+      },
+    },
+    '@media (pointer: coarse)': {
+      '&:active': {
+        transform: 'scale(0.99)',
+      },
     },
   }
 }
 
 export const primaryCtaShadow = (theme: Theme) => ({
+  transition: 'transform 0.14s ease, box-shadow 0.2s ease',
   boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.32)}`,
-  '&:hover': {
-    boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
+  '@media (pointer: fine)': {
+    '&:hover': {
+      boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
+    },
+  },
+  '@media (pointer: coarse)': {
+    '&:active': {
+      transform: 'scale(0.985)',
+    },
   },
 })
 

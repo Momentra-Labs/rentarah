@@ -1,17 +1,23 @@
-import { Box, useMediaQuery, useTheme } from '@mui/material'
+import { Box, CircularProgress, useMediaQuery, useTheme } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import LoadingScreen from '../brand/LoadingScreen'
-import AuthDialog from '../auth/AuthDialog'
 import OnboardingFlow from '../onboarding/OnboardingFlow'
 import { AppNavSidebar } from './AppNavigationList'
 import Footer from './Footer'
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_SX_PB } from './MobileBottomNav'
 import Navbar from './Navbar'
 import RouteFallback from './RouteFallback'
-import { pageMotionTransition, pageMotionVariants } from './pageMotion'
+import { mobileShellColumnSx } from '../../theme/pageStyles'
+import {
+  pageMotionTransition,
+  pageMotionTransitionNative,
+  pageMotionVariants,
+  pageMotionVariantsNative,
+} from './pageMotion'
 import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useBookingStore } from '../../store/useBookingStore'
@@ -21,19 +27,23 @@ import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { useSearchStore } from '../../store/useSearchStore'
 import type { AuthLocationState } from '../../types/authFlow'
 import { isAuthProfileComplete } from '../../lib/authProfile'
+import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { canProceedToBookingCheckout, isLegalAndSafetyOnboardingComplete } from '../../lib/trustOnboarding'
 
-/** Short beat so the brand registers; keep tighter so repeat navigations feel snappy. */
-const MIN_LOADING_SCREEN_MS = 520
+const AuthDialogLazy = lazy(() => import('../auth/AuthDialog'))
 
-/** Easing: fast start, gentle settle as the sheet clears the viewport */
-const loadingExitEase = [0.33, 1, 0.68, 1] as const
+/** Minimum splash beat — keep short so the fade can start right after catalog readiness. */
+const MIN_LOADING_SCREEN_MS = 400
+
+/** Snappy opacity-only motion: transform + long fades fight `backdrop-filter` (feels “laggy”). */
+const splashFadeIn = { duration: 0.26, ease: [0.25, 1, 0.45, 1] as const }
+const splashFadeOut = { duration: 0.22, ease: [0.4, 0, 1, 1] as const }
 
 export default function MainLayout() {
   const theme = useTheme()
   const reduceMotion = useReducedMotion()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
-  const lightRouteMotion = Boolean(reduceMotion || isMobile)
+  const nativeMobileRouteMotion = Boolean(isMobile && !reduceMotion)
   const location = useLocation()
   /** Open conversation on mobile: hide app bar and bottom tabs so the thread is full-screen. */
   const immersiveMobileMessageThread =
@@ -45,6 +55,13 @@ export default function MainLayout() {
   /** Bottom nav is fixed; map should extend edge-to-edge without a dead white strip from main padding. */
   const immersiveMapMobile = hideFooterOnMap
 
+  /** Narrow “phone shell” centered column; exclude full-bleed & marketing home. */
+  const useMobileShellColumn =
+    isMobile &&
+    !immersiveMobileMessageThread &&
+    !immersiveMapMobile &&
+    location.pathname !== '/' &&
+    !location.pathname.startsWith('/messages')
   /** On small screens only: footer is rendered inside `main` after the routed page so it sits above the fixed tab bar in scroll order. */
   const mobileFooterInMain =
     isMobile &&
@@ -61,6 +78,8 @@ export default function MainLayout() {
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
   const [registerAccountRolePreset, setRegisterAccountRolePreset] = useState<'renter' | 'host' | 'both' | undefined>(undefined)
   const [minSplashElapsed, setMinSplashElapsed] = useState(false)
+  /** Stops logo/road CSS animations during exit so opacity fade isn’t starved on the main thread. */
+  const [splashExitDecorations, setSplashExitDecorations] = useState(false)
   /** Survives re-renders: after auth, continue reserve → checkout if set. */
   const pendingBookCarIdRef = useRef<string | null>(null)
 
@@ -85,12 +104,30 @@ export default function MainLayout() {
 
   const showLoadingScreen = vehiclesLoading || !minSplashElapsed
 
+  /** Sync before paint — freeze visuals the same frame splash begins exiting (AnimatePresence keeps subtree mounted). */
+  useLayoutEffect(() => {
+    if (showLoadingScreen) setSplashExitDecorations(false)
+    else setSplashExitDecorations(true)
+  }, [showLoadingScreen])
+
+  useEffect(() => {
+    if (showLoadingScreen) return
+    const run = () => prefetchAuthDialogChunk()
+    if (typeof requestIdleCallback !== 'undefined') {
+      const id = requestIdleCallback(run, { timeout: 3500 })
+      return () => cancelIdleCallback(id)
+    }
+    const t = window.setTimeout(run, 1800)
+    return () => window.clearTimeout(t)
+  }, [showLoadingScreen])
+
   const handleLogout = useCallback(() => {
     logout()
     navigate('/')
   }, [logout, navigate])
 
   const handleAuthOpen = useCallback(() => {
+    prefetchAuthDialogChunk()
     setAuthDialogDefaultTab('login')
     setRegisterAccountRolePreset(undefined)
     setAuthOpen(true)
@@ -107,6 +144,7 @@ export default function MainLayout() {
   useEffect(() => {
     const st = location.state as AuthLocationState | undefined
     if (!st?.auth) return
+    prefetchAuthDialogChunk()
     if (st.pendingBookCarId) pendingBookCarIdRef.current = st.pendingBookCarId
     setAuthDialogDefaultTab(st.authTab === 'register' ? 'register' : 'login')
     if (st.authTab === 'register') {
@@ -168,29 +206,24 @@ export default function MainLayout() {
         {showLoadingScreen ? (
           <motion.div
             key="app-loading-screen"
-            initial={false}
-            animate={{ y: 0, x: 0, opacity: 1 }}
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+            animate={
+              reduceMotion ? { opacity: 1 } : { opacity: 1, transition: splashFadeIn }
+            }
             exit={
               reduceMotion
-                ? {
-                    opacity: 0,
-                    transition: { duration: 0.22, ease: 'easeOut' },
-                  }
-                : {
-                    y: '-100%',
-                    x: '-5%',
-                    opacity: 1,
-                    transition: { duration: 0.52, ease: loadingExitEase },
-                  }
+                ? { opacity: 0, transition: { duration: 0.12, ease: 'easeOut' } }
+                : { opacity: 0, transition: splashFadeOut }
             }
             style={{
               position: 'fixed',
               inset: 0,
               zIndex: theme.zIndex.modal + 2,
-              willChange: 'transform',
+              willChange: 'opacity',
+              pointerEvents: 'auto',
             }}
           >
-            <LoadingScreen />
+            <LoadingScreen freezeDecorations={splashExitDecorations} />
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -229,17 +262,19 @@ export default function MainLayout() {
                       },
             }}
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence initial={false}>
               <motion.div
                 key={location.pathname}
-                variants={pageMotionVariants}
+                variants={nativeMobileRouteMotion ? pageMotionVariantsNative : pageMotionVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
                 transition={
-                  lightRouteMotion
-                    ? { duration: 0.12, ease: 'easeOut' as const }
-                    : pageMotionTransition
+                  reduceMotion
+                    ? { duration: 0.09, ease: 'easeOut' as const }
+                    : nativeMobileRouteMotion
+                      ? pageMotionTransitionNative
+                      : pageMotionTransition
                 }
                 style={{
                   flex: 1,
@@ -249,12 +284,20 @@ export default function MainLayout() {
                   width: '100%',
                 }}
               >
-                <Suspense fallback={<RouteFallback />}>
-                  <Outlet />
-                </Suspense>
+                <Box
+                  sx={
+                    useMobileShellColumn
+                      ? mobileShellColumnSx
+                      : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', width: '100%' }
+                  }
+                >
+                  <Suspense fallback={<RouteFallback />}>
+                    <Outlet />
+                  </Suspense>
+                  {mobileFooterInMain ? <Footer /> : null}
+                </Box>
               </motion.div>
             </AnimatePresence>
-            {mobileFooterInMain ? <Footer /> : null}
           </Box>
         </Box>
       </Box>
@@ -262,13 +305,35 @@ export default function MainLayout() {
       {!immersiveMobileMessageThread && !hideFooterOnMap ? (
         <MobileBottomNav onAuthOpen={handleAuthOpen} />
       ) : null}
-      <AuthDialog
-        open={authOpen}
-        onClose={handleAuthClose}
-        onAuthenticated={handleAuthenticated}
-        defaultTab={authDialogDefaultTab}
-        registerAccountRolePreset={registerAccountRolePreset}
-      />
+      {authOpen ? (
+        <Suspense
+          fallback={
+            <Box
+              sx={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: theme.zIndex.modal,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: alpha(theme.palette.background.default, 0.72),
+              }}
+              aria-busy="true"
+              aria-label="Loading sign-in"
+            >
+              <CircularProgress color="inherit" size={36} />
+            </Box>
+          }
+        >
+          <AuthDialogLazy
+            open={authOpen}
+            onClose={handleAuthClose}
+            onAuthenticated={handleAuthenticated}
+            defaultTab={authDialogDefaultTab}
+            registerAccountRolePreset={registerAccountRolePreset}
+          />
+        </Suspense>
+      ) : null}
       {!showLoadingScreen ? <OnboardingFlow /> : null}
     </Box>
   )

@@ -259,9 +259,10 @@ function LaneVehicle({
 /**
  * Decorative two-lane road: near traffic LTR, far lane RTL (meeting procession), clearer car & bike silhouettes.
  */
-export default function LoadingRoadScene() {
+export default function LoadingRoadScene({ freezeDecorations = false }: { freezeDecorations?: boolean }) {
   const theme = useTheme()
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const motionOff = reduceMotion || freezeDecorations
   /** Blue-slate road */
   const roadTop = '#6B7C8E'
   const roadBottom = '#5A6A7A'
@@ -349,7 +350,7 @@ export default function LoadingRoadScene() {
             backgroundPosition: '0 62%',
             backgroundRepeat: 'repeat-x',
             opacity: 0.88,
-            ...(reduceMotion
+            ...(motionOff
               ? {}
               : { animation: `${laneScroll} 1.05s linear infinite` }),
             pointerEvents: 'none',
@@ -358,7 +359,7 @@ export default function LoadingRoadScene() {
 
         {/* Far lane — RTL oncoming procession (mirror faces travel direction) */}
         <LaneVehicle
-          reduceMotion={reduceMotion}
+          reduceMotion={motionOff}
           dir="rtl"
           variant="car"
           durationSec={7.6}
@@ -367,7 +368,7 @@ export default function LoadingRoadScene() {
           sx={{ bottom: { xs: 25, sm: 29 }, opacity: 0.94 }}
         />
         <LaneVehicle
-          reduceMotion={reduceMotion}
+          reduceMotion={motionOff}
           dir="rtl"
           variant="moto"
           durationSec={9.2}
@@ -376,7 +377,7 @@ export default function LoadingRoadScene() {
           sx={{ bottom: { xs: 25, sm: 29 }, opacity: 0.92 }}
         />
         <LaneVehicle
-          reduceMotion={reduceMotion}
+          reduceMotion={motionOff}
           dir="rtl"
           variant="car"
           durationSec={11.8}
@@ -387,7 +388,7 @@ export default function LoadingRoadScene() {
 
         {/* Near lane — LTR curb procession */}
         <LaneVehicle
-          reduceMotion={reduceMotion}
+          reduceMotion={motionOff}
           dir="ltr"
           variant="moto"
           durationSec={5.85}
@@ -396,7 +397,7 @@ export default function LoadingRoadScene() {
           sx={{ bottom: { xs: 8, sm: 10 }, opacity: 1 }}
         />
         <LaneVehicle
-          reduceMotion={reduceMotion}
+          reduceMotion={motionOff}
           dir="ltr"
           variant="car"
           durationSec={8.05}
@@ -405,7 +406,7 @@ export default function LoadingRoadScene() {
           sx={{ bottom: { xs: 8, sm: 10 }, opacity: 1 }}
         />
         <LaneVehicle
-          reduceMotion={reduceMotion}
+          reduceMotion={motionOff}
           dir="ltr"
           variant="moto"
           durationSec={10.9}

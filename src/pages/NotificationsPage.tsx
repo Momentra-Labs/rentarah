@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader'
 import NotificationList from '../components/notifications/NotificationList'
 import NotificationTabs from '../components/notifications/NotificationTabs'
+import { MOBILE_APP_BAR_TOOLBAR_PX } from '../constants/mobileShell'
 import { filterNotifications, useNotificationStore, useUnreadNotificationCount } from '../store/useNotificationStore'
 import { containerGutters } from '../theme/pageStyles'
 import type { NotificationFilter } from '../types'
@@ -59,8 +60,8 @@ export default function NotificationsPage() {
           sx={{
             position: 'sticky',
             zIndex: (t) => t.zIndex.appBar - 1,
-            // Sit below the global MUI AppBar (56px xs, 64px sm+)
-            top: { xs: 56, sm: 64 },
+            // Below global sticky AppBar (safe area + compact toolbar on mobile)
+            top: { xs: `calc(env(safe-area-inset-top, 0px) + ${MOBILE_APP_BAR_TOOLBAR_PX}px)`, md: 64 },
             bgcolor: (t) => t.palette.background.default,
             borderBottom: 1,
             borderColor: 'divider',
@@ -70,7 +71,7 @@ export default function NotificationsPage() {
           <Toolbar
             disableGutters
             variant="dense"
-            sx={{ minHeight: 56, px: 1, gap: 1 }}
+            sx={{ minHeight: MOBILE_APP_BAR_TOOLBAR_PX, px: 1, gap: 1 }}
           >
             <IconButton
               edge="start"
@@ -88,7 +89,7 @@ export default function NotificationsPage() {
               <Button
                 size="small"
                 onClick={markAllAsRead}
-                sx={{ fontWeight: 600, textTransform: 'none', minHeight: 40 }}
+                sx={{ fontWeight: 600, textTransform: 'none', minHeight: 44 }}
               >
                 Mark all
               </Button>

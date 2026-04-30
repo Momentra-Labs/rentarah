@@ -93,8 +93,7 @@ export default function VehicleModelSearchPage() {
   const searchToolbarRef = useRef<HTMLDivElement | null>(null)
   const [searchToolbarH, setSearchToolbarH] = useState(108)
 
-  const appBarOffsetPx = isMd ? 56 : 64
-  const belowSearchStickyTop = appBarOffsetPx + searchToolbarH
+  const desktopFiltersStickyTop = 64 + searchToolbarH
 
   useLayoutEffect(() => {
     const el = searchToolbarRef.current
@@ -191,8 +190,8 @@ export default function VehicleModelSearchPage() {
                 sx={{
                   p: { xs: 2, md: 2.25 },
                   position: 'sticky',
-                  top: belowSearchStickyTop,
-                  maxHeight: `calc(100vh - ${belowSearchStickyTop + 16}px)`,
+                  top: desktopFiltersStickyTop,
+                  maxHeight: `calc(100vh - ${desktopFiltersStickyTop + 16}px)`,
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
