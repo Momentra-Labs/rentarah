@@ -1,7 +1,9 @@
 import { Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 
 import type { SearchFilters } from '../../types'
 import { VEHICLE_TYPE_LABELS, VEHICLE_TYPE_VALUES } from '../../utils/vehicleUtils'
+import { compactSearchToggleSx } from './filterPanelStyles'
 
 const OPTIONS: { value: SearchFilters['vehicleType']; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -14,12 +16,18 @@ export type VehicleTypeFilterChipsProps = {
 }
 
 /**
- * Primary vehicle category filter — works with {@link SearchFilters.vehicleType} and URL param <code>vt</code>.
+ * Inline vehicle-category control — visuals match compact {@link FilterPanel} toggles so chip row + drawer feel like one system.
  */
 export default function VehicleTypeFilterChips({ value, onChange }: VehicleTypeFilterChipsProps) {
+  const theme = useTheme()
   return (
-    <Stack spacing={1} sx={{ mb: 2 }}>
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+    <Stack spacing={0.875} sx={{ mb: { xs: 1.75, md: 2 } }}>
+      <Typography
+        variant="caption"
+        component="span"
+        color="text.secondary"
+        sx={{ fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', display: 'block' }}
+      >
         Vehicle type
       </Typography>
       <ToggleButtonGroup
@@ -27,21 +35,7 @@ export default function VehicleTypeFilterChips({ value, onChange }: VehicleTypeF
         size="small"
         value={value}
         onChange={(_, v: SearchFilters['vehicleType'] | null) => v != null && onChange(v)}
-        sx={{
-          flexWrap: 'wrap',
-          gap: 0.75,
-          '& .MuiToggleButton-root': {
-            textTransform: 'none',
-            borderRadius: 2,
-            px: 1.5,
-            fontWeight: 600,
-            border: '1px solid',
-            borderColor: 'divider',
-            '&.Mui-selected': {
-              fontWeight: 700,
-            },
-          },
-        }}
+        sx={compactSearchToggleSx(theme)}
       >
         {OPTIONS.map((o) => (
           <ToggleButton key={o.value} value={o.value} aria-pressed={value === o.value}>

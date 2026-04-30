@@ -171,7 +171,7 @@ export default function SearchPage() {
               <Paper
                 elevation={0}
                 sx={{
-                  p: 2.5,
+                  p: { xs: 2, md: 2.25 },
                   position: 'sticky',
                   top: belowSearchStickyTop,
                   maxHeight: `calc(100vh - ${belowSearchStickyTop + 16}px)`,
@@ -179,11 +179,11 @@ export default function SearchPage() {
                   ...softInteractiveSurface(theme, false),
                 }}
               >
-                <Stack spacing={0.5} sx={{ mb: 2 }}>
-                  <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em' }}>
+                <Stack spacing={0.375} sx={{ mb: 1.5 }}>
+                  <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: '0.65rem' }}>
                     Refine
                   </Typography>
-                  <Typography variant="subtitle1" fontWeight={700} component="h2">
+                  <Typography variant="subtitle1" fontWeight={800} component="h2" sx={{ fontSize: '1.05rem', lineHeight: 1.25 }}>
                     Filters
                   </Typography>
                 </Stack>

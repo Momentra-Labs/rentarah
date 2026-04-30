@@ -65,33 +65,36 @@ export default function FilterDrawer({ open, onClose, filters, onChange, onClear
           />
         </Box>
 
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, pb: 1 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, pb: 0.5 }}>
           <Badge color="primary" variant="dot" invisible={!hasActive}>
-            <Typography variant="h6" component="span">
+            <Typography variant="subtitle1" component="span" fontWeight={800}>
               Filters
             </Typography>
           </Badge>
-          <IconButton edge="end" aria-label="Close filters" onClick={onClose} size="large">
+          <IconButton edge="end" aria-label="Close filters" onClick={onClose} size="small">
             <Close />
           </IconButton>
         </Stack>
+        <Typography variant="caption" color="text.secondary" sx={{ px: 2, pb: 1, display: 'block', lineHeight: 1.45 }}>
+          Includes quick presets and details below — counts update live.
+        </Typography>
 
-        <Box sx={{ px: 2, overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch' }}>
+        <Box sx={{ px: 2, overflowY: 'auto', flex: 1, WebkitOverflowScrolling: 'touch', pb: 0.5 }}>
           <FilterPanel filters={filters} onChange={onChange} onClear={onClear} hasActiveFilters={hasActive} />
         </Box>
 
         <Box
           sx={{
             px: 2,
-            pt: 2,
+            pt: 1,
             pb: 2,
             borderTop: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',
           }}
         >
-          <Button variant="contained" fullWidth size="large" onClick={onClose} sx={{ minHeight: 48 }}>
-            Show results
+          <Button variant="contained" fullWidth size="large" onClick={onClose} sx={{ minHeight: 46 }}>
+            Done
           </Button>
         </Box>
       </Stack>
