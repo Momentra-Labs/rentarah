@@ -83,6 +83,53 @@ export function formatTripDateTime(d: Dayjs): string {
   return d.format('MMM D, YYYY · h:mm A')
 }
 
+/**
+ * Conversation-friendly scheduling line: uses Today / Tomorrow / Yesterday when applicable,
+ * otherwise `Wed, Apr 28, 2026 · 3:30 PM`-style wording.
+ */
+export function formatTripDateTimeHuman(d: Dayjs, now: Dayjs = dayjs()): string {
+  if (!d?.isValid()) return ''
+  const clock = d.format('h:mm A')
+  const dayStart = d.startOf('day')
+  const todayStart = now.startOf('day')
+  const diffDays = dayStart.diff(todayStart, 'day')
+  let dayLabel: string
+  if (diffDays === 0) dayLabel = 'Today'
+  else if (diffDays === 1) dayLabel = 'Tomorrow'
+  else if (diffDays === -1) dayLabel = 'Yesterday'
+  else dayLabel = d.format('ddd, MMM D, YYYY')
+  return `${dayLabel} · ${clock}`
+}
+
+/**
+ * Clock-time span between pickup and dropoff (distinct from billed calendar-night count — see pricing copy).
+ * Uses minute-level diff from the picker; total hours rounded to one decimal where needed.
+ */
+export function formatPickupReturnRentSpanHuman(pickup: Dayjs, dropoff: Dayjs): string | null {
+  if (!pickup?.isValid() || !dropoff?.isValid() || !dropoff.isAfter(pickup)) return null
+  const totalMins = dropoff.diff(pickup, 'minute')
+  if (totalMins <= 0) return null
+
+  const totalHoursRounded = Math.round((totalMins / 60) * 10) / 10
+  const hrsFloor = Math.floor(totalMins / 60)
+  const mins = totalMins % 60
+  const days = Math.floor(hrsFloor / 24)
+  const hrs = hrsFloor % 24
+
+  const segments: string[] = []
+  if (days > 0) segments.push(`${days} day${days !== 1 ? 's' : ''}`)
+  if (hrs > 0) segments.push(`${hrs} hr${hrs !== 1 ? 's' : ''}`)
+  if (mins > 0) segments.push(`${mins} min`)
+
+  const breakdown = segments.join(' · ')
+  const hoursLabel =
+    totalHoursRounded % 1 === 0
+      ? `${totalHoursRounded} total hour${totalHoursRounded !== 1 ? 's' : ''}`
+      : `${totalHoursRounded.toFixed(1)} total hours`
+
+  return `~${hoursLabel} on the clock${breakdown ? ` (${breakdown})` : ''}`
+}
+
 /** Format a stored booking/search ISO or date string for dashboards. */
 export function formatBookingStoredDate(raw: string): string {
   const d = dayjs(raw)

@@ -28,6 +28,8 @@ import { pickerFocusOutlineSx } from '../../styles/pickerFocus'
 import {
   applyMinutesFromMidnightToDay,
   formatMinutesFromMidnightLabel,
+  formatPickupReturnRentSpanHuman,
+  formatTripDateTimeHuman,
   halfHourMinutesFromMidnightOptions,
   minutesFromMidnightSnappedHalfHour,
   snapToNearestHalfHourFromMidnight,
@@ -86,6 +88,8 @@ export interface DateRangePickerProps {
     dropoff?: Partial<TextFieldProps>
     textField?: Partial<TextFieldProps>
   }
+  /** Show plain-language pickup / return lines under the fields (recommended for booking-style UIs). */
+  showHumanReadableSummary?: boolean
 }
 
 const INPUT_RADIUS_SPLIT = '12px'
@@ -107,6 +111,7 @@ export default function DateRangePicker({
   autoReturnDayAfterPickup = false,
   timeGranularity = 'native',
   showPolicyCaption = true,
+  showHumanReadableSummary = true,
 }: DateRangePickerProps) {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
@@ -446,6 +451,65 @@ export default function DateRangePicker({
 
   const connectorVertical = compactToolbar && isMdUp
 
+  const spanSentence =
+    pickup?.isValid() && dropoff?.isValid() ? formatPickupReturnRentSpanHuman(pickup, dropoff) : null
+
+  const humanReadableSummary =
+    showHumanReadableSummary && (pickup?.isValid() || dropoff?.isValid()) ? (
+      <Stack
+        component="aside"
+        role="status"
+        aria-live="polite"
+        aria-label="Pick-up time, return time, and total rent duration"
+        spacing={0.35}
+        sx={{
+          width: '100%',
+          px: 1,
+          py: 0.75,
+          mt: compactToolbar && isMdUp ? 0.25 : 0,
+          borderRadius: 1,
+          bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'light' ? 0.04 : 0.08),
+          border: '1px solid',
+          borderColor: alpha(theme.palette.divider, theme.palette.mode === 'light' ? 0.9 : 0.45),
+        }}
+      >
+        {pickup?.isValid() ? (
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: 0.75 }}>
+              Pick-up
+            </Box>
+            {formatTripDateTimeHuman(pickup)}
+          </Typography>
+        ) : null}
+        {dropoff?.isValid() ? (
+          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45 }}>
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: 0.75 }}>
+              Return
+            </Box>
+            {formatTripDateTimeHuman(dropoff)}
+          </Typography>
+        ) : null}
+        {spanSentence ? (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              lineHeight: 1.45,
+              pt: 0.5,
+              mt: 0.15,
+              borderTop: '1px dashed',
+              borderColor: alpha(theme.palette.divider, theme.palette.mode === 'light' ? 0.75 : 0.5),
+            }}
+          >
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary', mr: 0.65 }}>
+              Rent time
+            </Box>
+            {spanSentence}
+          </Typography>
+        ) : null}
+      </Stack>
+    ) : null
+
   const connector = (
     <Box
       sx={{
@@ -484,20 +548,28 @@ export default function DateRangePicker({
 
     if (useHorizontal) {
       return (
-        <Stack direction="row" spacing={1} alignItems="flex-end" sx={{ width: '100%', flexWrap: { md: 'nowrap' }, minWidth: 0 }}>
-          <Stack spacing={0.35} sx={{ flex: '1 1 0%', minWidth: 0 }}>
-            <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
-              {pickupLabel}
-            </Typography>
-            <PickupRow />
+        <Stack spacing={1.25} sx={{ width: '100%', minWidth: 0 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="flex-end"
+            sx={{ width: '100%', flexWrap: { md: 'nowrap' }, minWidth: 0 }}
+          >
+            <Stack spacing={0.35} sx={{ flex: '1 1 0%', minWidth: 0 }}>
+              <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
+                {pickupLabel}
+              </Typography>
+              <PickupRow />
+            </Stack>
+            {connector}
+            <Stack spacing={0.35} sx={{ flex: '1 1 0%', minWidth: 0 }}>
+              <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
+                {dropoffLabel}
+              </Typography>
+              <ReturnRow />
+            </Stack>
           </Stack>
-          {connector}
-          <Stack spacing={0.35} sx={{ flex: '1 1 0%', minWidth: 0 }}>
-            <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
-              {dropoffLabel}
-            </Typography>
-            <ReturnRow />
-          </Stack>
+          {humanReadableSummary}
         </Stack>
       )
     }
@@ -519,6 +591,8 @@ export default function DateRangePicker({
           </Typography>
           <ReturnRow wrapBox={mobWrap} />
         </Stack>
+
+        {humanReadableSummary}
 
         {showPolicyCaption ? (
           <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block' }}>
@@ -597,6 +671,7 @@ export default function DateRangePicker({
           )}
         />
       </Stack>
+      {humanReadableSummary}
       {showPolicyCaption ? policyCaption : null}
     </Stack>
   )

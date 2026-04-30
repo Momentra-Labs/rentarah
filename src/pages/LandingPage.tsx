@@ -39,6 +39,11 @@ import { useMobileLightMotion } from '../hooks/useMobileLightMotion'
 import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import DateRangePicker from '../components/common/DateRangePicker'
 import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
+import {
+  LandingCarouselSlide,
+  LandingExploreListingHint,
+  LandingListingCarousel,
+} from '../components/landing/LandingListingCarousel'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
 import { softShadow, softShadowHover } from '../theme/pageStyles'
@@ -89,6 +94,7 @@ const HERO_WHY_COMPACT = [
 
 export default function LandingPage() {
   const theme = useTheme()
+  const landingBottomPaddingXs = `max(${theme.spacing(5)}, calc(112px + env(safe-area-inset-bottom, 0px)))`
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const navigate = useNavigate()
   const cars = useCarsStore((s) => s.cars)
@@ -129,7 +135,7 @@ export default function LandingPage() {
 
   const motorcycleListings = useMemo(() => cars.filter((c) => c.vehicleType === 'motorcycle'), [cars])
 
-  const motoPicks = useMemo(() => motorcycleListings.slice(0, 4), [motorcycleListings])
+  const motoPicks = useMemo(() => motorcycleListings.slice(0, 10), [motorcycleListings])
 
   const featured = useMemo(() => {
     const sortByRating = (a: Car, b: Car) => b.rating - a.rating
@@ -260,55 +266,66 @@ export default function LandingPage() {
                       overflow: 'hidden',
                     }}
                   >
-                    <Grid
-                      container
-                      columnSpacing={{ xs: 0.75, sm: 2.5, md: 4 }}
-                      rowSpacing={0}
+                    <Box
                       sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        alignItems: 'center',
+                        columnGap: { xs: 'clamp(10px, 3vw, 16px)', sm: 2.75, md: 3.5 },
+                        rowGap: 0,
                         borderTop: { xs: 'none', sm: '1px solid' },
                         borderColor: 'divider',
-                        pt: { xs: 1.75, sm: 2.25, md: 2.5 },
-                        px: { xs: 1, sm: 0 },
+                        pt: { xs: 1.375, sm: 2.25, md: 2.5 },
+                        pb: { xs: 1.375, sm: 0, md: 0 },
+                        px: { xs: 2, sm: 0 },
                         mt: { xs: 0, md: 0.25 },
                         width: '100%',
                       }}
                     >
                       {HERO_TRUST_NUMBERS.map((s) => (
-                        <Grid item xs={4} sm={4} md={4} key={s.k}>
-                          <Stack
-                            spacing={{ xs: 0.375, sm: 0.35, md: 0.5 }}
+                        <Stack
+                          key={s.k}
+                          spacing={{ xs: 0.375, sm: 0.35, md: 0.45 }}
+                          alignItems={{ xs: 'center', sm: 'flex-start' }}
+                          sx={{ minWidth: 0 }}
+                        >
+                          <Typography
+                            component="span"
+                            variant="subtitle2"
+                            fontWeight={800}
                             sx={{
+                              display: 'block',
+                              width: '100%',
                               textAlign: { xs: 'center', sm: 'left' },
+                              margin: 0,
+                              fontVariantNumeric: 'tabular-nums',
+                              lineHeight: 1.2,
+                              fontSize: { xs: '0.84375rem', sm: '0.9375rem', md: '1rem' },
+                              letterSpacing: '-0.02em',
                             }}
                           >
-                            <Typography
-                              variant="subtitle2"
-                              fontWeight={800}
-                              sx={{
-                                lineHeight: 1.15,
-                                fontSize: { xs: '0.84375rem', sm: '0.9375rem', md: '1rem' },
-                                letterSpacing: '-0.02em',
-                              }}
-                            >
-                              {s.k}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{
-                                display: 'block',
-                                fontSize: { xs: '0.65625rem', sm: '0.71875rem', md: '0.75rem' },
-                                lineHeight: { xs: 1.35, md: 1.4 },
-                                letterSpacing: { xs: '0.015em', sm: '0.012em' },
-                                opacity: { xs: 0.92, sm: 1 },
-                              }}
-                            >
-                              {s.l}
-                            </Typography>
-                          </Stack>
-                        </Grid>
+                            {s.k}
+                          </Typography>
+                          <Typography
+                            component="span"
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              display: 'block',
+                              width: '100%',
+                              textAlign: { xs: 'center', sm: 'left' },
+                              margin: 0,
+                              fontSize: { xs: '0.65625rem', sm: '0.71875rem', md: '0.75rem' },
+                              lineHeight: 1.35,
+                              letterSpacing: { xs: '0.01em', sm: '0.012em' },
+                              opacity: { xs: 0.92, sm: 1 },
+                            }}
+                          >
+                            {s.l}
+                          </Typography>
+                        </Stack>
                       ))}
-                    </Grid>
+                    </Box>
                   </Box>
 
                   <Box
@@ -898,7 +915,7 @@ export default function LandingPage() {
 
       {/* Motorcycles spotlight */}
       {motoPicks.length > 0 && (
-        <Container maxWidth="lg" sx={{ py: { xs: 0, md: 1 }, px: { xs: 2, sm: 3 }, pb: { xs: 4, md: 6 } }}>
+        <Container maxWidth="lg" sx={{ pt: { xs: 0, md: 1 }, px: { xs: 2, sm: 3 }, pb: { xs: 3, sm: 3.5, md: 7 } }}>
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -906,7 +923,7 @@ export default function LandingPage() {
             variants={fadeUpVariants}
             transition={tSection}
           >
-            <Stack spacing={2} sx={{ mb: { xs: 2.5, sm: 3 }, maxWidth: 560 }}>
+            <Stack spacing={{ xs: 1.25, md: 1.75 }} sx={{ mb: { xs: 1.375, sm: 2 }, maxWidth: 560 }}>
               <Box>
                 <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                   Two wheels
@@ -914,26 +931,35 @@ export default function LandingPage() {
                 <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 800, letterSpacing: '-0.02em', fontSize: { xs: '1.35rem', sm: '2rem', md: '2.125rem' } }}>
                   Motorcycles nationwide
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.6, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
-                  Sport, naked, and touring bikes with helmets on many listings — filter the full range on search.
+                <Typography variant="body2" color="text.secondary" sx={{ mt: { xs: 0.625, sm: 1 }, lineHeight: 1.6, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
+                  Sport, naked, and touring bikes — swipe for more picks, then dig into the map or motorcycle list below.
                 </Typography>
               </Box>
             </Stack>
-            <Grid container spacing={{ xs: 2, md: 3 }}>
+            <LandingListingCarousel>
               {motoPicks.map((car) => (
-                <Grid item xs={12} sm={6} md={3} key={car.id}>
+                <LandingCarouselSlide key={car.id}>
                   <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: { xs: 2.5, sm: 3 }, height: '100%' } }}>
                     <CarCard car={car} onNavigate={(c) => navigate(`/cars/${c.id}`)} onReserve={(c) => navigate(`/cars/${c.id}`)} />
                   </Box>
-                </Grid>
+                </LandingCarouselSlide>
               ))}
-            </Grid>
+            </LandingListingCarousel>
+            <LandingExploreListingHint listHref="/search?vt=motorcycle" variant="motorcycles" />
           </motion.div>
         </Container>
       )}
 
       {/* Featured */}
-      <Container maxWidth="lg" sx={{ py: { xs: 4.5, md: 9 }, px: { xs: 2, sm: 3 } }} data-onboarding="listings">
+      <Container
+        maxWidth="lg"
+        sx={{
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 2.75, md: 9 },
+          pb: { xs: landingBottomPaddingXs, md: 9 },
+        }}
+        data-onboarding="listings"
+      >
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -941,7 +967,7 @@ export default function LandingPage() {
           variants={fadeUpVariants}
           transition={tSection}
         >
-          <Stack spacing={2} sx={{ mb: { xs: 2.5, md: 4 }, maxWidth: 560 }}>
+          <Stack spacing={{ xs: 1.375, md: 1.75 }} sx={{ mb: { xs: 2.25, md: 3.25 }, maxWidth: 560 }}>
             <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
               Hand-picked
             </Typography>
@@ -949,24 +975,25 @@ export default function LandingPage() {
               Top picks this week
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
-              Mix of top-rated cars and a standout motorcycle this week — tap a card for details and booking.
+              Swipe picks below, then browse the entire fleet on search or pinpoint availability on the map.
             </Typography>
           </Stack>
-          <Grid container spacing={{ xs: 2, md: 3.5 }}>
+          <LandingListingCarousel>
             {cars.length === 0
               ? [0, 1, 2].map((i) => (
-                  <Grid item xs={12} md={4} key={i}>
+                  <LandingCarouselSlide key={i}>
                     <Skeleton variant="rounded" height={380} sx={{ borderRadius: 3 }} />
-                  </Grid>
+                  </LandingCarouselSlide>
                 ))
               : featured.map((car) => (
-                  <Grid item xs={12} sm={6} md={4} key={car.id}>
+                  <LandingCarouselSlide key={car.id}>
                     <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: { xs: 2.5, sm: 3 }, height: '100%' } }}>
                       <CarCard car={car} onNavigate={(c) => navigate(`/cars/${c.id}`)} onReserve={(c) => navigate(`/cars/${c.id}`)} />
                     </Box>
-                  </Grid>
+                  </LandingCarouselSlide>
                 ))}
-          </Grid>
+          </LandingListingCarousel>
+          <LandingExploreListingHint listHref="/search" />
         </motion.div>
       </Container>
 
