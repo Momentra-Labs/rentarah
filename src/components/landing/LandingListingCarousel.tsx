@@ -71,6 +71,12 @@ function carouselFloaterSx(theme: Theme, placement: 'left' | 'right'): SxProps<T
     border: `1px solid ${glassBorder}`,
     backdropFilter: 'blur(18px) saturate(170%)',
     WebkitBackdropFilter: 'blur(18px) saturate(170%)',
+    // Desktop: drop backdrop blur — large viewport glass + blur is costly while scrolling hero.
+    '@media (min-width: 900px)': {
+      backdropFilter: 'none',
+      WebkitBackdropFilter: 'none',
+      bgcolor: isLight ? alpha(theme.palette.common.white, 0.94) : alpha(theme.palette.grey[900], 0.88),
+    },
     boxShadow: isLight
       ? `${`0 2px 4px ${alpha(theme.palette.common.black, 0.06)}`}, ${`0 14px 40px ${alpha(theme.palette.common.black, 0.16)}`}`
       : `${`0 2px 8px ${alpha(theme.palette.common.black, 0.45)}`}, ${`0 12px 32px ${alpha(theme.palette.common.black, 0.35)}`}`,
@@ -81,6 +87,14 @@ function carouselFloaterSx(theme: Theme, placement: 'left' | 'right'): SxProps<T
         ? `${`0 4px 12px ${alpha(theme.palette.common.black, 0.1)}`}, ${`0 20px 48px ${alpha(theme.palette.common.black, 0.2)}`}`
         : `${`0 6px 20px ${alpha(theme.palette.common.black, 0.55)}`}, ${`0 16px 44px ${alpha(theme.palette.common.black, 0.45)}`}`,
       bgcolor: isLight ? alpha(theme.palette.common.white, 0.9) : alpha(theme.palette.grey[100], 0.22),
+    },
+    '@media (min-width: 900px) and (pointer: fine)': {
+      '&:hover:not(:disabled)': {
+        transform: 'translateY(-50%)',
+      },
+      '&:active:not(:disabled)': {
+        transform: 'translateY(-50%)',
+      },
     },
     '&:active:not(:disabled)': {
       transform: 'translateY(-50%) scale(1.02)',

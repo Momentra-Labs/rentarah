@@ -23,11 +23,10 @@ export default function NotificationItem({ notification, onOpen, compact }: Noti
 
   return (
     <MotionBox
-      layout
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12, ease: 'easeOut' }}
       component="li"
       onClick={() => onOpen(notification.id)}
       onKeyDown={(e) => {

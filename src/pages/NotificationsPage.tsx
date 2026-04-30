@@ -1,6 +1,6 @@
 import ArrowBack from '@mui/icons-material/ArrowBack'
 import { Box, Button, Container, IconButton, Stack, Toolbar, Typography, useMediaQuery, useTheme } from '@mui/material'
-import { motion } from 'framer-motion'
+import { alpha } from '@mui/material/styles'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -62,10 +62,9 @@ export default function NotificationsPage() {
             zIndex: (t) => t.zIndex.appBar - 1,
             // Below global sticky AppBar (safe area + compact toolbar on mobile)
             top: { xs: `calc(env(safe-area-inset-top, 0px) + ${MOBILE_APP_BAR_TOOLBAR_PX}px)`, md: 64 },
-            bgcolor: (t) => t.palette.background.default,
+            bgcolor: alpha(theme.palette.background.default, 0.98),
             borderBottom: 1,
             borderColor: 'divider',
-            backdropFilter: 'saturate(180%) blur(12px)',
           }}
         >
           <Toolbar
@@ -130,14 +129,9 @@ export default function NotificationsPage() {
             unreadCount={unreadCount}
           />
         </Box>
-        <motion.div
-          key={filter}
-          initial={{ opacity: 0.85, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-        >
+        <Box key={filter}>
           <NotificationList items={filtered} onItemOpen={onItemOpen} emptyFilterLabel={emptyLabel} />
-        </motion.div>
+        </Box>
       </Container>
     </Box>
   )

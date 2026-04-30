@@ -1,16 +1,14 @@
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import {
-  fetchListingSearch,
+  runListingSearch,
   type ListingModelKey,
   type ListingSearchHit,
   type ListingSearchParams,
 } from '../services/listingSearchService'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSearchStore } from '../store/useSearchStore'
-
-const DEBOUNCE_MS = 320
 
 export interface UseListingSearchOptions {
   /** Restrict to one make/model for the multi-host comparison view. */
@@ -22,8 +20,10 @@ export interface UseListingSearchOptions {
 export interface UseListingSearchResult {
   hits: ListingSearchHit[]
   vehicles: import('../types').Car[]
+  /** Kept for API parity — results are synchronous from the in‑memory catalog (`vehiclesLoading` covers catalog fetch). */
   isLoading: boolean
   error: string | null
+  /** Re-evaluates hits (e.g. after “Try again” when catalog was stale or a rare compute error cleared). */
   refetch: () => void
   /** True when pickup/dropoff are set and availability was applied. */
   availabilityApplied: boolean
@@ -49,22 +49,6 @@ function buildParams(
   }
 }
 
-/** Stable key so `filters` / `modelKey` object identity does not retrigger search every render. */
-function paramsDependencyKey(
-  modelKey: ListingModelKey | null | undefined,
-  location: string,
-  pickup: dayjs.Dayjs | null,
-  dropoff: dayjs.Dayjs | null,
-  filters: ReturnType<typeof useSearchStore.getState>['filters'],
-  sortBy: ReturnType<typeof useSearchStore.getState>['sortBy'],
-): string {
-  const pk = modelKey ? `${modelKey.make}\0${modelKey.model}\0${modelKey.vehicleType}` : ''
-  const pu = pickup?.isValid() ? pickup.format('YYYY-MM-DD') : ''
-  const dr = dropoff?.isValid() ? dropoff.format('YYYY-MM-DD') : ''
-  const fr = JSON.stringify(filters)
-  return [pk, location, pu, dr, fr, sortBy].join('\n')
-}
-
 export function useListingSearch(options: UseListingSearchOptions = {}): UseListingSearchResult {
   const { modelKey = null, enabled = true } = options
   const cars = useCarsStore((s) => s.cars)
@@ -73,19 +57,10 @@ export function useListingSearch(options: UseListingSearchOptions = {}): UseList
   const dropoff = useSearchStore((s) => s.dropoff)
   const filters = useSearchStore((s) => s.filters)
   const sortBy = useSearchStore((s) => s.sortBy)
-
-  const [hits, setHits] = useState<ListingSearchHit[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const debounceBoot = useRef(false)
+  const [retryEpoch, bumpRetryEpoch] = useState(0)
 
   const params = useMemo(
     () => buildParams(modelKey, location, pickup, dropoff, filters, sortBy),
-    [modelKey, location, pickup, dropoff, filters, sortBy],
-  )
-
-  const paramsKey = useMemo(
-    () => paramsDependencyKey(modelKey, location, pickup, dropoff, filters, sortBy),
     [modelKey, location, pickup, dropoff, filters, sortBy],
   )
 
@@ -93,65 +68,30 @@ export function useListingSearch(options: UseListingSearchOptions = {}): UseList
     params.pickupDate && params.dropoffDate && params.pickupDate <= params.dropoffDate,
   )
 
-  const refetch = useCallback(async () => {
+  const { hits, error } = useMemo(() => {
     if (!enabled) {
-      setHits([])
-      setIsLoading(false)
-      return
+      return { hits: [] as ListingSearchHit[], error: null as string | null }
     }
-    setIsLoading(true)
-    setError(null)
     try {
-      const result = await fetchListingSearch(cars, params)
-      setHits(result)
+      return { hits: runListingSearch(cars, params), error: null as string | null }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Search failed')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [cars, params, enabled])
-
-  useEffect(() => {
-    if (!enabled) {
-      setHits([])
-      setIsLoading(false)
-      setError(null)
-      return
-    }
-
-    let active = true
-    const delayMs = debounceBoot.current ? DEBOUNCE_MS : 0
-    debounceBoot.current = true
-
-    const schedule = window.setTimeout(async () => {
-      if (!active) return
-      setIsLoading(true)
-      setError(null)
-      try {
-        const result = await fetchListingSearch(cars, params)
-        if (!active) return
-        setHits(result)
-      } catch (e) {
-        if (!active) return
-        setError(e instanceof Error ? e.message : 'Search failed')
-      } finally {
-        if (active) setIsLoading(false)
+      return {
+        hits: [] as ListingSearchHit[],
+        error: e instanceof Error ? e.message : 'Search failed',
       }
-    }, delayMs)
-
-    return () => {
-      active = false
-      window.clearTimeout(schedule)
-      setIsLoading(false)
     }
-  }, [cars, enabled, paramsKey, params])
+  }, [cars, enabled, params, retryEpoch])
+
+  const refetch = useCallback(() => {
+    bumpRetryEpoch((n) => n + 1)
+  }, [])
 
   const vehicles = useMemo(() => hits.map((h) => h.vehicle), [hits])
 
   return {
     hits,
     vehicles,
-    isLoading,
+    isLoading: false,
     error,
     refetch,
     availabilityApplied,

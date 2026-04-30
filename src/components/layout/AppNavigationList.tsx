@@ -28,11 +28,12 @@ import {
 import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
 import type { Theme } from '@mui/material/styles'
 import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
+import { prefetchExploreNavChunks, prefetchPath } from '../../lib/routePrefetch'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { VehicleType } from '../../types'
@@ -57,6 +58,17 @@ const VEHICLE_QUICK_FILTER: { key: string; label: string; vt: VehicleType; icon:
 
 function getVtParam(search: string) {
   return new URLSearchParams(search).get('vt')
+}
+
+function navLinkPrefetchHandlers(to: string): {
+  onPointerDown: () => void
+  onPointerEnter: () => void
+} {
+  return {
+    /** Starts chunk load before `click`; helps touch devices that skip hover. */
+    onPointerDown: () => prefetchPath(to),
+    onPointerEnter: () => prefetchPath(to),
+  }
 }
 
 const EXPLORE_CORE: NavRow[] = [
@@ -129,7 +141,7 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
         mb: 0.25,
         minHeight: 48,
         justifyContent: 'center',
-        transition: 'background-color 0.18s ease, color 0.18s ease',
+        transition: 'background-color 0.1s ease, color 0.1s ease',
         '& .MuiListItemText-root': { display: 'none' },
         '& .MuiListItemIcon-root': {
           minWidth: 0,
@@ -148,10 +160,9 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
         pl: 1.25,
         mb: 0.25,
         minHeight: 48,
-        transition: 'background-color 0.18s ease, color 0.18s ease, transform 0.15s ease',
+        transition: 'background-color 0.1s ease, color 0.1s ease',
         '&:hover': {
           bgcolor: alpha(theme.palette.primary.main, 0.06),
-          transform: 'translateX(2px)',
         },
       } as const)
   if (selected) {
@@ -162,7 +173,6 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
       fontWeight: 700,
       '&:hover': {
         bgcolor: alpha(theme.palette.primary.main, 0.16),
-        transform: rail ? undefined : 'none',
       },
       '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
     }
@@ -194,6 +204,10 @@ export default function AppNavigationList({
   const search = location.search
   const user = useAuthStore((s) => s.user)
   const chatUnread = useChatUnreadForCurrentUser()
+
+  useLayoutEffect(() => {
+    prefetchExploreNavChunks()
+  }, [])
 
   const exploreNav: NavRow[] = user
     ? [...EXPLORE_CORE, ...(user.isHost ? [LIST_VEHICLE_ROW] : [BECOME_HOST_ROW])]
@@ -238,7 +252,7 @@ export default function AppNavigationList({
 
   const wrapRail = (listKey: string, label: string, node: ReactElement) =>
     rail ? (
-      <Tooltip key={listKey} title={label} placement="right" enterDelay={300}>
+      <Tooltip key={listKey} title={label} placement="right" enterDelay={80}>
         {node}
       </Tooltip>
     ) : (
@@ -289,6 +303,7 @@ export default function AppNavigationList({
         component={RouterLink}
         to={row.to!}
         selected={selected}
+        {...navLinkPrefetchHandlers(row.to!)}
         onClick={() => onNavigate?.()}
         sx={(theme) => navItemSx(theme, selected, rail)}
       >
@@ -330,6 +345,7 @@ export default function AppNavigationList({
                 component={RouterLink}
                 to={`/search?vt=${row.vt}`}
                 selected={selected}
+                {...navLinkPrefetchHandlers(`/search?vt=${row.vt}`)}
                 onClick={() => onNavigate?.()}
                 sx={(theme) => navItemSx(theme, selected, rail)}
               >
@@ -494,7 +510,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
             textDecoration: 'none',
             color: 'inherit',
             borderRadius: 2,
-            transition: 'background-color 0.2s ease',
+            transition: 'background-color 0.12s ease',
             '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06) },
           }}
         >
@@ -527,11 +543,8 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
             py: 0,
             textDecoration: 'none',
             color: 'inherit',
-            transition: 'background-color 0.2s ease, transform 0.22s ease-in-out',
+            transition: 'background-color 0.12s ease',
             '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
-            '@media (hover: hover)': {
-              '&:hover': { transform: 'scale(1.02)' },
-            },
           }}
         >
           <RentaraLogoMark size="md" variant="navLockup" showTextFallback />
@@ -566,7 +579,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
         borderRight: 1,
         borderColor: 'divider',
         bgcolor: 'background.default',
-        transition: 'width 0.22s ease',
+        transition: 'width 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {brandRow}

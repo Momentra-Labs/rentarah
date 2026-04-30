@@ -20,13 +20,14 @@ import {
   useTheme,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { useCallback, useEffect, useRef, useState, type MouseEventHandler } from 'react'
+import { useCallback, useEffect, useRef, useState, memo, type MouseEventHandler } from 'react'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import UserAvatar from '../common/UserAvatar'
 import NotificationPanelContent from '../notifications/NotificationPanelContent'
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
+import { prefetchPath } from '../../lib/routePrefetch'
 import { MOBILE_APP_BAR_TOOLBAR_PX } from '../../constants/mobileShell'
 import AppNavigationList from './AppNavigationList'
 import GeolocationShareDialog from './GeolocationShareDialog'
@@ -39,7 +40,7 @@ export type NavbarProps = {
   onAuthOpen: () => void
 }
 
-export default function Navbar({ onAuthOpen }: NavbarProps) {
+export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
   const theme = useTheme()
   const isMd = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
@@ -116,9 +117,14 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
     [markAsRead],
   )
 
+  /** Sync with document scroll immediately — RAF batching delayed the shadow on listing pages and felt sluggish vs lighter routes. */
   useEffect(() => {
-    const onScroll = () => setElevated(window.scrollY > 50)
-    window.addEventListener('scroll', onScroll)
+    const onScroll = () => {
+      const next = window.scrollY > 50
+      setElevated((prev) => (prev === next ? prev : next))
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
@@ -142,7 +148,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
           color: 'text.primary',
           borderBottom: elevated ? 'none' : '1px solid',
           borderColor: 'divider',
-          transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
+          transition: 'box-shadow 0.12s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.12s cubic-bezier(0.4, 0, 0.2, 1)',
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
         }}
       >
@@ -161,11 +167,8 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
               py: 0.5,
               px: 0.5,
               borderRadius: 2,
-              transition: 'background-color 0.2s ease, transform 0.22s ease-in-out',
+              transition: 'background-color 0.12s ease',
               '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
-              '@media (hover: hover)': {
-                '&:hover': { transform: 'scale(1.02)' },
-              },
             }}
           >
             <RentaraLogoMark size="sm" variant="navLockup" showTextFallback />
@@ -185,6 +188,7 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
               variant="text"
               size="medium"
               startIcon={<MapOutlined />}
+              onPointerEnter={() => prefetchPath('/map')}
               sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               Map
@@ -502,4 +506,4 @@ export default function Navbar({ onAuthOpen }: NavbarProps) {
       </Drawer>
     </>
   )
-}
+})

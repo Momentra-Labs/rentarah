@@ -17,7 +17,6 @@ import {
   useTheme,
 } from '@mui/material'
 import dayjs from 'dayjs'
-import { motion } from 'framer-motion'
 import type { Dayjs } from 'dayjs'
 import { useMemo, useState } from 'react'
 import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -160,23 +159,21 @@ export default function CarDetailPage() {
 
         <Grid container spacing={{ xs: 3, md: 4 }}>
           <Grid item xs={12} md={8} order={{ xs: 2, md: 1 }}>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Box
-                component="img"
-                src={car.images[activeImg]}
-                alt={`${car.make} ${car.model}`}
-                sx={{
-                  width: '100%',
-                  height: { xs: 240, sm: 360, md: 520 },
-                  objectFit: twoWheeler ? 'contain' : 'cover',
-                  bgcolor: twoWheeler ? 'grey.100' : undefined,
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
-                }}
-              />
-            </motion.div>
+            <Box
+              component="img"
+              src={car.images[activeImg]}
+              alt={`${car.make} ${car.model}`}
+              sx={{
+                width: '100%',
+                height: { xs: 240, sm: 360, md: 520 },
+                objectFit: twoWheeler ? 'contain' : 'cover',
+                bgcolor: twoWheeler ? 'grey.100' : undefined,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+              }}
+            />
             <Stack direction="row" spacing={1} sx={{ mt: 2, overflowX: 'auto' }}>
               {car.images.map((src, i) => (
                 <Box
@@ -344,11 +341,9 @@ export default function CarDetailPage() {
                 </Alert>
               )}
               {pricingHooks.pricing && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}>
-                  <Box sx={{ mt: 2 }}>
-                    <PriceBreakdown pricing={pricingHooks.pricing} pricePerDay={car.pricePerDay} />
-                  </Box>
-                </motion.div>
+                <Box sx={{ mt: 2 }}>
+                  <PriceBreakdown pricing={pricingHooks.pricing} pricePerDay={car.pricePerDay} />
+                </Box>
               )}
               <Button
                 fullWidth

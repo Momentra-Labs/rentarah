@@ -30,12 +30,11 @@ import {
 } from '@mui/material'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
-import { useMobileLightMotion } from '../hooks/useMobileLightMotion'
+import { prefetchPath } from '../lib/routePrefetch'
 import { useOfferGeoPrompt } from '../hooks/useOfferGeoPrompt'
 import DateRangePicker from '../components/common/DateRangePicker'
 import HeroAmbientBackground from '../components/landing/HeroAmbientBackground'
@@ -101,33 +100,14 @@ export default function LandingPage() {
   const setLocation = useSearchStore((s) => s.setLocation)
   const setDates = useSearchStore((s) => s.setDates)
   const setFilter = useSearchStore((s) => s.setFilter)
-  const lightMotion = useMobileLightMotion()
-
-  const fadeUpVariants = useMemo(
-    () =>
-      lightMotion
-        ? { hidden: { opacity: 0 }, visible: { opacity: 1 } }
-        : { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } },
-    [lightMotion],
-  )
-
-  /** Tighter margins on mobile = fewer whileInView recalculations while scrolling. */
-  const landingViewport = useMemo(
-    () =>
-      lightMotion
-        ? { once: true, amount: 0.06, margin: '0px 0px -24px 0px' as const }
-        : { once: true, amount: 0.12, margin: '0px 0px -80px 0px' as const },
-    [lightMotion],
-  )
-
-  const tHero = useMemo(() => (lightMotion ? { duration: 0.2 } : { duration: 0.32 }), [lightMotion])
-  const tHeroDelay = useMemo(
-    () => (lightMotion ? { duration: 0.2 } : { duration: 0.32, delay: 0.06 }),
-    [lightMotion],
-  )
-  const tSection = useMemo(() => (lightMotion ? { duration: 0.26 } : { duration: 0.4 }), [lightMotion])
 
   useOfferGeoPrompt('landing')
+
+  useEffect(() => {
+    prefetchPath('/search')
+    prefetchPath('/search/model')
+    prefetchPath('/map')
+  }, [])
 
   const [loc, setLoc] = useState('Makati')
   const [pickup, setPickup] = useState<Dayjs | null>(() => withDefaultPickupTime(dayjs().add(1, 'day')))
@@ -198,7 +178,7 @@ export default function LandingPage() {
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative', zIndex: 1 }}>
           <Grid container spacing={{ xs: 2.5, md: 6 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7} sx={{ order: { xs: 2, md: 1 } }}>
-              <motion.div initial="hidden" animate="visible" variants={fadeUpVariants} transition={tHero}>
+              <Box component="div">
                 <Stack
                   data-onboarding="hero"
                   spacing={{ xs: 2.25, sm: 2.5, md: 4 }}
@@ -259,9 +239,9 @@ export default function LandingPage() {
                       borderRadius: { xs: 2.5, sm: 0 },
                       border: { xs: '1px solid', sm: 'none' },
                       borderColor: { xs: alpha(theme.palette.divider, 0.88), sm: 'transparent' },
-                      bgcolor: { xs: alpha(theme.palette.background.paper, 0.75), sm: 'transparent' },
-                      backdropFilter: { xs: 'blur(18px)', sm: 'none' },
-                      WebkitBackdropFilter: { xs: 'blur(18px)', sm: 'none' },
+                      bgcolor: { xs: alpha(theme.palette.background.paper, 0.92), sm: 'transparent' },
+                      backdropFilter: { xs: 'none', sm: 'none' },
+                      WebkitBackdropFilter: { xs: 'none', sm: 'none' },
                       boxShadow: { xs: `0 4px 24px ${alpha('#000', 0.04)}`, sm: 'none' },
                       overflow: 'hidden',
                     }}
@@ -550,17 +530,11 @@ export default function LandingPage() {
                     </Grid>
                   </Stack>
                 </Stack>
-              </motion.div>
+              </Box>
             </Grid>
 
             <Grid item xs={12} md={6} lg={5} sx={{ order: { xs: 1, md: 2 } }}>
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={fadeUpVariants}
-                transition={tHeroDelay}
-                style={{ height: '100%' }}
-              >
+              <Box sx={{ height: '100%' }}>
                 <Paper
                   id="trip-search"
                   data-onboarding="search"
@@ -797,7 +771,7 @@ export default function LandingPage() {
                     </Stack>
                   </Stack>
                 </Paper>
-              </motion.div>
+              </Box>
             </Grid>
           </Grid>
         </Container>
@@ -805,13 +779,7 @@ export default function LandingPage() {
 
       <Box id="categories" sx={{ bgcolor: 'grey.50', py: { xs: 4.5, md: 9 } }}>
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={landingViewport}
-            variants={fadeUpVariants}
-            transition={tSection}
-          >
+          <Box component="section">
             <Stack
               spacing={0.75}
               sx={{
@@ -845,15 +813,14 @@ export default function LandingPage() {
                       border: '1px solid',
                       borderColor: 'divider',
                       bgcolor: 'background.default',
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+                      transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
                       '@media (hover: hover)': {
                         '&:hover': {
                           borderColor: alpha(theme.palette.primary.main, 0.45),
                           boxShadow: softShadowHover,
-                          transform: 'translateY(-3px)',
                         },
                       },
-                      '&:active': { transform: { xs: 'scale(0.98)', sm: 'translateY(-1px)' } },
+                      '&:active': { transform: { xs: 'scale(0.98)', sm: 'none' } },
                     }}
                     onClick={() => {
                       setFilter({ types: [type], vehicleType: 'all' })
@@ -884,15 +851,14 @@ export default function LandingPage() {
                     border: '1px solid',
                     borderColor: 'divider',
                     bgcolor: 'background.default',
-                    transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+                    transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
                     '@media (hover: hover)': {
                       '&:hover': {
                         borderColor: alpha(theme.palette.primary.main, 0.45),
                         boxShadow: softShadowHover,
-                        transform: 'translateY(-3px)',
                       },
                     },
-                    '&:active': { transform: { xs: 'scale(0.98)', sm: 'translateY(-1px)' } },
+                    '&:active': { transform: { xs: 'scale(0.98)', sm: 'none' } },
                   }}
                   onClick={() => {
                     setFilter({ types: [], vehicleType: 'motorcycle' })
@@ -909,20 +875,14 @@ export default function LandingPage() {
                 </Paper>
               </Grid>
             </Grid>
-          </motion.div>
+          </Box>
         </Container>
       </Box>
 
       {/* Motorcycles spotlight */}
       {motoPicks.length > 0 && (
         <Container maxWidth="lg" sx={{ pt: { xs: 0, md: 1 }, px: { xs: 2, sm: 3 }, pb: { xs: 3, sm: 3.5, md: 7 } }}>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={landingViewport}
-            variants={fadeUpVariants}
-            transition={tSection}
-          >
+          <Box component="section">
             <Stack spacing={{ xs: 1.25, md: 1.75 }} sx={{ mb: { xs: 1.375, sm: 2 }, maxWidth: 560 }}>
               <Box>
                 <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
@@ -946,7 +906,7 @@ export default function LandingPage() {
               ))}
             </LandingListingCarousel>
             <LandingExploreListingHint listHref="/search?vt=motorcycle" variant="motorcycles" />
-          </motion.div>
+          </Box>
         </Container>
       )}
 
@@ -960,13 +920,7 @@ export default function LandingPage() {
         }}
         data-onboarding="listings"
       >
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={landingViewport}
-          variants={fadeUpVariants}
-          transition={tSection}
-        >
+        <Box component="section">
           <Stack spacing={{ xs: 1.375, md: 1.75 }} sx={{ mb: { xs: 2.25, md: 3.25 }, maxWidth: 560 }}>
             <Typography variant="overline" color="primary" sx={{ fontWeight: 700, letterSpacing: '0.08em', fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
               Hand-picked
@@ -994,7 +948,7 @@ export default function LandingPage() {
                 ))}
           </LandingListingCarousel>
           <LandingExploreListingHint listHref="/search" />
-        </motion.div>
+        </Box>
       </Container>
 
     </Box>

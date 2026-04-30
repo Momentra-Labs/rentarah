@@ -31,7 +31,7 @@ export default function NotificationList({ items, onItemOpen, compact, emptyFilt
         WebkitOverflowScrolling: 'touch',
       }}
     >
-      <AnimatePresence initial={false} mode="popLayout">
+      <AnimatePresence initial={false}>
         {items.map((n) => (
           <NotificationItem key={n.id} notification={n} onOpen={onItemOpen} compact={compact} />
         ))}

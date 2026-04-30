@@ -9,6 +9,7 @@ import {
   parseSearchDateTimeParam,
   withDefaultDropoffTime,
 } from '../utils/dateUtils'
+import { areUrlSearchQueriesEqual } from '../utils/urlQueryCompare'
 import CarCard from '../components/common/CarCard'
 import BrowseCarSearch from '../components/browse/BrowseCarSearch'
 import EmptyState from '../components/common/EmptyState'
@@ -19,6 +20,7 @@ import SortBar from '../components/search/SortBar'
 import VehicleTypeFilterChips from '../components/search/VehicleTypeFilterChips'
 import { useListingSearch } from '../hooks/useListingSearch'
 import { useVehicles } from '../hooks/useVehicles'
+import { prefetchPath } from '../lib/routePrefetch'
 import { useSearchStore } from '../store/useSearchStore'
 import type { Car, SearchFilters } from '../types'
 import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
@@ -77,14 +79,21 @@ export default function SearchPage() {
   useLayoutEffect(() => {
     const el = searchToolbarRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
+    let raf = 0
     const ro = new ResizeObserver(() => {
-      setSearchToolbarH(Math.round(el.getBoundingClientRect().height))
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        setSearchToolbarH(Math.round(el.getBoundingClientRect().height))
+      })
     })
     ro.observe(el)
-    return () => ro.disconnect()
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
   }, [])
 
-  /** Reset scroll when entering search (e.g. landing “Show more”) so sticky trip search + sort/filters stay visible. */
+  /** Reset scroll once on first mount — avoid repeating when stale layout wrappers remount briefly. */
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   }, [])
@@ -92,21 +101,53 @@ export default function SearchPage() {
   /** Sidebar filters only render on `md+` (`isMd` = down(md) mobile). Offset is global app chrome + sticky search strip. */
   const desktopFiltersStickyTop = 64 + searchToolbarH
 
+  const filtersTypesKey = useMemo(() => [...filters.types].sort().join('|'), [filters.types])
+  const pickupKey = pickup?.isValid() ? formatSearchDateTimeParam(pickup) : ''
+  const dropoffKey = dropoff?.isValid() ? formatSearchDateTimeParam(dropoff) : ''
+
   useEffect(() => {
     const q = new URLSearchParams(routeLocation.search)
-    const loc = q.get('location')
-    const pu = q.get('pickup')
-    const dr = q.get('dropoff')
-    const types = q.get('types')
-    const vt = q.get('vt')
-    if (loc) setLocation(loc)
-    const puParsed = parseSearchDateTimeParam(pu, 'pickup')
-    const drParsed = parseSearchDateTimeParam(dr, 'dropoff')
-    if (puParsed && drParsed) setDates(puParsed, drParsed)
-    else if (puParsed) setDates(puParsed, withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day')))
-    if (types) setFilter({ types: types.split(',').filter(Boolean) })
-    if (vt && isValidVehicleType(vt)) setFilter({ vehicleType: vt })
-    else setFilter({ vehicleType: 'all' })
+    const st = useSearchStore.getState()
+
+    const rawLoc = q.get('location')
+    const locTrim = rawLoc?.trim()
+    if (locTrim && locTrim !== st.location) setLocation(locTrim)
+
+    const vtRaw = q.get('vt')
+    if (vtRaw && isValidVehicleType(vtRaw)) {
+      if (st.filters.vehicleType !== vtRaw) setFilter({ vehicleType: vtRaw })
+    } else if (st.filters.vehicleType !== 'all') {
+      setFilter({ vehicleType: 'all' })
+    }
+
+    const typesCsv = q.get('types')
+    const typesParsed = typesCsv?.split(',').filter(Boolean)
+    if (typesParsed?.length) {
+      const incoming = [...typesParsed].sort().join('|')
+      const existing = [...st.filters.types].sort().join('|')
+      if (incoming !== existing) setFilter({ types: typesParsed })
+    } else if (st.filters.types.length > 0) {
+      setFilter({ types: [] })
+    }
+
+    const puParsed = parseSearchDateTimeParam(q.get('pickup'), 'pickup')
+    const drParsed = parseSearchDateTimeParam(q.get('dropoff'), 'dropoff')
+
+    if (puParsed?.isValid() && drParsed?.isValid()) {
+      const samePu =
+        st.pickup?.isValid() && formatSearchDateTimeParam(st.pickup) === formatSearchDateTimeParam(puParsed)
+      const sameDr =
+        st.dropoff?.isValid() && formatSearchDateTimeParam(st.dropoff) === formatSearchDateTimeParam(drParsed)
+      if (!samePu || !sameDr) setDates(puParsed, drParsed)
+    } else if (puParsed?.isValid()) {
+      const defDrop = withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day'))
+      const samePu =
+        st.pickup?.isValid() && formatSearchDateTimeParam(st.pickup) === formatSearchDateTimeParam(puParsed)
+      const sameDr =
+        st.dropoff?.isValid() &&
+        formatSearchDateTimeParam(st.dropoff) === formatSearchDateTimeParam(defDrop)
+      if (!samePu || !sameDr) setDates(puParsed, defDrop)
+    }
   }, [routeLocation.search, setLocation, setDates, setFilter])
 
   useEffect(() => {
@@ -116,8 +157,22 @@ export default function SearchPage() {
     if (dropoff?.isValid()) params.set('dropoff', formatSearchDateTimeParam(dropoff))
     if (filters.types.length) params.set('types', filters.types.join(','))
     if (filters.vehicleType !== 'all') params.set('vt', filters.vehicleType)
+
+    const next = params.toString()
+    const dest = next ? `?${next}` : ''
+    if (areUrlSearchQueriesEqual(routeLocation.search ?? '', dest)) return
     setSearchParams(params, { replace: true })
-  }, [location, pickup, dropoff, filters.types, filters.vehicleType, setSearchParams])
+  }, [
+    location,
+    pickupKey,
+    dropoffKey,
+    filtersTypesKey,
+    filters.vehicleType,
+    setSearchParams,
+    routeLocation.search,
+    pickup,
+    dropoff,
+  ])
 
   const totalCount = hits.length
   const effectiveViewMode = isSmDown ? 'list' : viewMode
@@ -129,7 +184,18 @@ export default function SearchPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [filters, sortBy, location])
+  }, [
+    sortBy,
+    location,
+    filtersTypesKey,
+    filters.vehicleType,
+    filters.transmission,
+    filters.fuel,
+    filters.seats,
+    filters.priceRange[0],
+    filters.priceRange[1],
+    filters.availableOnly,
+  ])
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -149,8 +215,22 @@ export default function SearchPage() {
     setLocation(DEFAULT_SEARCH_LOCATION)
   }, [clearFilters, setLocation])
 
-  const handleNavigateToVehicle = useCallback((c: Car) => navigate(vehicleModelSearchPath(c)), [navigate])
-  const handleReserveVehicle = useCallback((c: Car) => navigate(`/cars/${c.id}`), [navigate])
+  const handleNavigateToVehicle = useCallback(
+    (c: Car) => {
+      const path = vehicleModelSearchPath(c)
+      prefetchPath(path)
+      navigate(path)
+    },
+    [navigate],
+  )
+  const handleReserveVehicle = useCallback(
+    (c: Car) => {
+      const path = `/cars/${c.id}`
+      prefetchPath(path)
+      navigate(path)
+    },
+    [navigate],
+  )
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: { xs: 8, md: 6 } }}>

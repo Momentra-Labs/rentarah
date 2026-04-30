@@ -15,12 +15,10 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { motion } from 'framer-motion'
-import type { ReactNode } from 'react'
+import { alpha } from '@mui/material/styles'
 import { memo, useEffect, useState } from 'react'
 
 import type { Car } from '../../types'
-import { useMobileLightMotion } from '../../hooks/useMobileLightMotion'
 import { formatPeso } from '../../utils/formatCurrency'
 import { getVehicleType, isTwoWheeler, VEHICLE_TYPE_LABELS } from '../../utils/vehicleUtils'
 import { useCarsStore } from '../../store/useCarsStore'
@@ -47,7 +45,6 @@ function CarCard({
 }: CarCardProps) {
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.down('sm'))
-  const lightMotion = useMobileLightMotion()
   const toggleSaved = useCarsStore((s) => s.toggleSaved)
   const carIdForSaved = car?.id
   const saved = useCarsStore((s) => !!(carIdForSaved && s.savedCarIds.includes(carIdForSaved)))
@@ -147,10 +144,10 @@ function CarCard({
           label={VEHICLE_TYPE_LABELS[vehicleClass]}
           size="small"
           sx={{
-            bgcolor: 'rgba(255,255,255,0.95)',
+            bgcolor: 'rgba(255,255,255,0.98)',
             color: 'primary.dark',
             fontWeight: 700,
-            backdropFilter: { xs: 'none', sm: 'blur(4px)' },
+            backdropFilter: 'none',
           }}
         />
         <Chip
@@ -388,12 +385,12 @@ function CarCard({
     flexDirection: 'column',
     height: '100%',
     overflow: 'hidden',
-    transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.2s ease',
+    transition: 'box-shadow 0.15s ease, border-color 0.15s ease',
     '@media (hover: hover) and (pointer: fine)': {
       '&:hover': {
-        transform: 'translateY(-3px)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.06)',
-        borderColor: 'action.hover',
+        transform: 'none',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05)',
+        borderColor: alpha(theme.palette.text.primary, 0.22),
       },
     },
   }
@@ -425,21 +422,9 @@ function CarCard({
     </Card>
   )
 
-  const wrapGrid = (node: ReactNode) =>
-    lightMotion ? (
-      <Box sx={{ height: '100%' }}>{node}</Box>
-    ) : (
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-        style={{ height: '100%' }}
-      >
-        {node}
-      </motion.div>
-    )
-
-  return wrapGrid(gridCard)
+  return (
+    <Box sx={{ height: '100%' }}>{gridCard}</Box>
+  )
 }
 
 export default memo(CarCard)

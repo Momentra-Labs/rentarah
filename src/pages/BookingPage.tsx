@@ -20,7 +20,6 @@ import {
   useTheme,
 } from '@mui/material'
 import { Elements } from '@stripe/react-stripe-js'
-import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -361,8 +360,7 @@ export default function BookingPage() {
             )}
 
             {step === 3 && bookingRef && (
-              <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                <Stack alignItems="center" spacing={2} textAlign="center">
+              <Stack alignItems="center" spacing={2} textAlign="center">
                   <CheckCircleOutline sx={{ fontSize: 96, color: 'success.main' }} />
                   <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem' } }}>
                     Booking Confirmed!
@@ -393,7 +391,6 @@ export default function BookingPage() {
                     </Button>
                   </Stack>
                 </Stack>
-              </motion.div>
             )}
           </Grid>
 

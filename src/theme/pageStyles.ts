@@ -38,8 +38,9 @@ export function stickyToolbarPaper(theme: Theme): SxProps<Theme> {
     border: 'none',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    bgcolor: alpha(theme.palette.background.default, 0.92),
-    backdropFilter: 'saturate(180%) blur(12px)',
+    bgcolor: alpha(theme.palette.background.default, 0.98),
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
     boxShadow: '0 1px 0 rgba(0,0,0,0.04)',
   }
 }
@@ -52,19 +53,17 @@ export function softInteractiveSurface(theme: Theme, hover = true): SxProps<Them
     borderColor: 'divider',
     bgcolor: 'background.default',
     boxShadow: softShadow,
-    transition:
-      'box-shadow 0.22s ease, border-color 0.2s ease, transform 0.14s ease',
+    transition: 'box-shadow 0.22s ease, border-color 0.2s ease',
     ...(hover
       ? {
           '@media (pointer: fine)': {
             '&:hover': {
-              boxShadow: softShadowHover,
               borderColor: alpha(theme.palette.primary.main, 0.15),
+              boxShadow: softShadow,
             },
           },
           '@media (pointer: coarse)': {
             '&:active': {
-              transform: 'scale(0.99)',
               boxShadow: softShadow,
             },
           },
@@ -80,32 +79,27 @@ export function listRowSurface(theme: Theme): SxProps<Theme> {
     border: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.default',
-    transition: 'box-shadow 0.2s ease, border-color 0.2s ease, transform 0.14s ease',
+    transition: 'box-shadow 0.2s ease, border-color 0.2s ease',
     '@media (pointer: fine)': {
       '&:hover': {
-        boxShadow: softShadow,
         borderColor: alpha(theme.palette.primary.main, 0.1),
+        boxShadow: 'none',
       },
     },
     '@media (pointer: coarse)': {
       '&:active': {
-        transform: 'scale(0.99)',
+        borderColor: alpha(theme.palette.primary.main, 0.12),
       },
     },
   }
 }
 
 export const primaryCtaShadow = (theme: Theme) => ({
-  transition: 'transform 0.14s ease, box-shadow 0.2s ease',
+  transition: 'box-shadow 0.2s ease',
   boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.32)}`,
   '@media (pointer: fine)': {
     '&:hover': {
       boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
-    },
-  },
-  '@media (pointer: coarse)': {
-    '&:active': {
-      transform: 'scale(0.985)',
     },
   },
 })

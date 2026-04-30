@@ -14,7 +14,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { DEFAULT_SEARCH_LOCATION } from '../constants/geo'
@@ -27,11 +27,13 @@ import FilterPanelScrollColumn from '../components/search/FilterPanelScrollColum
 import SortBar from '../components/search/SortBar'
 import { useListingSearch } from '../hooks/useListingSearch'
 import { useVehicles } from '../hooks/useVehicles'
+import { prefetchPath } from '../lib/routePrefetch'
 import { useSearchStore } from '../store/useSearchStore'
-import type { SearchFilters, VehicleType } from '../types'
+import type { Car, SearchFilters, VehicleType } from '../types'
 import { MOBILE_TAB_BAR_FAB_BOTTOM } from '../components/layout/MobileBottomNav'
 import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '../theme/pageStyles'
 import {
+  formatSearchDateTimeParam,
   parseSearchDateTimeParam,
   withDefaultDropoffTime,
 } from '../utils/dateUtils'
@@ -107,14 +109,28 @@ export default function VehicleModelSearchPage() {
 
   useEffect(() => {
     const q = new URLSearchParams(routeLocation.search)
-    const loc = q.get('location')
-    const pu = q.get('pickup')
-    const dr = q.get('dropoff')
-    if (loc) setLocation(loc)
-    const puParsed = parseSearchDateTimeParam(pu, 'pickup')
-    const drParsed = parseSearchDateTimeParam(dr, 'dropoff')
-    if (puParsed && drParsed) setDates(puParsed, drParsed)
-    else if (puParsed) setDates(puParsed, withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day')))
+    const st = useSearchStore.getState()
+    const locTrim = q.get('location')?.trim()
+    if (locTrim && locTrim !== st.location) setLocation(locTrim)
+
+    const puParsed = parseSearchDateTimeParam(q.get('pickup'), 'pickup')
+    const drParsed = parseSearchDateTimeParam(q.get('dropoff'), 'dropoff')
+
+    if (puParsed?.isValid() && drParsed?.isValid()) {
+      const samePu =
+        st.pickup?.isValid() && formatSearchDateTimeParam(st.pickup) === formatSearchDateTimeParam(puParsed)
+      const sameDr =
+        st.dropoff?.isValid() && formatSearchDateTimeParam(st.dropoff) === formatSearchDateTimeParam(drParsed)
+      if (!samePu || !sameDr) setDates(puParsed, drParsed)
+    } else if (puParsed?.isValid()) {
+      const defDrop = withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day'))
+      const samePu =
+        st.pickup?.isValid() && formatSearchDateTimeParam(st.pickup) === formatSearchDateTimeParam(puParsed)
+      const sameDr =
+        st.dropoff?.isValid() &&
+        formatSearchDateTimeParam(st.dropoff) === formatSearchDateTimeParam(defDrop)
+      if (!samePu || !sameDr) setDates(puParsed, defDrop)
+    }
   }, [routeLocation.search, setLocation, setDates])
 
   const totalCount = hits.length
@@ -125,9 +141,25 @@ export default function VehicleModelSearchPage() {
     return hits.slice(start, start + PAGE_SIZE)
   }, [hits, page])
 
+  const filtersTypesKeyVm = useMemo(() => [...filters.types].sort().join('|'), [filters.types])
+
   useEffect(() => {
     setPage(1)
-  }, [filters, sortBy, location, make, model, vtRaw])
+  }, [
+    sortBy,
+    location,
+    make,
+    model,
+    vtRaw,
+    filtersTypesKeyVm,
+    filters.vehicleType,
+    filters.transmission,
+    filters.fuel,
+    filters.seats,
+    filters.priceRange[0],
+    filters.priceRange[1],
+    filters.availableOnly,
+  ])
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -147,6 +179,15 @@ export default function VehicleModelSearchPage() {
     setLocation(DEFAULT_SEARCH_LOCATION)
   }
 
+  const navigateToCar = useCallback(
+    (c: Car) => {
+      const path = `/cars/${c.id}`
+      prefetchPath(path)
+      navigate(path)
+    },
+    [navigate],
+  )
+
   if (!modelKey) {
     return <Navigate to="/search" replace />
   }
@@ -163,6 +204,7 @@ export default function VehicleModelSearchPage() {
               to="/search"
               startIcon={<ArrowBack />}
               size="small"
+              onPointerEnter={() => prefetchPath('/search')}
               sx={{ alignSelf: 'flex-start', fontWeight: 700 }}
             >
               All vehicles
@@ -272,8 +314,8 @@ export default function VehicleModelSearchPage() {
                           layout={effectiveViewMode}
                           showDateAvailabilityHint={availabilityApplied && hit.availability.availableForRange}
                           distanceKm={hit.distanceKm}
-                          onNavigate={(c) => navigate(`/cars/${c.id}`)}
-                          onReserve={(c) => navigate(`/cars/${c.id}`)}
+                          onNavigate={navigateToCar}
+                          onReserve={navigateToCar}
                         />
                       </Box>
                     </Grid>

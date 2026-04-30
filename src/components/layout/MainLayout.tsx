@@ -1,7 +1,6 @@
 import { Box, CircularProgress, useMediaQuery, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import LoadingScreen from '../brand/LoadingScreen'
@@ -12,12 +11,6 @@ import MobileBottomNav, { MOBILE_BOTTOM_NAV_SX_PB } from './MobileBottomNav'
 import Navbar from './Navbar'
 import RouteFallback from './RouteFallback'
 import { mobileShellColumnSx } from '../../theme/pageStyles'
-import {
-  pageMotionTransition,
-  pageMotionTransitionNative,
-  pageMotionVariants,
-  pageMotionVariantsNative,
-} from './pageMotion'
 import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useBookingStore } from '../../store/useBookingStore'
@@ -29,21 +22,13 @@ import type { AuthLocationState } from '../../types/authFlow'
 import { isAuthProfileComplete } from '../../lib/authProfile'
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { canProceedToBookingCheckout, isLegalAndSafetyOnboardingComplete } from '../../lib/trustOnboarding'
+import { prefetchPrimaryShellRoutes } from '../../lib/routePrefetch'
 
 const AuthDialogLazy = lazy(() => import('../auth/AuthDialog'))
 
-/** Minimum splash beat — keep short so the fade can start right after catalog readiness. */
-const MIN_LOADING_SCREEN_MS = 400
-
-/** Snappy opacity-only motion: transform + long fades fight `backdrop-filter` (feels “laggy”). */
-const splashFadeIn = { duration: 0.26, ease: [0.25, 1, 0.45, 1] as const }
-const splashFadeOut = { duration: 0.22, ease: [0.4, 0, 1, 1] as const }
-
 export default function MainLayout() {
   const theme = useTheme()
-  const reduceMotion = useReducedMotion()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
-  const nativeMobileRouteMotion = Boolean(isMobile && !reduceMotion)
   const location = useLocation()
   /** Open conversation on mobile: hide app bar and bottom tabs so the thread is full-screen. */
   const immersiveMobileMessageThread =
@@ -77,19 +62,11 @@ export default function MainLayout() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authDialogDefaultTab, setAuthDialogDefaultTab] = useState<'login' | 'register'>('login')
   const [registerAccountRolePreset, setRegisterAccountRolePreset] = useState<'renter' | 'host' | 'both' | undefined>(undefined)
-  const [minSplashElapsed, setMinSplashElapsed] = useState(false)
-  /** Stops logo/road CSS animations during exit so opacity fade isn’t starved on the main thread. */
-  const [splashExitDecorations, setSplashExitDecorations] = useState(false)
   /** Survives re-renders: after auth, continue reserve → checkout if set. */
   const pendingBookCarIdRef = useRef<string | null>(null)
 
   /** Boots the shared vehicle catalog (mock or API) for all routes. */
   const { isLoading: vehiclesLoading } = useVehicles()
-
-  useEffect(() => {
-    const id = window.setTimeout(() => setMinSplashElapsed(true), MIN_LOADING_SCREEN_MS)
-    return () => window.clearTimeout(id)
-  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -102,13 +79,7 @@ export default function MainLayout() {
     restoreIfPermittedOnLoad()
   }, [restoreIfPermittedOnLoad])
 
-  const showLoadingScreen = vehiclesLoading || !minSplashElapsed
-
-  /** Sync before paint — freeze visuals the same frame splash begins exiting (AnimatePresence keeps subtree mounted). */
-  useLayoutEffect(() => {
-    if (showLoadingScreen) setSplashExitDecorations(false)
-    else setSplashExitDecorations(true)
-  }, [showLoadingScreen])
+  const showLoadingScreen = vehiclesLoading
 
   useEffect(() => {
     if (showLoadingScreen) return
@@ -118,6 +89,17 @@ export default function MainLayout() {
       return () => cancelIdleCallback(id)
     }
     const t = window.setTimeout(run, 1800)
+    return () => window.clearTimeout(t)
+  }, [showLoadingScreen])
+
+  useEffect(() => {
+    if (showLoadingScreen) return
+    const run = () => prefetchPrimaryShellRoutes()
+    if (typeof requestIdleCallback !== 'undefined') {
+      const id = requestIdleCallback(run, { timeout: 1200 })
+      return () => cancelIdleCallback(id)
+    }
+    const t = window.setTimeout(run, 500)
     return () => window.clearTimeout(t)
   }, [showLoadingScreen])
 
@@ -202,31 +184,19 @@ export default function MainLayout() {
         bgcolor: 'background.default',
       }}
     >
-      <AnimatePresence>
-        {showLoadingScreen ? (
-          <motion.div
-            key="app-loading-screen"
-            initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
-            animate={
-              reduceMotion ? { opacity: 1 } : { opacity: 1, transition: splashFadeIn }
-            }
-            exit={
-              reduceMotion
-                ? { opacity: 0, transition: { duration: 0.12, ease: 'easeOut' } }
-                : { opacity: 0, transition: splashFadeOut }
-            }
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: theme.zIndex.modal + 2,
-              willChange: 'opacity',
-              pointerEvents: 'auto',
-            }}
-          >
-            <LoadingScreen freezeDecorations={splashExitDecorations} />
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {showLoadingScreen ? (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: theme.zIndex.modal + 2,
+            pointerEvents: 'auto',
+          }}
+          role="presentation"
+        >
+          <LoadingScreen />
+        </Box>
+      ) : null}
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', alignItems: 'stretch' }}>
         <AppNavSidebar onAuthOpen={handleAuthOpen} onLogout={handleLogout} />
         <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -262,42 +232,29 @@ export default function MainLayout() {
                       },
             }}
           >
-            <AnimatePresence initial={false}>
-              <motion.div
-                key={location.pathname}
-                variants={nativeMobileRouteMotion ? pageMotionVariantsNative : pageMotionVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={
-                  reduceMotion
-                    ? { duration: 0.09, ease: 'easeOut' as const }
-                    : nativeMobileRouteMotion
-                      ? pageMotionTransitionNative
-                      : pageMotionTransition
+            <Box
+              key={location.pathname}
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+              }}
+            >
+              <Box
+                sx={
+                  useMobileShellColumn
+                    ? mobileShellColumnSx
+                    : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', width: '100%' }
                 }
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  width: '100%',
-                }}
               >
-                <Box
-                  sx={
-                    useMobileShellColumn
-                      ? mobileShellColumnSx
-                      : { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', width: '100%' }
-                  }
-                >
-                  <Suspense fallback={<RouteFallback />}>
-                    <Outlet />
-                  </Suspense>
-                  {mobileFooterInMain ? <Footer /> : null}
-                </Box>
-              </motion.div>
-            </AnimatePresence>
+                <Suspense fallback={<RouteFallback />}>
+                  <Outlet />
+                </Suspense>
+                {mobileFooterInMain ? <Footer /> : null}
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Box>

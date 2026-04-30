@@ -1,7 +1,6 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 
 const cardShadow = '0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)'
-const cardShadowHover = '0 4px 12px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.08)'
 const modalShadow = '0 20px 60px rgba(0,0,0,0.18)'
 
 const baseTheme = createTheme({
@@ -134,6 +133,9 @@ const baseTheme = createTheme({
           fontWeight: 600,
           borderRadius: '8px',
           minHeight: 44,
+          '@media (min-width: 900px)': {
+            minHeight: 40,
+          },
         },
         containedPrimary: {
           backgroundColor: '#1A56DB',
@@ -146,7 +148,6 @@ const baseTheme = createTheme({
           '@media (pointer: coarse)': {
             '&:active': {
               backgroundColor: '#1748b8',
-              transform: 'scale(0.985)',
             },
           },
         },
@@ -161,7 +162,6 @@ const baseTheme = createTheme({
           '@media (pointer: coarse)': {
             '&:active': {
               borderWidth: '1.5px',
-              transform: 'scale(0.985)',
               backgroundColor: '#EFF6FF',
             },
           },
@@ -174,10 +174,14 @@ const baseTheme = createTheme({
           borderRadius: 10,
           minWidth: 44,
           minHeight: 44,
+          '@media (min-width: 900px)': {
+            minWidth: 40,
+            minHeight: 40,
+          },
           '@media (pointer: coarse)': {
             '&:active': {
-              transform: 'scale(0.96)',
-              transition: 'transform 0.12s ease',
+              opacity: 0.88,
+              transition: 'opacity 0.1s ease',
             },
           },
         },
@@ -190,15 +194,10 @@ const baseTheme = createTheme({
           borderRadius: '16px',
           boxShadow: cardShadow,
           backgroundColor: '#FFFFFF',
-          transition: 'box-shadow 0.2s ease, transform 0.14s ease',
+          transition: 'border-color 0.2s ease',
           '@media (pointer: fine)': {
             '&:hover': {
-              boxShadow: cardShadowHover,
-            },
-          },
-          '@media (pointer: coarse)': {
-            '&:active': {
-              transform: 'scale(0.993)',
+              borderColor: '#D1D5DB',
             },
           },
         },
@@ -208,6 +207,9 @@ const baseTheme = createTheme({
       styleOverrides: {
         root: {
           minHeight: 44,
+          '@media (min-width: 900px)': {
+            minHeight: 40,
+          },
         },
       },
     },

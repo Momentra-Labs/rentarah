@@ -2,15 +2,12 @@ import ChevronRight from '@mui/icons-material/ChevronRight'
 import ChevronLeft from '@mui/icons-material/ChevronLeft'
 import { Box, Button, IconButton, Stack, Typography } from '@mui/material'
 import { alpha, type SxProps, type Theme } from '@mui/material/styles'
-import { motion } from 'framer-motion'
 import type { ReactNode, SyntheticEvent } from 'react'
 
 import { formatPeso } from '../../utils/formatCurrency'
 import type { ExploreMapListing } from '../../utils/exploreMapListings'
 import { popupCtaGestureBlockers } from '../../utils/exploreMapPopupGestures'
 import VehicleHeroImage from '../media/VehicleHeroImage'
-
-const SWIPE_DRAG_THRESHOLD = 64
 
 /** Large prev/next arrows + bar — `/map` popup (compact + desktop stacked). */
 function exploreMapPopupCityNavIconButtonSx(theme: Theme) {
@@ -266,26 +263,7 @@ export function ExploreMapPopupSwipeRail({
 
   return (
     <Box sx={{ position: 'relative', width: '100%' }}>
-      <motion.div
-        drag={canPrev || canNext ? 'x' : false}
-        dragElastic={0.06}
-        dragConstraints={{
-          left: canNext ? -180 : 0,
-          right: canPrev ? 180 : 0,
-        }}
-        dragPropagation={false}
-        onDragEnd={(_, info) => {
-          const ox = info.offset.x
-          if (ox <= -SWIPE_DRAG_THRESHOLD && canNext) {
-            onSwipeNext()
-          } else if (ox >= SWIPE_DRAG_THRESHOLD && canPrev) {
-            onSwipePrev()
-          }
-        }}
-        style={{ touchAction: 'pan-y', width: '100%' }}
-      >
-        {children}
-      </motion.div>
+      <Box sx={{ touchAction: 'pan-y', width: '100%' }}>{children}</Box>
       {!navigationAvailable ? null : (
         <ExploreMapPopupCityPrevNextRow
           canPrev={canPrev}

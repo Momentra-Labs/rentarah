@@ -12,8 +12,8 @@ import { USE_MOCK_API } from './config'
  */
 export const USE_MOCK = true
 
-/** Network latency simulation in milliseconds; keeps loading states visible in dev. */
-const MOCK_DELAY_MS = 200
+/** Network latency simulation in mock mode; `0` keeps listings snappy in local dev. */
+const MOCK_DELAY_MS = 0
 
 const delay = (ms = MOCK_DELAY_MS) => new Promise((r) => setTimeout(r, ms))
 

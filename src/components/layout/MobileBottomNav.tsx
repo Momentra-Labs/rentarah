@@ -8,9 +8,11 @@ import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import { Badge, BottomNavigation, BottomNavigationAction, Box, Paper } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import useMediaQuery from '@mui/material/useMediaQuery'
+import { useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
+import { prefetchPath } from '../../lib/routePrefetch'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { AuthUser } from '../../types'
@@ -76,6 +78,15 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
   const user = useAuthStore((s) => s.user)
   const chatUnread = useChatUnreadForCurrentUser()
 
+  const go = useCallback(
+    (to: string) => {
+      prefetchPath(to)
+      /** Plain navigation keeps tab highlight + route in sync. `startTransition` deferred heavy routes (e.g. `/search`) and made “Browse” feel sluggish vs other tabs. */
+      navigate(to)
+    },
+    [navigate],
+  )
+
   if (isMdUp) return null
 
   const value = tabIndexForPath(pathname, user)
@@ -95,9 +106,8 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
         pb: 'env(safe-area-inset-bottom, 0px)',
         displayPrint: 'none',
         overflow: 'visible',
-        bgcolor: alpha(theme.palette.background.paper, 0.86),
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
+        /** Avoid `backdrop-filter` here — composited under scroll + Leaflet/maps makes frames drop on mid-range phones. */
+        bgcolor: alpha(theme.palette.background.paper, 0.96),
       }}
     >
       <Box sx={{ position: 'relative', overflow: 'visible' }}>
@@ -107,16 +117,16 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
           onChange={(_e, newValue: number | false) => {
             if (newValue === false) return
             if (user) {
-              if (newValue === 0) navigate('/')
-              else if (newValue === 1) navigate('/search')
-              else if (newValue === 2) navigate('/map')
-              else if (newValue === 3) navigate('/messages')
-              else if (newValue === 4) navigate('/dashboard?nav=profile')
+              if (newValue === 0) go('/')
+              else if (newValue === 1) go('/search')
+              else if (newValue === 2) go('/map')
+              else if (newValue === 3) go('/messages')
+              else if (newValue === 4) go('/dashboard?nav=profile')
             } else {
-              if (newValue === 0) navigate('/')
-              else if (newValue === 1) navigate('/search')
-              else if (newValue === 2) navigate('/map')
-              else if (newValue === 3) navigate('/become-a-host')
+              if (newValue === 0) go('/')
+              else if (newValue === 1) go('/search')
+              else if (newValue === 2) go('/map')
+              else if (newValue === 3) go('/become-a-host')
               else if (newValue === 4) onAuthOpen?.()
             }
           }}
@@ -139,11 +149,13 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             label="Home"
             aria-label="Home — go to the home page"
             icon={<HomeOutlined fontSize="small" aria-hidden />}
+            onPointerEnter={() => prefetchPath('/')}
           />
           <BottomNavigationAction
             label="Browse"
             aria-label="Browse — search vehicles"
             icon={<SearchOutlined fontSize="small" aria-hidden />}
+            onPointerEnter={() => prefetchPath('/search')}
           />
           <BottomNavigationAction
             label="Map"
@@ -178,6 +190,7 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
               minWidth: 68,
               '&.Mui-selected': { color: t.palette.primary.main },
             })}
+            onPointerEnter={() => prefetchPath('/map')}
           />
           {user ? (
             <BottomNavigationAction
@@ -201,12 +214,14 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
                   </Box>
                 </Badge>
               }
+              onPointerEnter={() => prefetchPath('/messages')}
             />
           ) : (
             <BottomNavigationAction
               label="Host"
               aria-label="Host — become a host"
               icon={<StorefrontOutlined fontSize="small" aria-hidden />}
+              onPointerEnter={() => prefetchPath('/become-a-host')}
             />
           )}
           <BottomNavigationAction
@@ -214,7 +229,8 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             aria-label={user ? 'Account' : 'Sign in'}
             icon={user ? <AccountCircleOutlined fontSize="small" aria-hidden /> : <LoginOutlined fontSize="small" aria-hidden />}
             onPointerEnter={() => {
-              if (!user) prefetchAuthDialogChunk()
+              if (user) prefetchPath('/dashboard?nav=profile')
+              else prefetchAuthDialogChunk()
             }}
           />
         </BottomNavigation>

@@ -1,33 +1,18 @@
 import { Box, LinearProgress, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import { motion, useReducedMotion } from 'framer-motion'
 
-import LoadingRoadScene from './LoadingRoadScene'
 import RentaraLoadingLogo from './RentaraLoadingLogo'
 
-export type LoadingScreenProps = {
-  /** True when splash begins exiting — freezes heavy visuals and blur so opacity fade stays smooth. */
-  freezeDecorations?: boolean
-}
-
-/**
- * Full-viewport splash: native-style safe areas, glass center card, thin indeterminate progress (mobile-app feel).
- */
-export default function LoadingScreen({ freezeDecorations = false }: LoadingScreenProps) {
+/** Fast first paint: solid card, single progress bar — no Framer, no animated road scene, no backdrop blur. */
+export default function LoadingScreen() {
   const theme = useTheme()
-  const reduceMotion = useReducedMotion()
   const isXs = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true })
   const primary = theme.palette.primary.main
 
-  /** During exit remove blur — fading blurred layers tends to feel “laggy”. */
-  const cardBlurPx = freezeDecorations ? 0 : isXs ? 14 : 22
-  const surface = freezeDecorations
-    ? theme.palette.mode === 'dark'
+  const surface =
+    theme.palette.mode === 'dark'
       ? alpha(theme.palette.background.paper, 0.92)
-      : alpha('#fff', 0.94)
-    : theme.palette.mode === 'dark'
-      ? alpha(theme.palette.background.paper, 0.45)
-      : alpha('#fff', 0.78)
+      : alpha('#fff', 0.96)
   const surfaceBorder = alpha(primary, theme.palette.mode === 'dark' ? 0.22 : 0.14)
 
   return (
@@ -46,7 +31,6 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
         overflow: 'hidden',
         WebkitOverflowScrolling: 'touch',
         overscrollBehavior: 'none',
-        // Safe-area: avoid notch / home indicator (PWA / mobile browsers)
         paddingTop: `max(env(safe-area-inset-top, 0px), ${theme.spacing(2)})`,
         paddingBottom: `max(env(safe-area-inset-bottom, 0px), ${theme.spacing(1)})`,
         paddingLeft: `max(env(safe-area-inset-left, 0px), ${theme.spacing(2)})`,
@@ -59,7 +43,6 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
                linear-gradient(180deg, ${alpha(theme.palette.primary.light, 1)} 0%, ${theme.palette.grey[50]} 38%, ${alpha(theme.palette.background.default, 1)} 100%)`,
       }}
     >
-      {/* Soft vignette — depth without noisy animation */}
       <Box
         aria-hidden
         sx={{
@@ -74,16 +57,8 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
       />
 
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <motion.div
-          initial={
-            freezeDecorations || reduceMotion ? false : { opacity: 0, y: isXs ? 10 : 12, scale: 0.985 }
-          }
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{
-            duration: freezeDecorations || reduceMotion ? 0 : isXs ? 0.4 : 0.34,
-            ease: [0.25, 1, 0.45, 1],
-          }}
-          style={{
+        <Box
+          sx={{
             width: '100%',
             maxWidth: 340,
             transformOrigin: 'center top',
@@ -97,12 +72,6 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
               py: { xs: 3, sm: 3.75 },
               borderRadius: { xs: 4, sm: 5 },
               background: surface,
-              ...(cardBlurPx > 0
-                ? {
-                    backdropFilter: `blur(${cardBlurPx}px)`,
-                    WebkitBackdropFilter: `blur(${cardBlurPx}px)`,
-                  }
-                : {}),
               border: `1px solid ${surfaceBorder}`,
               boxShadow:
                 theme.palette.mode === 'dark'
@@ -110,7 +79,7 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
                   : `0 16px 48px -18px ${alpha(theme.palette.grey[900], 0.12)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.92)}`,
             }}
           >
-            <RentaraLoadingLogo freezeDecorations={freezeDecorations} />
+            <RentaraLoadingLogo />
 
             <Typography
               component="span"
@@ -140,12 +109,8 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
             >
               Find your ride
             </Typography>
-
-            <Box sx={{ width: '100%', mt: { xs: 1.75, sm: 2 }, pt: { xs: 0.75, sm: 1 } }}>
-              <LoadingRoadScene freezeDecorations={freezeDecorations} />
-            </Box>
           </Stack>
-        </motion.div>
+        </Box>
       </Box>
 
       <Box sx={{ width: '100%', mt: 1 }}>
@@ -155,40 +120,31 @@ export default function LoadingScreen({ freezeDecorations = false }: LoadingScre
             height: isXs ? 2.75 : 3,
             borderRadius: '3px',
             bgcolor: alpha(primary, theme.palette.mode === 'dark' ? 0.15 : 0.1),
-            '& .MuiLinearProgress-bar1Indeterminate, & .MuiLinearProgress-bar2Indeterminate':
-              freezeDecorations
-                ? {
-                    animation: 'none',
-                    borderRadius: '3px',
-                    backgroundColor: alpha(primary, theme.palette.mode === 'dark' ? 0.85 : 0.95),
-                  }
-                : {
-                    borderRadius: '3px',
-                    backgroundColor: alpha(primary, theme.palette.mode === 'dark' ? 0.85 : 0.95),
-                    animationDuration: isXs ? `${2.75}s` : `${2.35}s`,
-                    animationTimingFunction: 'cubic-bezier(0.42, 0, 0.58, 1)',
-                  },
+            '& .MuiLinearProgress-bar1Indeterminate, & .MuiLinearProgress-bar2Indeterminate': {
+              borderRadius: '3px',
+              backgroundColor: alpha(primary, theme.palette.mode === 'dark' ? 0.85 : 0.95),
+              animationDuration: isXs ? `${2.75}s` : `${2.35}s`,
+              animationTimingFunction: 'cubic-bezier(0.42, 0, 0.58, 1)',
+            },
           }}
         />
-        {!reduceMotion && (
-          <Typography
-            variant="caption"
-            component="span"
-            sx={{
-              mt: 0.75,
-              display: 'block',
-              width: '100%',
-              textAlign: 'center',
-              fontWeight: 500,
-              fontSize: '0.65rem',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: alpha(theme.palette.text.secondary, 0.75),
-            }}
-          >
-            Loading
-          </Typography>
-        )}
+        <Typography
+          variant="caption"
+          component="span"
+          sx={{
+            mt: 0.75,
+            display: 'block',
+            width: '100%',
+            textAlign: 'center',
+            fontWeight: 500,
+            fontSize: '0.65rem',
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: alpha(theme.palette.text.secondary, 0.75),
+          }}
+        >
+          Loading
+        </Typography>
       </Box>
     </Box>
   )

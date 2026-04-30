@@ -592,8 +592,9 @@ export default function AuthDialog({
       TransitionComponent={isBottomSheet ? AuthBottomSheetSlide : undefined}
       BackdropProps={{
         sx: {
-          backgroundColor: alpha(theme.palette.common.black, 0.58),
-          backdropFilter: 'blur(6px)',
+          /** Solid-ish dim without `backdrop-filter` on sheets — blur over scrolling content is expensive on WebViews. */
+          backgroundColor: alpha(theme.palette.common.black, isBottomSheet ? 0.5 : 0.58),
+          backdropFilter: isBottomSheet ? 'none' : 'blur(6px)',
         },
       }}
       TransitionProps={{

@@ -7,8 +7,8 @@ import { rangeConflictsBooked } from '../utils/bookingCalendar'
 import { matchesVehicleTypeFilter } from '../utils/vehicleUtils'
 import { USE_MOCK_API } from './config'
 
-/** Simulated network latency for catalog search (mock only). */
-const MOCK_SEARCH_DELAY_MS = 180
+/** Simulated network latency for catalog search (mock only). `0` = run at full speed. */
+const MOCK_SEARCH_DELAY_MS = 0
 
 const delay = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
@@ -221,7 +221,7 @@ export async function fetchListingSearch(
   params: ListingSearchParams,
   signal?: AbortSignal,
 ): Promise<ListingSearchHit[]> {
-  if (USE_MOCK_API) {
+  if (USE_MOCK_API && MOCK_SEARCH_DELAY_MS > 0) {
     await delay(MOCK_SEARCH_DELAY_MS, signal)
   }
   return runListingSearch(cars, params)
