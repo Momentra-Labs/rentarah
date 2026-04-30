@@ -1,4 +1,5 @@
 import { Box, Paper, Stack, Typography } from '@mui/material'
+import type { Key } from 'react'
 import { CalendarPicker } from '@mui/x-date-pickers/CalendarPicker'
 import { PickersDay } from '@mui/x-date-pickers/PickersDay'
 import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay'
@@ -48,12 +49,18 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
     const booked = car.bookedDates.includes(iso)
     const inSelectedRange = rangeSet.has(iso)
 
+    /** MUI merges `key` into this object; spreading it triggers React dev warnings — pass `key` on the JSX node. */
+    const { key: pickersReactKey, sx: pickerSxProp, ...pickersDayRest } = pickersDayProps as PickersDayProps<Dayjs> & {
+      key?: Key | null | undefined
+    }
+
     return (
       <PickersDay
-        {...pickersDayProps}
+        key={pickersReactKey ?? iso}
+        {...pickersDayRest}
         disableMargin
         sx={{
-          ...pickersDayProps.sx,
+          ...pickerSxProp,
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,

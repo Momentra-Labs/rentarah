@@ -63,6 +63,8 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
   }, [location.hash, location.pathname, location.search])
 
   const closeMobileDrawer = useCallback(() => {
+    // Focus leaves the drawer before MuiModal applies aria-hidden during exit — avoids a11y mismatch with a focused link inside.
+    mobileMenuButtonRef.current?.focus({ preventScroll: true })
     setMobileOpen(false)
   }, [])
 
@@ -117,15 +119,27 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
     [markAsRead],
   )
 
-  /** Sync with document scroll immediately — RAF batching delayed the shadow on listing pages and felt sluggish vs lighter routes. */
+  /** Coalesce scroll reads to once per animation frame — avoids React updates on high-frequency wheel/touch scrolling. */
   useEffect(() => {
+    let raf = 0
+    let lastElevated = window.scrollY > 50
+    setElevated(lastElevated)
     const onScroll = () => {
-      const next = window.scrollY > 50
-      setElevated((prev) => (prev === next ? prev : next))
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        const next = window.scrollY > 50
+        if (next !== lastElevated) {
+          lastElevated = next
+          setElevated(next)
+        }
+      })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [])
 
   useEffect(() => {
@@ -148,7 +162,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
           color: 'text.primary',
           borderBottom: elevated ? 'none' : '1px solid',
           borderColor: 'divider',
-          transition: 'box-shadow 0.12s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.12s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'none',
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
         }}
       >
@@ -167,7 +181,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
               py: 0.5,
               px: 0.5,
               borderRadius: 2,
-              transition: 'background-color 0.12s ease',
+              transition: 'none',
               '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
             }}
           >
@@ -188,7 +202,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
               variant="text"
               size="medium"
               startIcon={<MapOutlined />}
-              onPointerEnter={() => prefetchPath('/map')}
+              onPointerDown={() => prefetchPath('/map')}
               sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               Map
@@ -207,7 +221,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                 </IconButton>
                 <Button
                   variant="text"
-                  onPointerEnter={() => prefetchAuthDialogChunk()}
+                  onPointerDown={() => prefetchAuthDialogChunk()}
                   onClick={() => onAuthOpen()}
                   sx={{ fontWeight: 600 }}
                 >
@@ -215,7 +229,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                 </Button>
                 <Button
                   variant="contained"
-                  onPointerEnter={() => prefetchAuthDialogChunk()}
+                  onPointerDown={() => prefetchAuthDialogChunk()}
                   onClick={() => onAuthOpen()}
                   sx={{ fontWeight: 600, borderRadius: 2, px: 2.5 }}
                 >

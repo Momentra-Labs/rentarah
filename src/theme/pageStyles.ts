@@ -104,21 +104,37 @@ export const primaryCtaShadow = (theme: Theme) => ({
   },
 })
 
+/** Renter + host dashboard: wrap {@link dashboardSectionTabsSx} for a clear, paper-backed tab strip. */
+export const dashboardTabsBarWrapSx: SxProps<Theme> = {
+  mb: 3,
+  borderRadius: 2,
+  border: 1,
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+  overflow: 'hidden',
+  boxShadow: (t) => `0 1px 0 ${alpha(t.palette.common.black, t.palette.mode === 'light' ? 0.06 : 0.12)}`,
+}
+
 /**
- * MUI `Tabs` for renter + host dashboards: underline, scrollable.
- * Stays within the same horizontal padding as {@link containerGutters} so tabs line up with PageHeader and cards.
- * Collapses disabled scroll arrows; slightly tighter tab padding on small screens.
+ * MUI `Tabs` for renter + host dashboards: scrollable strip, strong selected state.
+ * Pair with {@link dashboardTabsBarWrapSx}; no bottom border here (the wrap provides the chrome).
  */
 export const dashboardSectionTabsSx: SxProps<Theme> = {
-  borderBottom: 1,
-  borderColor: 'divider',
-  mb: 3,
-  minHeight: 48,
+  minHeight: 52,
+  px: { xs: 0.25, sm: 0.75 },
+  bgcolor: 'transparent',
   '& .MuiTabs-flexContainer': {
-    alignItems: 'center',
+    alignItems: 'stretch',
+    gap: { xs: 0.25, sm: 0.5 },
+  },
+  '& .MuiTabs-indicator': {
+    height: 3,
+    borderRadius: '3px 3px 0 0',
   },
   '& .MuiTabs-scrollButtons': {
     flexShrink: 0,
+    borderRadius: 1,
+    '&.Mui-disabled': { opacity: 0 },
   },
   '& .MuiTabs-scrollButtons.Mui-disabled': {
     width: 0,
@@ -133,11 +149,25 @@ export const dashboardSectionTabsSx: SxProps<Theme> = {
   },
   '& .MuiTab-root': {
     minWidth: 0,
-    minHeight: 48,
+    minHeight: 52,
     flexShrink: 0,
-    px: { xs: 0.75, sm: 1.5 },
+    px: { xs: 1, sm: 1.75 },
+    py: 1,
+    opacity: 1,
     textTransform: 'none',
     fontWeight: 600,
-    fontSize: { xs: '0.75rem', sm: '0.8rem' },
+    fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+    letterSpacing: '-0.01em',
+    color: 'text.secondary',
+    transition: 'color 0.15s ease, background-color 0.15s ease',
+    borderRadius: '8px 8px 0 0',
+    '&.Mui-selected': {
+      color: 'primary.main',
+      fontWeight: 700,
+      bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.06 : 0.12),
+    },
+    '& .MuiTab-iconWrapper': {
+      marginRight: { xs: '6px', sm: '8px' },
+    },
   },
 }

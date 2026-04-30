@@ -959,14 +959,12 @@ export default function MapPage() {
               >
                 <Paper
                   elevation={0}
-                  className="rounded-2xl border border-solid border-transparent p-2 shadow-search backdrop-blur-md max-[359px]:p-1.5 sm:p-3.5"
+                  className="rounded-2xl border border-solid border-transparent p-2 shadow-search max-[359px]:p-1.5 sm:p-3.5"
                   sx={{
                     borderRadius: '16px',
                     border: '1px solid',
                     borderColor: 'divider',
-                    bgcolor: alpha('#ffffff', 0.86),
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
+                    bgcolor: alpha(theme.palette.background.paper, 0.97),
                     boxShadow: (t) => `0 8px 32px ${alpha(t.palette.common.black, 0.09)}`,
                   }}
                 >
@@ -1046,12 +1044,10 @@ export default function MapPage() {
                   px: 2,
                   py: 0.75,
                   borderRadius: 999,
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.16),
                   color: (t) => t.palette.primary.dark,
                   border: '1px solid',
-                  borderColor: (t) => alpha(t.palette.primary.main, 0.22),
-                  backdropFilter: 'saturate(140%) blur(10px)',
-                  WebkitBackdropFilter: 'saturate(140%) blur(10px)',
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.28),
                   pointerEvents: 'none',
                   boxShadow: (t) => `0 4px 20px ${alpha(t.palette.common.black, 0.06)}`,
                 }}
@@ -1073,12 +1069,10 @@ export default function MapPage() {
                   px: 1,
                   py: 0.5,
                   borderRadius: 999,
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.16),
                   color: (t) => t.palette.primary.dark,
                   border: '1px solid',
-                  borderColor: (t) => alpha(t.palette.primary.main, 0.22),
-                  backdropFilter: 'saturate(140%) blur(10px)',
-                  WebkitBackdropFilter: 'saturate(140%) blur(10px)',
+                  borderColor: (t) => alpha(t.palette.primary.main, 0.28),
                   pointerEvents: 'none',
                   maxWidth: 'calc(100% - 56px)',
                   textAlign: 'center',

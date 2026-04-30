@@ -204,7 +204,7 @@ export default function VehicleModelSearchPage() {
               to="/search"
               startIcon={<ArrowBack />}
               size="small"
-              onPointerEnter={() => prefetchPath('/search')}
+              onPointerDown={() => prefetchPath('/search')}
               sx={{ alignSelf: 'flex-start', fontWeight: 700 }}
             >
               All vehicles

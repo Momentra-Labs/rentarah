@@ -28,7 +28,7 @@ export default function FilterPanelScrollColumn({
   ...panelProps
 }: Props) {
   const { filters, hasActiveFilters } = panelProps
-  const { scrollRef, showScrollHint, refreshScrollHint } = useFilterPaneScrollHint({
+  const { scrollRef, showScrollHint, refreshScrollHintOnScroll } = useFilterPaneScrollHint({
     active,
     resetScrollTopOnReveal,
     filters,
@@ -39,7 +39,7 @@ export default function FilterPanelScrollColumn({
     <Stack sx={{ flex: 1, minHeight: 0, minWidth: 0 }} spacing={0}>
       <Box
         ref={scrollRef}
-        onScroll={refreshScrollHint}
+        onScroll={refreshScrollHintOnScroll}
         sx={{
           flex: 1,
           minHeight: 0,

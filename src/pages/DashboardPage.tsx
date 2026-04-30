@@ -50,7 +50,7 @@ import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
-import { containerGutters, dashboardSectionTabsSx, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
+import { containerGutters, dashboardSectionTabsSx, dashboardTabsBarWrapSx, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 
 function tabIndexFromNav(nav: string | null): number {
   if (nav === 'profile') return 0
@@ -156,7 +156,7 @@ export default function DashboardPage() {
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 }, ...containerGutters }}>
-        <PageHeader overline="Your account" title="Dashboard" subtitle="Trips, saved cars, reviews, and profile settings." dense />
+        <PageHeader overline="Your account" title="Dashboard" dense />
 
         <Card
           elevation={0}
@@ -233,43 +233,45 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Tabs
-          value={tab}
-          onChange={(_, v) => {
-            setTab(v)
-            setSearchParams(
-              (prev) => {
-                const n = new URLSearchParams(prev)
-                const keys: Record<number, string> = {
-                  0: 'profile',
-                  1: 'trips',
-                  2: 'past',
-                  3: 'saved',
-                  4: 'reviews',
-                }
-                const key = keys[v]
-                if (key) n.set('nav', key)
-                return n
-              },
-              { replace: true },
-            )
-          }}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile={false}
-          aria-label="Account sections"
-          sx={dashboardSectionTabsSx}
-        >
-          <Tab icon={<PersonOutline fontSize="small" />} iconPosition="start" label="Profile" />
-          <Tab
-            icon={<CalendarMonthOutlined fontSize="small" />}
-            iconPosition="start"
-            label={shortTabLabels ? 'Upcoming' : 'Upcoming trips'}
-          />
-          <Tab icon={<HistoryOutlined fontSize="small" />} iconPosition="start" label="Past" />
-          <Tab icon={<FavoriteBorder fontSize="small" />} iconPosition="start" label="Saved" />
-          <Tab icon={<RateReviewOutlined fontSize="small" />} iconPosition="start" label="Reviews" />
-        </Tabs>
+        <Box sx={dashboardTabsBarWrapSx}>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => {
+              setTab(v)
+              setSearchParams(
+                (prev) => {
+                  const n = new URLSearchParams(prev)
+                  const keys: Record<number, string> = {
+                    0: 'profile',
+                    1: 'trips',
+                    2: 'past',
+                    3: 'saved',
+                    4: 'reviews',
+                  }
+                  const key = keys[v]
+                  if (key) n.set('nav', key)
+                  return n
+                },
+                { replace: true },
+              )
+            }}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            aria-label="Account sections"
+            sx={dashboardSectionTabsSx}
+          >
+            <Tab icon={<PersonOutline fontSize="small" />} iconPosition="start" label="Profile" />
+            <Tab
+              icon={<CalendarMonthOutlined fontSize="small" />}
+              iconPosition="start"
+              label={shortTabLabels ? 'Upcoming' : 'Upcoming trips'}
+            />
+            <Tab icon={<HistoryOutlined fontSize="small" />} iconPosition="start" label="Past" />
+            <Tab icon={<FavoriteBorder fontSize="small" />} iconPosition="start" label="Saved" />
+            <Tab icon={<RateReviewOutlined fontSize="small" />} iconPosition="start" label="Reviews" />
+          </Tabs>
+        </Box>
 
       {tab === 0 && (
         <Card
@@ -289,75 +291,57 @@ export default function DashboardPage() {
               '&:last-child': { pb: { xs: 2, sm: 3.5 } },
             }}
           >
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 2.5 }}>
               <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.02em" sx={{ color: 'text.primary' }}>
                 Profile & contact
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
-                Keep your name and contact details up to date for drivers and support.
+                Name, phone, and license are used for bookings and support. Your photo appears in the card above.
               </Typography>
             </Box>
             <Stack spacing={2.5} alignItems="stretch" sx={{ width: '100%' }}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={2}
-                alignItems={{ xs: 'flex-start', sm: 'center' }}
-                sx={{ width: '100%' }}
-              >
-                <UserAvatar
-                  avatar={user?.avatar}
-                  firstName={user?.firstName}
-                  lastName={user?.lastName}
-                  size={88}
-                  sx={{
-                    flexShrink: 0,
-                    boxShadow: (t) =>
-                      `0 0 0 2px ${t.palette.background.paper}, 0 0 0 3px ${alpha(t.palette.primary.main, 0.25)}`,
-                  }}
+              <Box>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: '-0.02em', color: 'text.primary' }}>
+                  Profile photo
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.25, lineHeight: 1.5 }}>
+                  JPG or PNG — same image as in your account header.
+                </Typography>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  hidden
+                  aria-label="Upload profile photo"
+                  onChange={onAvatarFileChange}
                 />
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: '-0.02em', color: 'text.primary' }}>
-                    Profile photo
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5, lineHeight: 1.5 }}>
-                    JPG or PNG — shown on your account, nav menu, and new listings you publish.
-                  </Typography>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    hidden
-                    aria-label="Upload profile photo"
-                    onChange={onAvatarFileChange}
-                  />
-                  <Stack direction="row" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
+                <Stack direction="row" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    startIcon={<PhotoCameraOutlined />}
+                    disabled={avatarBusy || !user}
+                    onClick={pickAvatarPhoto}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    {avatarBusy ? 'Processing…' : 'Change photo'}
+                  </Button>
+                  {user && isProfilePhotoAvatar(user.avatar) ? (
                     <Button
                       type="button"
-                      variant="outlined"
+                      variant="text"
                       size="small"
-                      startIcon={<PhotoCameraOutlined />}
-                      disabled={avatarBusy || !user}
-                      onClick={pickAvatarPhoto}
-                      sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                      color="inherit"
+                      disabled={avatarBusy}
+                      onClick={removeAvatarPhoto}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
-                      {avatarBusy ? 'Processing…' : 'Upload photo'}
+                      Remove photo
                     </Button>
-                    {user && isProfilePhotoAvatar(user.avatar) ? (
-                      <Button
-                        type="button"
-                        variant="text"
-                        size="small"
-                        color="inherit"
-                        disabled={avatarBusy}
-                        onClick={removeAvatarPhoto}
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
-                      >
-                        Remove photo
-                      </Button>
-                    ) : null}
-                  </Stack>
-                </Box>
-              </Stack>
+                  ) : null}
+                </Stack>
+              </Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
                 <TextField
                   label="First name"

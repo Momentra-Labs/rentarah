@@ -27,11 +27,11 @@ const SCROLL_EDGE_EPSILON = 2
 const ICON_SIZE = 22
 const ICON_STROKE = 2.35
 
-/** Glass circular — floated on carousel sides (xs+; hover-reveal only on md+ fine pointer). */
+/** Floated carousel arrows — solid surface only (no backdrop blur: blur + scroll is costly on mobile/desktop). */
 function carouselFloaterSx(theme: Theme, placement: 'left' | 'right'): SxProps<Theme> {
   const isLight = theme.palette.mode === 'light'
 
-  const glassBg = isLight ? alpha(theme.palette.common.white, 0.58) : alpha(theme.palette.grey[100], 0.12)
+  const glassBg = isLight ? alpha(theme.palette.common.white, 0.94) : alpha(theme.palette.grey[900], 0.88)
 
   const glassBorder = isLight ? alpha(theme.palette.common.white, 0.82) : alpha(theme.palette.common.white, 0.12)
 
@@ -69,14 +69,6 @@ function carouselFloaterSx(theme: Theme, placement: 'left' | 'right'): SxProps<T
     color: ink,
     bgcolor: glassBg,
     border: `1px solid ${glassBorder}`,
-    backdropFilter: 'blur(18px) saturate(170%)',
-    WebkitBackdropFilter: 'blur(18px) saturate(170%)',
-    // Desktop: drop backdrop blur — large viewport glass + blur is costly while scrolling hero.
-    '@media (min-width: 900px)': {
-      backdropFilter: 'none',
-      WebkitBackdropFilter: 'none',
-      bgcolor: isLight ? alpha(theme.palette.common.white, 0.94) : alpha(theme.palette.grey[900], 0.88),
-    },
     boxShadow: isLight
       ? `${`0 2px 4px ${alpha(theme.palette.common.black, 0.06)}`}, ${`0 14px 40px ${alpha(theme.palette.common.black, 0.16)}`}`
       : `${`0 2px 8px ${alpha(theme.palette.common.black, 0.45)}`}, ${`0 12px 32px ${alpha(theme.palette.common.black, 0.35)}`}`,
@@ -120,6 +112,7 @@ export function LandingListingCarousel({
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
   const trackRef = useRef<HTMLDivElement>(null)
+  const scrollUiRaf = useRef(0)
   const listId = useId()
   const [needsScroll, setNeedsScroll] = useState(false)
   const [atStart, setAtStart] = useState(true)
@@ -140,6 +133,14 @@ export function LandingListingCarousel({
     setAtStart(scrollLeft <= SCROLL_EDGE_EPSILON)
     setAtEnd(scrollLeft + clientWidth >= scrollWidth - SCROLL_EDGE_EPSILON)
   }, [])
+
+  const scheduleScrollStateUpdate = useCallback(() => {
+    if (scrollUiRaf.current) return
+    scrollUiRaf.current = window.requestAnimationFrame(() => {
+      scrollUiRaf.current = 0
+      updateScrollState()
+    })
+  }, [updateScrollState])
 
   useLayoutEffect(() => {
     updateScrollState()
@@ -163,6 +164,13 @@ export function LandingListingCarousel({
       ro.disconnect()
     }
   }, [children, updateScrollState])
+
+  useEffect(
+    () => () => {
+      if (scrollUiRaf.current) cancelAnimationFrame(scrollUiRaf.current)
+    },
+    [],
+  )
 
   const scrollBySlides = useCallback((direction: 1 | -1) => {
     const container = trackRef.current
@@ -201,7 +209,7 @@ export function LandingListingCarousel({
     overflowY: 'hidden',
     scrollSnapType: 'x mandatory',
     WebkitOverflowScrolling: 'touch',
-    scrollBehavior: 'smooth',
+    scrollBehavior: 'auto',
     /** Scrollbar hidden globally — drag, arrows, and keyboard remain. */
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
@@ -273,7 +281,7 @@ export function LandingListingCarousel({
               : 'Listing carousel · use side arrows or swipe for more listings'
           }
           tabIndex={0}
-          onScroll={updateScrollState}
+          onScroll={scheduleScrollStateUpdate}
           onKeyDown={handleKeyDownTrack}
           sx={[carouselRowSxBase, ...(trackSx ? (Array.isArray(trackSx) ? trackSx : [trackSx]) : [])]}
         >

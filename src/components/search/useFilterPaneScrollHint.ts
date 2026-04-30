@@ -20,6 +20,7 @@ export function useFilterPaneScrollHint({
 }: Options) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const prevActiveRef = useRef(false)
+  const scrollUiRaf = useRef(0)
   const [showScrollHint, setShowScrollHint] = useState(false)
 
   const refreshScrollHint = useCallback(() => {
@@ -33,6 +34,14 @@ export function useFilterPaneScrollHint({
     const atBottom = scrollTop + clientHeight >= scrollHeight - FILTER_SCROLL_HINT_BOTTOM_EPS_PX
     setShowScrollHint(hasOverflow && !atBottom)
   }, [])
+
+  const refreshScrollHintOnScroll = useCallback(() => {
+    if (scrollUiRaf.current) return
+    scrollUiRaf.current = window.requestAnimationFrame(() => {
+      scrollUiRaf.current = 0
+      refreshScrollHint()
+    })
+  }, [refreshScrollHint])
 
   useLayoutEffect(() => {
     if (!active) {
@@ -76,9 +85,17 @@ export function useFilterPaneScrollHint({
     }
   }, [active, refreshScrollHint])
 
+  useEffect(
+    () => () => {
+      if (scrollUiRaf.current) cancelAnimationFrame(scrollUiRaf.current)
+    },
+    [],
+  )
+
   return {
     scrollRef,
     showScrollHint,
     refreshScrollHint,
+    refreshScrollHintOnScroll,
   }
 }

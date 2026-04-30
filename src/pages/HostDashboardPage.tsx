@@ -43,7 +43,14 @@ import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatBookingStoredDate } from '../utils/dateUtils'
 import { formatPeso } from '../utils/formatCurrency'
-import { containerGutters, dashboardSectionTabsSx, listRowSurface, primaryCtaShadow, softInteractiveSurface } from '../theme/pageStyles'
+import {
+  containerGutters,
+  dashboardSectionTabsSx,
+  dashboardTabsBarWrapSx,
+  listRowSurface,
+  primaryCtaShadow,
+  softInteractiveSurface,
+} from '../theme/pageStyles'
 
 export default function HostDashboardPage() {
   const theme = useTheme()
@@ -159,32 +166,34 @@ export default function HostDashboardPage() {
           dense
         />
 
-        <Tabs
-          value={tab}
-          onChange={(_, v) => setTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile={false}
-          aria-label="Host dashboard sections"
-          sx={dashboardSectionTabsSx}
-        >
-          <Tab
-            icon={<DirectionsCar fontSize="small" />}
-            iconPosition="start"
-            label={shortTabLabels ? 'Listings' : 'My listings'}
-          />
-          <Tab
-            icon={<Settings fontSize="small" />}
-            iconPosition="start"
-            label={shortTabLabels ? 'Settings' : 'Listing settings'}
-          />
-          <Tab icon={<MonetizationOn fontSize="small" />} iconPosition="start" label="Earnings" />
-          <Tab
-            icon={<EventAvailable fontSize="small" />}
-            iconPosition="start"
-            label={shortTabLabels ? 'Bookings' : 'Booking requests'}
-          />
-        </Tabs>
+        <Box sx={dashboardTabsBarWrapSx}>
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            aria-label="Host dashboard sections"
+            sx={dashboardSectionTabsSx}
+          >
+            <Tab
+              icon={<DirectionsCar fontSize="small" />}
+              iconPosition="start"
+              label={shortTabLabels ? 'Listings' : 'My listings'}
+            />
+            <Tab
+              icon={<Settings fontSize="small" />}
+              iconPosition="start"
+              label={shortTabLabels ? 'Settings' : 'Listing settings'}
+            />
+            <Tab icon={<MonetizationOn fontSize="small" />} iconPosition="start" label="Earnings" />
+            <Tab
+              icon={<EventAvailable fontSize="small" />}
+              iconPosition="start"
+              label={shortTabLabels ? 'Bookings' : 'Booking requests'}
+            />
+          </Tabs>
+        </Box>
 
       {tab === 0 && (
         <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">

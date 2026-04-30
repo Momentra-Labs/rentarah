@@ -95,6 +95,7 @@ export default function ExploreMapListingStrip({
   const theme = useTheme()
   const isCompact = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const scrollRef = useRef<HTMLDivElement>(null)
+  const arrowsRaf = useRef(0)
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(false)
 
@@ -110,6 +111,14 @@ export default function ExploreMapListingStrip({
     setCanPrev(scrollLeft > SCROLL_EDGE_EPS)
     setCanNext(scrollLeft < scrollWidth - clientWidth - SCROLL_EDGE_EPS)
   }, [orientation])
+
+  const scheduleScrollArrowsUpdate = useCallback(() => {
+    if (arrowsRaf.current) return
+    arrowsRaf.current = window.requestAnimationFrame(() => {
+      arrowsRaf.current = 0
+      updateScrollArrows()
+    })
+  }, [updateScrollArrows])
 
   const listingsScrollOuterParent =
     listScrollMode === 'outer' && orientation === 'vertical' && layout === 'panel'
@@ -148,15 +157,16 @@ export default function ExploreMapListingStrip({
     const el = scrollRef.current
     if (!el) return
     const raf = window.requestAnimationFrame(() => updateScrollArrows())
-    el.addEventListener('scroll', updateScrollArrows, { passive: true })
+    el.addEventListener('scroll', scheduleScrollArrowsUpdate, { passive: true })
     const ro = new ResizeObserver(() => updateScrollArrows())
     ro.observe(el)
     return () => {
       window.cancelAnimationFrame(raf)
-      el.removeEventListener('scroll', updateScrollArrows)
+      if (arrowsRaf.current) cancelAnimationFrame(arrowsRaf.current)
+      el.removeEventListener('scroll', scheduleScrollArrowsUpdate)
       ro.disconnect()
     }
-  }, [listings, updateScrollArrows])
+  }, [listings, updateScrollArrows, scheduleScrollArrowsUpdate])
 
   const scrollByStep = (dir: -1 | 1) => {
     const el = scrollRef.current

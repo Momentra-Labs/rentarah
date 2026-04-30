@@ -1,5 +1,5 @@
 import { Box, useTheme } from '@mui/material'
-import { useCallback, useLayoutEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { ONBOARDING_TOUR_SELECTORS } from './onboardingTourTargets'
 import ProductTourTooltip from './ProductTourTooltip'
@@ -101,10 +101,21 @@ export default function ProductTour({ open, dontShowAgain, onDontShowAgainChange
   const theme = useTheme()
   const [step, setStep] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const scrollRaf = useRef(0)
 
   const selector = ONBOARDING_TOUR_SELECTORS[step] ?? ONBOARDING_TOUR_SELECTORS[0]
 
-  const measure = useCallback(() => {
+  const updateRectOnly = useCallback(() => {
+    if (!open) return
+    const el = document.querySelector(selector)
+    if (!el || !(el instanceof HTMLElement)) {
+      setRect(null)
+      return
+    }
+    setRect(el.getBoundingClientRect())
+  }, [open, selector])
+
+  const alignAndMeasure = useCallback(() => {
     if (!open) return
     const el = document.querySelector(selector)
     if (!el || !(el instanceof HTMLElement)) {
@@ -117,20 +128,30 @@ export default function ProductTour({ open, dontShowAgain, onDontShowAgainChange
 
   useLayoutEffect(() => {
     if (!open) return
-    measure()
-    const onResize = () => measure()
-    const onScroll = () => measure()
-    window.addEventListener('resize', onResize)
-    window.addEventListener('scroll', onScroll, true)
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => measure()) : null
+    alignAndMeasure()
+  }, [open, selector, alignAndMeasure])
+
+  useEffect(() => {
+    if (!open) return
+    const scheduleRect = () => {
+      if (scrollRaf.current) return
+      scrollRaf.current = window.requestAnimationFrame(() => {
+        scrollRaf.current = 0
+        updateRectOnly()
+      })
+    }
+    window.addEventListener('resize', scheduleRect)
+    window.addEventListener('scroll', scheduleRect, true)
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(scheduleRect) : null
     const el = document.querySelector(selector)
     if (el instanceof HTMLElement && ro) ro.observe(el)
     return () => {
-      window.removeEventListener('resize', onResize)
-      window.removeEventListener('scroll', onScroll, true)
+      if (scrollRaf.current) cancelAnimationFrame(scrollRaf.current)
+      window.removeEventListener('resize', scheduleRect)
+      window.removeEventListener('scroll', scheduleRect, true)
       ro?.disconnect()
     }
-  }, [open, selector, measure])
+  }, [open, selector, updateRectOnly])
 
   useLayoutEffect(() => {
     if (open) setStep(0)

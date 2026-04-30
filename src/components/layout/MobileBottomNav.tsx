@@ -149,13 +149,13 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             label="Home"
             aria-label="Home — go to the home page"
             icon={<HomeOutlined fontSize="small" aria-hidden />}
-            onPointerEnter={() => prefetchPath('/')}
+            onPointerDown={() => prefetchPath('/')}
           />
           <BottomNavigationAction
             label="Browse"
             aria-label="Browse — search vehicles"
             icon={<SearchOutlined fontSize="small" aria-hidden />}
-            onPointerEnter={() => prefetchPath('/search')}
+            onPointerDown={() => prefetchPath('/search')}
           />
           <BottomNavigationAction
             label="Map"
@@ -190,7 +190,7 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
               minWidth: 68,
               '&.Mui-selected': { color: t.palette.primary.main },
             })}
-            onPointerEnter={() => prefetchPath('/map')}
+            onPointerDown={() => prefetchPath('/map')}
           />
           {user ? (
             <BottomNavigationAction
@@ -214,21 +214,21 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
                   </Box>
                 </Badge>
               }
-              onPointerEnter={() => prefetchPath('/messages')}
+              onPointerDown={() => prefetchPath('/messages')}
             />
           ) : (
             <BottomNavigationAction
               label="Host"
               aria-label="Host — become a host"
               icon={<StorefrontOutlined fontSize="small" aria-hidden />}
-              onPointerEnter={() => prefetchPath('/become-a-host')}
+              onPointerDown={() => prefetchPath('/become-a-host')}
             />
           )}
           <BottomNavigationAction
             label={user ? 'Account' : 'Sign in'}
             aria-label={user ? 'Account' : 'Sign in'}
             icon={user ? <AccountCircleOutlined fontSize="small" aria-hidden /> : <LoginOutlined fontSize="small" aria-hidden />}
-            onPointerEnter={() => {
+            onPointerDown={() => {
               if (user) prefetchPath('/dashboard?nav=profile')
               else prefetchAuthDialogChunk()
             }}

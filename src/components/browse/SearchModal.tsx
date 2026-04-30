@@ -122,7 +122,7 @@ export default function SearchModal({
           transition={{ duration: 0.2 }}
         >
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"
+            className="absolute inset-0 bg-black/40"
             onMouseDown={handleBackdropMouseDown}
             aria-hidden
           />

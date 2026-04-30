@@ -60,14 +60,12 @@ function getVtParam(search: string) {
   return new URLSearchParams(search).get('vt')
 }
 
-function navLinkPrefetchHandlers(to: string): {
-  onPointerDown: () => void
-  onPointerEnter: () => void
-} {
+function navLinkPrefetchHandlers(to: string): { onPointerDown: () => void; onFocus: () => void } {
   return {
-    /** Starts chunk load before `click`; helps touch devices that skip hover. */
+    /** Prefetch on press — avoids work on mere `pointerenter` passes across the list. */
     onPointerDown: () => prefetchPath(to),
-    onPointerEnter: () => prefetchPath(to),
+    /** Keyboard / focus users still warm the route once per focused link (deduped in `prefetchPath`). */
+    onFocus: () => prefetchPath(to),
   }
 }
 
@@ -141,8 +139,7 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
         mb: 0.25,
         minHeight: 48,
         justifyContent: 'center',
-        transition: 'background-color 0.1s ease, color 0.1s ease',
-        '& .MuiListItemText-root': { display: 'none' },
+        transition: 'none',
         '& .MuiListItemIcon-root': {
           minWidth: 0,
           justifyContent: 'center',
@@ -160,7 +157,7 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
         pl: 1.25,
         mb: 0.25,
         minHeight: 48,
-        transition: 'background-color 0.1s ease, color 0.1s ease',
+        transition: 'none',
         '&:hover': {
           bgcolor: alpha(theme.palette.primary.main, 0.06),
         },
@@ -252,7 +249,7 @@ export default function AppNavigationList({
 
   const wrapRail = (listKey: string, label: string, node: ReactElement) =>
     rail ? (
-      <Tooltip key={listKey} title={label} placement="right" enterDelay={80}>
+      <Tooltip key={listKey} title={label} placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
         {node}
       </Tooltip>
     ) : (
@@ -266,7 +263,7 @@ export default function AppNavigationList({
       const btn = (
         <ListItemButton
           key={row.key}
-          onPointerEnter={() => prefetchAuthDialogChunk()}
+          onPointerDown={() => prefetchAuthDialogChunk()}
           onClick={() => {
             onAuthOpen?.()
             onNavigate?.()
@@ -391,7 +388,7 @@ export default function AppNavigationList({
             const signIn = (
               <ListItemButton
                 key="sign-in"
-                onPointerEnter={() => prefetchAuthDialogChunk()}
+                onPointerDown={() => prefetchAuthDialogChunk()}
                 onClick={() => {
                   onAuthOpen?.()
                   onNavigate?.()
@@ -407,7 +404,7 @@ export default function AppNavigationList({
             const getStarted = (
               <ListItemButton
                 key="get-started"
-                onPointerEnter={() => prefetchAuthDialogChunk()}
+                onPointerDown={() => prefetchAuthDialogChunk()}
                 onClick={() => {
                   onAuthOpen?.()
                   onNavigate?.()
@@ -488,7 +485,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           borderColor: 'divider',
         }}
       >
-        <Tooltip title="Expand navigation" placement="right">
+        <Tooltip title="Expand navigation" placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
           <IconButton
             aria-label="Expand navigation"
             size="small"
@@ -510,7 +507,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
             textDecoration: 'none',
             color: 'inherit',
             borderRadius: 2,
-            transition: 'background-color 0.12s ease',
+            transition: 'none',
             '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06) },
           }}
         >
@@ -543,14 +540,14 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
             py: 0,
             textDecoration: 'none',
             color: 'inherit',
-            transition: 'background-color 0.12s ease',
+            transition: 'none',
             '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
           }}
         >
           <RentaraLogoMark size="md" variant="navLockup" showTextFallback />
         </Box>
         {isMapRoute ? (
-          <Tooltip title="Collapse navigation" placement="right">
+          <Tooltip title="Collapse navigation" placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
             <IconButton
               aria-label="Collapse navigation"
               size="small"
