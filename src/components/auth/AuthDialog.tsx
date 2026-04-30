@@ -43,11 +43,13 @@ import { Controller, useForm, useWatch } from 'react-hook-form'
 
 import type { AccountRole } from '../../types'
 import { isFirebaseConfigured } from '../../lib/firebase'
-import { mapFirebaseUserToAuthUser, signInWithGoogle } from '../../lib/firebaseGoogle'
+import { mergeFirebaseUserIntoPartialAuthUser, signInWithGoogle } from '../../lib/firebaseGoogle'
 import type { RegisterAccountRole } from '../../store/useAuthStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useSnackbarStore } from '../../store/useSnackbarStore'
 import { RoleCard } from './RoleCard'
+import PhilippineNationalMobileTextField from './PhilippineNationalMobileTextField'
+import PhilippineDriversLicenseTextField from './PhilippineDriversLicenseTextField'
 import { authOutlinedFieldSx } from './authFieldSx'
 import {
   loginSchema,
@@ -468,7 +470,7 @@ export default function AuthDialog({
     if (firebaseGoogleEnabled) {
       try {
         const fu = await signInWithGoogle()
-        loginWithFirebaseUser(mapFirebaseUserToAuthUser(fu))
+        loginWithFirebaseUser(mergeFirebaseUserIntoPartialAuthUser(useAuthStore.getState().user, fu))
         const u = useAuthStore.getState().user
         showSuccess(u ? `Signed in with Google — hello, ${u.firstName}!` : 'Signed in')
         onAuthenticated?.()
@@ -1140,32 +1142,57 @@ export default function AuthDialog({
                           sx={compactFieldSx}
                         />
                       </Stack>
-                      <TextField
-                        size="small"
-                        label="Mobile number"
-                        placeholder="+63 9xx xxx xxxx"
-                        autoComplete="tel"
-                        fullWidth
-                        margin="none"
-                        {...rf.register('phone', { onChange: () => rf.clearErrors('phone') })}
-                        error={!!rf.formState.errors.phone}
-                        helperText={
-                          rf.formState.errors.phone?.message ?? 'Philippine numbers: +63 or 0 prefix, then 10 digits.'
-                        }
-                        sx={compactFieldSx}
+                      <Controller
+                        name="phone"
+                        control={rf.control}
+                        render={({ field }) => (
+                          <PhilippineNationalMobileTextField
+                            size="small"
+                            label="Mobile number"
+                            fullWidth
+                            margin="none"
+                            value={field.value}
+                            onChange={(digits) => {
+                              field.onChange(digits)
+                              rf.clearErrors('phone')
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            inputRef={field.ref}
+                            error={!!rf.formState.errors.phone}
+                            helperText={
+                              rf.formState.errors.phone?.message ??
+                              '10 digits after +63 starting with 9 (you can paste 09…).'
+                            }
+                            sx={compactFieldSx}
+                          />
+                        )}
                       />
-                      <TextField
-                        size="small"
-                        label="Driver’s license number"
-                        autoComplete="off"
-                        fullWidth
-                        margin="none"
-                        {...rf.register('licenseNumber', { onChange: () => rf.clearErrors('licenseNumber') })}
-                        error={!!rf.formState.errors.licenseNumber}
-                        helperText={
-                          rf.formState.errors.licenseNumber?.message ?? 'As shown on your license — letters, numbers, or hyphens.'
-                        }
-                        sx={compactFieldSx}
+                      <Controller
+                        name="licenseNumber"
+                        control={rf.control}
+                        render={({ field }) => (
+                          <PhilippineDriversLicenseTextField
+                            size="small"
+                            label="Driver’s license number"
+                            fullWidth
+                            margin="none"
+                            value={field.value}
+                            onChange={(v) => {
+                              field.onChange(v)
+                              rf.clearErrors('licenseNumber')
+                            }}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            inputRef={field.ref}
+                            error={!!rf.formState.errors.licenseNumber}
+                            helperText={
+                              rf.formState.errors.licenseNumber?.message ??
+                              'LTO number formats as you type for long IDs (hyphens).'
+                            }
+                            sx={compactFieldSx}
+                          />
+                        )}
                       />
                     </Stack>
                   </motion.div>

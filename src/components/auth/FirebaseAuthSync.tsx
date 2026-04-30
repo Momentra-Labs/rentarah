@@ -2,7 +2,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { useEffect } from 'react'
 
 import { getFirebaseAuth, isFirebaseConfigured } from '../../lib/firebase'
-import { mapFirebaseUserToAuthUser } from '../../lib/firebaseGoogle'
+import { mergeFirebaseUserIntoPartialAuthUser } from '../../lib/firebaseGoogle'
 import { useAuthStore } from '../../store/useAuthStore'
 
 /**
@@ -23,7 +23,7 @@ export function FirebaseAuthSync() {
         }
         return
       }
-      loginWithFirebaseUser(mapFirebaseUserToAuthUser(firebaseUser))
+      loginWithFirebaseUser(mergeFirebaseUserIntoPartialAuthUser(useAuthStore.getState().user, firebaseUser))
     })
 
     return () => unsub()

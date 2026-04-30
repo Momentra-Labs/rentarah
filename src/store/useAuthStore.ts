@@ -5,11 +5,66 @@ import { signOutFirebaseIfAny } from '../lib/firebaseGoogle'
 
 import { DEMO_USER_ID } from '../data/mockUsers'
 import type { AuthUser, StoredUser, AccountRole } from '../types'
+import { isAuthProfileComplete } from '../lib/authProfile'
 
 /** @deprecated Use {@link AccountRole} from `../types` */
 export type RegisterAccountRole = AccountRole
 export const MOCK_GOOGLE_USER_ID = 'user_google_mock'
 const MOCK_GOOGLE_OAUTH_HASH = '__oauth_google_mock__'
+
+/** Seeded helpers turn `StoredUser` into client profile shape during migration and login. */
+function stripPassword(u: StoredUser): AuthUser {
+  return {
+    id: u.id,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    email: u.email,
+    phone: u.phone,
+    licenseNumber: u.licenseNumber,
+    isHost: u.isHost,
+    avatar: u.avatar,
+    createdAt: u.createdAt,
+    accountRole: u.accountRole,
+    emailVerified: u.emailVerified,
+    trustTermsAcceptedAt: u.trustTermsAcceptedAt,
+    trustRenterGuidelinesAcceptedAt: u.trustRenterGuidelinesAcceptedAt,
+    trustHostStandardsAcceptedAt: u.trustHostStandardsAcceptedAt,
+    identityVerification: u.identityVerification,
+  }
+}
+
+/** Grandfather seeded demo personas only — new `user_*` accounts must affirm trust onboarding. */
+function migrateStoredUserTrust(u: StoredUser): StoredUser {
+  if (!(u.id === DEMO_USER_ID || u.id === MOCK_GOOGLE_USER_ID)) return u
+  let row = u
+  if (!isAuthProfileComplete(stripPassword(row))) return row
+
+  if (!row.trustTermsAcceptedAt) {
+    const iso = row.createdAt
+    const wantsHostStd = row.accountRole === 'host' || row.accountRole === 'both' || row.isHost
+    row = {
+      ...row,
+      emailVerified: row.emailVerified ?? true,
+      trustTermsAcceptedAt: iso,
+      trustRenterGuidelinesAcceptedAt: iso,
+      ...(wantsHostStd ? { trustHostStandardsAcceptedAt: iso } : {}),
+    }
+  }
+
+  if (row.identityVerification?.status !== 'approved') {
+    row = {
+      ...row,
+      identityVerification: {
+        status: 'approved',
+        submittedAt: row.identityVerification?.submittedAt ?? row.createdAt,
+        fileName: row.identityVerification?.fileName ?? 'demo-seeded.jpg',
+        mimeType: 'image/jpeg',
+      },
+    }
+  }
+
+  return row
+}
 
 /**
  * Seeded user — id matches mock catalog `hostId` for Carlo (`user_001`), so the host dashboard
@@ -56,7 +111,7 @@ function ensureSeedUsers(users: StoredUser[]): StoredUser[] {
 }
 
 function migrateUsers(users: StoredUser[]): StoredUser[] {
-  const mapped = users.map((u) => {
+  const mapped = users.map((u) => migrateStoredUserTrust(u)).map((u) => {
     const email = u.email === 'demo@rentahub.com' ? 'demo@rentara.com' : u.email
     if (u.id === 'user_demo' && (u.email === 'demo@rentahub.com' || u.email === 'demo@rentara.com')) {
       return {
@@ -79,6 +134,24 @@ function migrateUsers(users: StoredUser[]): StoredUser[] {
   return Array.from(new Map(mapped.map((u) => [u.id, u])).values())
 }
 
+/** Drop in-memory ID image blob before compressing into `localStorage`. */
+function stripIdentityDocumentBlob(user: AuthUser | null): AuthUser | null {
+  if (!user?.identityVerification) return user
+  return {
+    ...user,
+    identityVerification: { ...user.identityVerification, documentDataUrl: undefined },
+  }
+}
+
+function persistableUsers(users: StoredUser[]): StoredUser[] {
+  return users.map((row) => ({
+    ...row,
+    identityVerification: row.identityVerification
+      ? { ...row.identityVerification, documentDataUrl: undefined }
+      : undefined,
+  }))
+}
+
 export interface RegisterInput {
   firstName: string
   lastName: string
@@ -88,21 +161,6 @@ export interface RegisterInput {
   licenseNumber: string
   /** Host + list vehicles; both = renter who may also host. */
   accountRole?: RegisterAccountRole
-}
-
-function stripPassword(u: StoredUser): AuthUser {
-  return {
-    id: u.id,
-    firstName: u.firstName,
-    lastName: u.lastName,
-    email: u.email,
-    phone: u.phone,
-    licenseNumber: u.licenseNumber,
-    isHost: u.isHost,
-    avatar: u.avatar,
-    createdAt: u.createdAt,
-    accountRole: u.accountRole,
-  }
 }
 
 /** How {@link AuthUser} was authenticated — persisted so Firebase-linked sessions survive reload. */
@@ -121,7 +179,21 @@ interface AuthStoreState {
   logout: () => void
   updateProfile: (
     data: Partial<
-      Pick<AuthUser, 'firstName' | 'lastName' | 'phone' | 'licenseNumber' | 'avatar' | 'isHost' | 'accountRole'>
+      Pick<
+        AuthUser,
+        | 'firstName'
+        | 'lastName'
+        | 'phone'
+        | 'licenseNumber'
+        | 'avatar'
+        | 'isHost'
+        | 'accountRole'
+        | 'emailVerified'
+        | 'trustTermsAcceptedAt'
+        | 'trustRenterGuidelinesAcceptedAt'
+        | 'trustHostStandardsAcceptedAt'
+        | 'identityVerification'
+      >
     >,
   ) => void
   becomeHost: () => void
@@ -175,11 +247,12 @@ export const useAuthStore = create<AuthStoreState>()(
           email: data.email.toLowerCase(),
           passwordHash: btoa(data.password),
           phone: data.phone,
-          licenseNumber: data.licenseNumber.trim().toUpperCase(),
+          licenseNumber: data.licenseNumber,
           isHost,
           avatar: `${data.firstName[0] ?? '?'}${data.lastName[0] ?? '?'}`.toUpperCase(),
           createdAt: new Date().toISOString(),
           accountRole: role,
+          emailVerified: true,
         }
         set((s) => ({
           users: [...s.users, newUser],
@@ -268,6 +341,9 @@ export const useAuthStore = create<AuthStoreState>()(
           } else if (!users.some((u) => u.id === user!.id)) {
             user = null
             authProvider = 'none'
+          } else {
+            const row = users.find((u) => u.id === user!.id)
+            if (row) user = stripPassword(row)
           }
         }
 
@@ -280,8 +356,8 @@ export const useAuthStore = create<AuthStoreState>()(
         }
       },
       partialize: (state) => ({
-        user: state.user,
-        users: state.users,
+        user: stripIdentityDocumentBlob(state.user),
+        users: persistableUsers(state.users),
         authProvider: state.authProvider,
       }),
     },

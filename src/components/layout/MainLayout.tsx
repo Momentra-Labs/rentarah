@@ -20,6 +20,7 @@ import { useGeolocationStore } from '../../store/useGeolocationStore'
 import { useSearchStore } from '../../store/useSearchStore'
 import type { AuthLocationState } from '../../types/authFlow'
 import { isAuthProfileComplete } from '../../lib/authProfile'
+import { canProceedToBookingCheckout, isLegalAndSafetyOnboardingComplete } from '../../lib/trustOnboarding'
 
 /** Short beat so the brand mark registers without blocking return visits. */
 const MIN_LOADING_SCREEN_MS = 800
@@ -125,6 +126,18 @@ export default function MainLayout() {
         state: {
           from: `${location.pathname}${location.search}`,
           pendingBookCarId: carId,
+        },
+      })
+      pendingBookCarIdRef.current = null
+      return
+    }
+    if (u && carId != null && !canProceedToBookingCheckout(u)) {
+      navigate(isLegalAndSafetyOnboardingComplete(u) ? '/verify-identity' : '/trust-onboarding', {
+        replace: true,
+        state: {
+          from: `${location.pathname}${location.search}`,
+          pendingBookCarId: carId,
+          intent: 'booking',
         },
       })
       pendingBookCarIdRef.current = null

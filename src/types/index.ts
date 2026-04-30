@@ -274,6 +274,19 @@ export interface PricingBreakdown {
 /** Renter vs host intent from registration wizard or OAuth profile completion. */
 export type AccountRole = 'renter' | 'host' | 'both'
 
+/** ID document pipeline (client uploads; persist strips {@link IdentityVerificationState.documentDataUrl}). */
+export type IdentityVerificationStatus = 'none' | 'pending_review' | 'approved' | 'rejected'
+
+export interface IdentityVerificationState {
+  status: IdentityVerificationStatus
+  submittedAt?: string
+  fileName?: string
+  mimeType?: string
+  /** Session-only JPEG preview — not written to localStorage (see auth store `partialize`). */
+  documentDataUrl?: string
+  rejectionReason?: string
+}
+
 export interface AuthUser {
   id: string
   firstName: string
@@ -286,6 +299,17 @@ export interface AuthUser {
   createdAt: string
   /** Required for bookings once set (email signup + OAuth onboarding). OAuth users omit until `/complete-profile`. */
   accountRole?: AccountRole
+
+  /** When `false`, booking / hosted listings stay blocked until the inbox is verified (`firebase/auth`). Omit or `true` for email/password signups unless you tighten this in prod. */
+  emailVerified?: boolean
+
+  /** ISO timestamps — Terms + Privacy, renter/community safety, and host standards (accepted on `/trust-onboarding`). */
+  trustTermsAcceptedAt?: string
+  trustRenterGuidelinesAcceptedAt?: string
+  trustHostStandardsAcceptedAt?: string
+
+  /** Govt ID verification — `/verify-identity`, required before bookings & host dashboard. */
+  identityVerification?: IdentityVerificationState
 }
 
 export interface StoredUser extends AuthUser {

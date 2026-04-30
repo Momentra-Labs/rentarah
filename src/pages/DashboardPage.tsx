@@ -28,9 +28,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom'
 
 import CarCard from '../components/common/CarCard'
+import PhilippineDriversLicenseTextField from '../components/auth/PhilippineDriversLicenseTextField'
+import PhilippineNationalMobileTextField from '../components/auth/PhilippineNationalMobileTextField'
 import PageHeader from '../components/layout/PageHeader'
 import { formatBookingStoredDate } from '../utils/dateUtils'
 import { useAuthStore } from '../store/useAuthStore'
+import {
+  e164ToNationalMobileDigits,
+  formatPhilippineDriversLicenseInput,
+  isValidPhilippineDriversLicense,
+  nationalMobileDigitsToE164,
+  normalizePhilippineDriversLicense,
+} from '../lib/philippineContact'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
@@ -57,6 +66,8 @@ export default function DashboardPage() {
   const bookings = useBookingStore((s) => s.bookings)
   const cancelBooking = useBookingStore((s) => s.cancelBooking)
   const showInfo = useSnackbarStore((s) => s.showInfo)
+  const showSuccess = useSnackbarStore((s) => s.showSuccess)
+  const showError = useSnackbarStore((s) => s.showError)
 
   const cars = useCarsStore((s) => s.cars)
   const savedIds = useCarsStore((s) => s.savedCarIds)
@@ -86,8 +97,8 @@ export default function DashboardPage() {
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
     email: user?.email ?? '',
-    phone: user?.phone ?? '',
-    licenseNumber: user?.licenseNumber ?? '',
+    phone: e164ToNationalMobileDigits(user?.phone ?? ''),
+    licenseNumber: formatPhilippineDriversLicenseInput(user?.licenseNumber ?? ''),
   })
 
   useEffect(() => {
@@ -96,8 +107,8 @@ export default function DashboardPage() {
       firstName: user.firstName ?? '',
       lastName: user.lastName ?? '',
       email: user.email ?? '',
-      phone: user.phone ?? '',
-      licenseNumber: user.licenseNumber ?? '',
+      phone: e164ToNationalMobileDigits(user.phone ?? ''),
+      licenseNumber: formatPhilippineDriversLicenseInput(user.licenseNumber ?? ''),
     })
   }, [tab, user])
 
@@ -282,20 +293,22 @@ export default function DashboardPage() {
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
-                <TextField
+                <PhilippineNationalMobileTextField
                   label="Phone"
                   value={pf.phone}
-                  onChange={(e) => setPf({ ...pf, phone: e.target.value })}
+                  onChange={(digits) => setPf({ ...pf, phone: digits })}
                   fullWidth
                   size="small"
+                  helperText="10 digits starting with 9 (you can paste 09…)."
                   sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
-                <TextField
+                <PhilippineDriversLicenseTextField
                   label="License number"
                   value={pf.licenseNumber}
-                  onChange={(e) => setPf({ ...pf, licenseNumber: e.target.value })}
+                  onChange={(v) => setPf({ ...pf, licenseNumber: v })}
                   fullWidth
                   size="small"
+                  helperText="Long LTO numbers format with hyphens (e.g. N12-34-567890)."
                   sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Stack>
@@ -303,13 +316,28 @@ export default function DashboardPage() {
                 variant="contained"
                 fullWidth
                 onClick={() => {
+                  const phone = nationalMobileDigitsToE164(pf.phone)
+                  const licenseNumber = normalizePhilippineDriversLicense(pf.licenseNumber)
+                  if (!phone) {
+                    showError('Enter 10 digits after +63 starting with 9.')
+                    return
+                  }
+                  if (!isValidPhilippineDriversLicense(licenseNumber)) {
+                    showError('License must match your LTO card (e.g. N12-34-567890 or N12345678).')
+                    return
+                  }
                   updateProfile({
-                    firstName: pf.firstName,
-                    lastName: pf.lastName,
-                    phone: pf.phone,
-                    licenseNumber: pf.licenseNumber,
+                    firstName: pf.firstName.trim(),
+                    lastName: pf.lastName.trim(),
+                    phone,
+                    licenseNumber,
                   })
-                  useSnackbarStore.getState().showSuccess('Profile updated')
+                  setPf((prev) => ({
+                    ...prev,
+                    phone: e164ToNationalMobileDigits(phone),
+                    licenseNumber: formatPhilippineDriversLicenseInput(licenseNumber),
+                  }))
+                  showSuccess('Profile updated')
                 }}
                 sx={{
                   py: 1.25,

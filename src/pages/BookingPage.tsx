@@ -22,12 +22,15 @@ import {
 import { Elements } from '@stripe/react-stripe-js'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
 
 import StripePaymentForm from '../components/booking/StripePaymentForm'
+import PhilippineDriversLicenseTextField from '../components/auth/PhilippineDriversLicenseTextField'
 import PriceBreakdown from '../components/common/PriceBreakdown'
+import PhilippineNationalMobileTextField from '../components/auth/PhilippineNationalMobileTextField'
+import { philippineDriversLicenseZod, philippineMobileZod } from '../components/auth/authSchemas'
 import { getStripe } from '../lib/stripe'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
@@ -38,18 +41,20 @@ import { useDateValidation } from '../hooks/useDateValidation'
 import { usePricing } from '../hooks/usePricing'
 import PageHeader from '../components/layout/PageHeader'
 import { formatTripDateTime } from '../utils/dateUtils'
+import { e164ToNationalMobileDigits, formatPhilippineDriversLicenseInput } from '../lib/philippineContact'
 import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 
 const driverSchema = z.object({
   firstName: z.string().min(2, 'Required'),
   lastName: z.string().min(2, 'Required'),
   email: z.string().email('Invalid email'),
-  phone: z.string().regex(/^(\+63|0)[0-9]{10}$/, 'Invalid PH number'),
-  licenseNumber: z.string().min(6, 'Invalid license'),
+  phone: philippineMobileZod,
+  licenseNumber: philippineDriversLicenseZod,
   licenseExpiry: z.string().min(1, 'Required'),
 })
 
-type DriverValues = z.infer<typeof driverSchema>
+type DriverFormValues = z.input<typeof driverSchema>
+type DriverSubmitValues = z.output<typeof driverSchema>
 
 const steps = ['Review trip', 'Driver details', 'Payment', 'Confirmed']
 
@@ -80,14 +85,14 @@ export default function BookingPage() {
   const conflict =
     car && pickup && dropoff ? !isRangeAvailable(pickup, dropoff) : false
 
-  const df = useForm<DriverValues>({
+  const df = useForm<DriverFormValues, unknown, DriverSubmitValues>({
     resolver: zodResolver(driverSchema),
     defaultValues: {
       firstName: user?.firstName ?? '',
       lastName: user?.lastName ?? '',
       email: user?.email ?? '',
-      phone: user?.phone ?? '',
-      licenseNumber: user?.licenseNumber ?? '',
+      phone: e164ToNationalMobileDigits(user?.phone ?? ''),
+      licenseNumber: formatPhilippineDriversLicenseInput(user?.licenseNumber ?? ''),
       licenseExpiry: '',
     },
   })
@@ -108,8 +113,8 @@ export default function BookingPage() {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        phone: user.phone,
-        licenseNumber: user.licenseNumber,
+        phone: e164ToNationalMobileDigits(user.phone),
+        licenseNumber: formatPhilippineDriversLicenseInput(user.licenseNumber),
         licenseExpiry: df.getValues('licenseExpiry'),
       })
     }
@@ -264,8 +269,46 @@ export default function BookingPage() {
                   <TextField label="Last name" fullWidth {...df.register('lastName')} error={!!df.formState.errors.lastName} helperText={df.formState.errors.lastName?.message} />
                 </Stack>
                 <TextField label="Email" fullWidth {...df.register('email')} error={!!df.formState.errors.email} helperText={df.formState.errors.email?.message} />
-                <TextField label="Phone" placeholder="+639xxxxxxxxx" fullWidth {...df.register('phone')} error={!!df.formState.errors.phone} helperText={df.formState.errors.phone?.message} />
-                <TextField label="License number" fullWidth {...df.register('licenseNumber')} error={!!df.formState.errors.licenseNumber} helperText={df.formState.errors.licenseNumber?.message} />
+                <Controller
+                  name="phone"
+                  control={df.control}
+                  render={({ field }) => (
+                    <PhilippineNationalMobileTextField
+                      label="Phone"
+                      fullWidth
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      inputRef={field.ref}
+                      error={!!df.formState.errors.phone}
+                      helperText={
+                        df.formState.errors.phone?.message ??
+                        '10 digits after +63 starting with 9 (you can paste 09…).'
+                      }
+                    />
+                  )}
+                />
+                <Controller
+                  name="licenseNumber"
+                  control={df.control}
+                  render={({ field }) => (
+                    <PhilippineDriversLicenseTextField
+                      label="License number"
+                      fullWidth
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      inputRef={field.ref}
+                      error={!!df.formState.errors.licenseNumber}
+                      helperText={
+                        df.formState.errors.licenseNumber?.message ??
+                        'Long LTO numbers auto-format with hyphens; compact IDs stay as typed.'
+                      }
+                    />
+                  )}
+                />
                 <TextField label="License expiry" type="date" InputLabelProps={{ shrink: true }} fullWidth {...df.register('licenseExpiry')} error={!!df.formState.errors.licenseExpiry} helperText={df.formState.errors.licenseExpiry?.message} />
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
                   <Button type="button" variant="outlined" onClick={back} sx={{ order: { xs: 2, sm: 1 } }}>

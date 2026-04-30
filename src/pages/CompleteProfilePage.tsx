@@ -22,8 +22,21 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { RoleCard } from '../components/auth/RoleCard'
 import { authOutlinedFieldSx } from '../components/auth/authFieldSx'
-import { completeProfileSchema, type CompleteProfileFormValues } from '../components/auth/authSchemas'
+import PhilippineNationalMobileTextField from '../components/auth/PhilippineNationalMobileTextField'
+import PhilippineDriversLicenseTextField from '../components/auth/PhilippineDriversLicenseTextField'
+import {
+  completeProfileSchema,
+  type CompleteProfileFormValues,
+  type CompleteProfileSubmitValues,
+} from '../components/auth/authSchemas'
 import { isAuthProfileComplete } from '../lib/authProfile'
+import { e164ToNationalMobileDigits, formatPhilippineDriversLicenseInput } from '../lib/philippineContact'
+import {
+  isHostTrustComplete,
+  isIdentityVerificationApproved,
+  isLegalAndSafetyOnboardingComplete,
+  wantsHostTrust,
+} from '../lib/trustOnboarding'
 import { useAuthStore } from '../store/useAuthStore'
 import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
@@ -65,8 +78,8 @@ export default function CompleteProfilePage() {
     return {
       firstName: user.firstName,
       lastName: user.lastName,
-      phone: user.phone,
-      licenseNumber: user.licenseNumber,
+      phone: e164ToNationalMobileDigits(user.phone ?? ''),
+      licenseNumber: formatPhilippineDriversLicenseInput(user.licenseNumber ?? ''),
       accountRole: user.accountRole ?? 'renter',
     }
   }, [user])
@@ -78,7 +91,7 @@ export default function CompleteProfilePage() {
     reset,
     trigger,
     formState: { errors },
-  } = useForm<CompleteProfileFormValues>({
+  } = useForm<CompleteProfileFormValues, unknown, CompleteProfileSubmitValues>({
     resolver: zodResolver(completeProfileSchema),
     defaultValues: defaults,
     mode: 'onChange',
@@ -98,7 +111,7 @@ export default function CompleteProfilePage() {
   }, [])
 
   const onSubmit = useCallback(
-    async (data: CompleteProfileFormValues) => {
+    async (data: CompleteProfileSubmitValues) => {
       const role = data.accountRole
       const isHost = role === 'host' || role === 'both'
       setSubmitting(true)
@@ -106,11 +119,44 @@ export default function CompleteProfilePage() {
         updateProfile({
           firstName: data.firstName.trim(),
           lastName: data.lastName.trim(),
-          phone: data.phone.trim(),
-          licenseNumber: data.licenseNumber.trim().toUpperCase(),
+          phone: data.phone,
+          licenseNumber: data.licenseNumber,
           accountRole: role,
           isHost,
         })
+        const uNext = useAuthStore.getState().user
+        if (uNext && !isLegalAndSafetyOnboardingComplete(uNext)) {
+          navigate('/trust-onboarding', {
+            replace: true,
+            state: {
+              from:
+                st?.from && st.from !== '/complete-profile'
+                  ? st.from
+                  : '/dashboard',
+              pendingBookCarId: st?.pendingBookCarId ?? undefined,
+              intent: wantsHostTrust(uNext) && !isHostTrustComplete(uNext) ? 'host' : 'booking',
+            },
+          })
+          showSuccess('Profile saved — finish safeguards next.')
+          return
+        }
+
+        if (uNext && !isIdentityVerificationApproved(uNext)) {
+          navigate('/verify-identity', {
+            replace: true,
+            state: {
+              from:
+                st?.from && st.from !== '/complete-profile'
+                  ? st.from
+                  : '/dashboard',
+              pendingBookCarId: st?.pendingBookCarId ?? undefined,
+              intent: wantsHostTrust(uNext) ? 'host' : 'booking',
+            },
+          })
+          showSuccess('Profile saved — upload your government ID next.')
+          return
+        }
+
         showSuccess('Profile complete — you’re ready to book.')
 
         const pending = st?.pendingBookCarId
@@ -136,6 +182,34 @@ export default function CompleteProfilePage() {
   if (!user) return <Navigate to="/" replace />
 
   if (isAuthProfileComplete(user)) {
+    if (!isLegalAndSafetyOnboardingComplete(user)) {
+      return (
+        <Navigate
+          to="/trust-onboarding"
+          replace
+          state={{
+            from: st?.from && st.from !== '/complete-profile' ? st.from : '/dashboard',
+            pendingBookCarId: st?.pendingBookCarId,
+            intent: wantsHostTrust(user) && !isHostTrustComplete(user) ? 'host' : 'booking',
+          }}
+        />
+      )
+    }
+
+    if (!isIdentityVerificationApproved(user)) {
+      return (
+        <Navigate
+          to="/verify-identity"
+          replace
+          state={{
+            from: st?.from && st.from !== '/complete-profile' ? st.from : '/dashboard',
+            pendingBookCarId: st?.pendingBookCarId,
+            intent: wantsHostTrust(user) ? 'host' : 'booking',
+          }}
+        />
+      )
+    }
+
     const to = st?.from && st.from !== '/complete-profile' ? st.from : '/dashboard'
     return <Navigate to={to} replace />
   }
@@ -281,26 +355,48 @@ export default function CompleteProfilePage() {
                 sx={compactSx}
               />
             </Stack>
-            <TextField
-              size="small"
-              label="Mobile number"
-              placeholder="+63 9xx xxx xxxx"
-              autoComplete="tel"
-              fullWidth
-              {...register('phone')}
-              error={!!errors.phone}
-              helperText={errors.phone?.message ?? 'Philippine numbers: +63 or 0 prefix, then 10 digits.'}
-              sx={compactSx}
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <PhilippineNationalMobileTextField
+                  size="small"
+                  label="Mobile number"
+                  fullWidth
+                  value={field.value}
+                  onChange={(digits) => field.onChange(digits)}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  inputRef={field.ref}
+                  error={!!errors.phone}
+                  helperText={
+                    errors.phone?.message ?? '10 digits after +63, starting with 9 (you can paste 09…).'
+                  }
+                  sx={compactSx}
+                />
+              )}
             />
-            <TextField
-              size="small"
-              label="Driver’s license number"
-              autoComplete="off"
-              fullWidth
-              {...register('licenseNumber')}
-              error={!!errors.licenseNumber}
-              helperText={errors.licenseNumber?.message ?? 'As shown on your license card.'}
-              sx={compactSx}
+            <Controller
+              name="licenseNumber"
+              control={control}
+              render={({ field }) => (
+                <PhilippineDriversLicenseTextField
+                  size="small"
+                  label="Driver’s license number"
+                  fullWidth
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  inputRef={field.ref}
+                  error={!!errors.licenseNumber}
+                  helperText={
+                    errors.licenseNumber?.message ??
+                    'Letters, digits, hyphen — long numbers format as L##-##-###### (compact N12345678 also OK).'
+                  }
+                  sx={compactSx}
+                />
+              )}
             />
           </Stack>
         )}

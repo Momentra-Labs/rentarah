@@ -2,6 +2,8 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import GlobalSnackbar from './components/layout/GlobalSnackbar'
 import MainLayout from './components/layout/MainLayout'
+import BookingTrustGate from './components/layout/BookingTrustGate'
+import HostTrustGate from './components/layout/HostTrustGate'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import BookingPage from './pages/BookingPage'
 import CarDetailPage from './pages/CarDetailPage'
@@ -15,6 +17,10 @@ import MapPage from './pages/MapPage'
 import NotificationsPage from './pages/NotificationsPage'
 import SearchPage from './pages/SearchPage'
 import VehicleModelSearchPage from './pages/VehicleModelSearchPage'
+import LegalPrivacyPage from './pages/legal/LegalPrivacyPage'
+import LegalTermsPage from './pages/legal/LegalTermsPage'
+import TrustOnboardingPage from './pages/TrustOnboardingPage'
+import VerifyIdentityPage from './pages/VerifyIdentityPage'
 
 function NotFoundPage() {
   return <Navigate to="/" replace />
@@ -38,12 +44,18 @@ export default function App() {
           <Route path="/map" element={<MapPage />} />
           <Route path="/become-a-host" element={<HostInvitePage />} />
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
+          <Route path="/trust-onboarding" element={<TrustOnboardingPage />} />
+          <Route path="/verify-identity" element={<VerifyIdentityPage />} />
+          <Route path="/legal/terms" element={<LegalTermsPage />} />
+          <Route path="/legal/privacy" element={<LegalPrivacyPage />} />
           <Route path="/cars/:id" element={<CarDetailRoute />} />
           <Route
             path="/booking/:carId"
             element={
               <ProtectedRoute>
-                <BookingPage />
+                <BookingTrustGate>
+                  <BookingPage />
+                </BookingTrustGate>
               </ProtectedRoute>
             }
           />
@@ -59,7 +71,9 @@ export default function App() {
             path="/host"
             element={
               <ProtectedRoute>
-                <HostDashboardPage />
+                <HostTrustGate>
+                  <HostDashboardPage />
+                </HostTrustGate>
               </ProtectedRoute>
             }
           />

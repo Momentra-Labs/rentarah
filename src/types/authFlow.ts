@@ -1,3 +1,5 @@
+import type { TrustOnboardingIntent } from '../lib/trustOnboarding'
+
 /** Passed via `react-router` `location.state` to open auth without losing context. */
 export type AuthLocationState = {
   auth?: boolean
@@ -14,3 +16,13 @@ export type CompleteProfileLocationState = {
   from?: string
   pendingBookCarId?: string | null
 }
+
+/** After profile completion — explicit legal/community acceptance before bookings or host dashboard. */
+export type TrustOnboardingLocationState = {
+  from?: string
+  pendingBookCarId?: string | null
+  intent?: TrustOnboardingIntent
+}
+
+/** `/verify-identity` — same resume shape as trust onboarding. */
+export type VerifyIdentityLocationState = TrustOnboardingLocationState
