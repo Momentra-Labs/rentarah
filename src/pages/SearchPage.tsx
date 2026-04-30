@@ -86,6 +86,11 @@ export default function SearchPage() {
     return () => ro.disconnect()
   }, [])
 
+  /** Reset scroll when entering search (e.g. landing “Show more”) so sticky trip search + sort/filters stay visible. */
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [])
+
   const belowSearchStickyTop = appBarOffsetPx + searchToolbarH
 
   useEffect(() => {

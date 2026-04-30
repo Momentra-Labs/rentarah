@@ -1,20 +1,18 @@
-import MapOutlined from '@mui/icons-material/MapOutlined'
-import ViewListRounded from '@mui/icons-material/ViewListRounded'
+import ArrowForward from '@mui/icons-material/ArrowForward'
 import {
   alpha,
   Box,
+  Button,
   IconButton,
-  Link,
   Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
-  type SvgIconProps,
 } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
-import type { ComponentType, PropsWithChildren, ReactElement, ReactNode } from 'react'
+import type { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { Children, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 
@@ -410,110 +408,58 @@ export type LandingExploreListingHintProps = {
   variant?: 'default' | 'motorcycles'
 }
 
-const exploreHintLinkSx: SxProps<Theme> = {
-  whiteSpace: 'nowrap',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 0.35,
-  fontWeight: 600,
-}
-
-function ExploreHintIcon({ Icon }: { Icon: ComponentType<SvgIconProps> }): ReactElement {
-  return <Icon sx={{ fontSize: { xs: 16, md: 17 }, opacity: 0.92 }} aria-hidden />
-}
-
+/**
+ * Compact foot for listing carousels: one dominant CTA to the search surface (fleet or motorcycles).
+ * Prose hints were replaced with this pattern — clearer hierarchy, larger tap targets, predictable journey.
+ */
 export function LandingExploreListingHint({ listHref, variant = 'default' }: LandingExploreListingHintProps): ReactElement {
   const theme = useTheme()
-  const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
-
-  /** Shared map + listing links embedded in prose */
-  const mapExploreLink = (
-    <Link component={RouterLink} to="/map" underline="hover" sx={exploreHintLinkSx}>
-      <ExploreHintIcon Icon={MapOutlined} />
-      map
-    </Link>
-  )
-  const searchLinkDefault = (
-    <Link component={RouterLink} to={listHref} underline="hover" sx={exploreHintLinkSx}>
-      <ExploreHintIcon Icon={ViewListRounded} />
-      search
-    </Link>
-  )
-  const listLinkMoto = (
-    <Link component={RouterLink} to={listHref} underline="hover" sx={exploreHintLinkSx}>
-      <ExploreHintIcon Icon={ViewListRounded} />
-      motorcycle list
-    </Link>
-  )
-
-  const bodyTypographySx = {
-    fontSize: { xs: '0.8125rem', sm: '0.875rem', md: '0.9375rem' },
-    lineHeight: 1.68,
-    color: 'text.secondary',
-    maxWidth: { xs: 340, sm: 480, md: 720 },
-    mx: 'auto',
-  }
-
-  const unifiedMobileSentence = (
-    <>
-      Beyond these highlights, browse rentals on the {mapExploreLink} — nearby pickups at a glance — or open{' '}
-      {searchLinkDefault} for the full marketplace.
-    </>
-  )
-
-  if (variant === 'motorcycles') {
-    const motorcycleSearchLink = (
-      <Link component={RouterLink} to={listHref} underline="hover" sx={exploreHintLinkSx}>
-        <ExploreHintIcon Icon={ViewListRounded} />
-        search
-      </Link>
-    )
-    const unifiedMobileSentenceMoto = (
-      <>
-        Beyond these highlights, browse rentals on the {mapExploreLink} — nearby pickups at a glance — or open{' '}
-        {motorcycleSearchLink} for the full marketplace.
-      </>
-    )
-
-    const desktop = (
-      <>
-        Beyond this row — compare live motorcycles on the {mapExploreLink}, or open the filtered {listLinkMoto}.
-      </>
-    )
-
-    return (
-      <Box component="aside" sx={{ mt: { xs: 1.125, sm: 1.35, md: 2 }, px: 0 }}>
-        {isMdUp ? (
-          <Typography variant="body2" sx={{ ...bodyTypographySx, textAlign: 'center', letterSpacing: { md: '0.01em' } }}>
-            {desktop}
-          </Typography>
-        ) : (
-          <Typography variant="body2" sx={{ ...bodyTypographySx, textAlign: 'center', letterSpacing: '0.01em' }}>
-            {unifiedMobileSentenceMoto}
-          </Typography>
-        )}
-      </Box>
-    )
-  }
-
-  const defaultDesktop = (
-    <>
-      Beyond these highlights, browse rentals on the {mapExploreLink} — nearby pickups at a glance — or open{' '}
-      {searchLinkDefault} for the full marketplace.
-    </>
-  )
+  const ariaLabel =
+    variant === 'motorcycles'
+      ? 'Show more motorcycle rentals — opens filtered search'
+      : 'Show more rentals — opens full marketplace search'
 
   return (
-    <Box component="aside" sx={{ mt: { xs: 1.125, sm: 1.35, md: 2 }, px: 0 }}>
-      {isMdUp ? (
-        <Typography variant="body2" sx={{ ...bodyTypographySx, textAlign: 'center', letterSpacing: { md: '0.008em' } }}>
-          {defaultDesktop}
-        </Typography>
-      ) : (
-        <Typography variant="body2" sx={{ ...bodyTypographySx, textAlign: 'center', letterSpacing: '0.01em' }}>
-          {unifiedMobileSentence}
-        </Typography>
-      )}
+    <Box component="aside" sx={{ mt: { xs: 1.125, sm: 1.35, md: 1.75 }, width: '100%' }}>
+      <Button
+        component={RouterLink}
+        to={listHref}
+        aria-label={ariaLabel}
+        fullWidth
+        variant="outlined"
+        size="large"
+        disableElevation
+        endIcon={<ArrowForward sx={{ fontSize: { xs: 19, sm: 20 }, opacity: 0.92 }} />}
+        sx={{
+          justifyContent: 'center',
+          gap: 1,
+          py: { xs: 1.25, sm: 1.35 },
+          px: 2,
+          borderRadius: 2,
+          borderColor: alpha(theme.palette.divider, theme.palette.mode === 'light' ? 1 : 0.88),
+          borderWidth: 1,
+          color: 'text.primary',
+          fontWeight: 700,
+          textTransform: 'none',
+          letterSpacing: '-0.015em',
+          fontSize: { xs: '0.9375rem', sm: '1rem' },
+          bgcolor:
+            theme.palette.mode === 'light' ? theme.palette.background.paper : alpha(theme.palette.background.paper, 0.88),
+          boxShadow: 'none',
+          transition: 'border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.22s ease',
+          '& .MuiButton-endIcon': { ml: 0.5 },
+          '&:hover': {
+            borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.45 : 0.52),
+            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.04 : 0.1),
+            boxShadow:
+              theme.palette.mode === 'light'
+                ? `0 3px 14px ${alpha(theme.palette.common.black, 0.07)}`
+                : `0 2px 12px ${alpha(theme.palette.common.black, 0.35)}`,
+          },
+        }}
+      >
+        Show more
+      </Button>
     </Box>
   )
 }

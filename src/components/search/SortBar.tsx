@@ -4,6 +4,7 @@ import { FormControl, InputLabel, MenuItem, Select, Stack, ToggleButton, ToggleB
 
 import type { SearchStoreState } from '../../store/useSearchStore'
 
+/** Result count, sort control, and optional grid/list toggle. Full filter UI: sidebar (md+) or SearchPage FAB (< md). */
 interface SortBarProps {
   total: number
   /** First segment of location for “N cars in …” */
