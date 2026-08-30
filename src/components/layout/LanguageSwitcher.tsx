@@ -86,14 +86,12 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
           px: compact ? 0.9 : 1.15,
           py: compact ? 0.5 : 0.35,
           borderRadius: 2,
-          border: '1px solid transparent',
-          background: (th) => {
-            const fill = alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.12 : 0.06)
-            const edge = `linear-gradient(135deg, ${alpha(th.palette.primary.main, 0.62)}, ${alpha(th.palette.primary.light, 0.35)} 48%, ${alpha(th.palette.primary.main, 0.28)})`
-            return `linear-gradient(${fill}, ${fill}) padding-box, ${edge} border-box`
-          },
-          boxShadow: (th) =>
-            `inset 0 1px 0 ${alpha(th.palette.common.white, th.palette.mode === 'dark' ? 0.08 : 0.75)}, 0 4px 10px ${alpha(th.palette.primary.main, 0.1)}`,
+          border: '1px solid',
+          borderColor: (th) => alpha(th.palette.primary.main, 0.38),
+          backgroundImage: (th) =>
+            `linear-gradient(135deg, ${alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.22 : 0.14)} 0%, ${alpha(th.palette.primary.main, 0.04)} 100%)`,
+          backgroundColor: 'transparent',
+          boxShadow: (th) => `0 4px 12px ${alpha(th.palette.primary.main, 0.14)}`,
           textTransform: 'none',
           fontWeight: 700,
           fontSize: '0.8125rem',
@@ -101,12 +99,10 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
           color: 'text.primary',
           '& .MuiButton-endIcon': { ml: 0.25 },
           '&:hover': {
-            border: '1px solid transparent',
-            background: (th) => {
-              const fill = alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.18 : 0.1)
-              const edge = `linear-gradient(135deg, ${alpha(th.palette.primary.main, 0.85)}, ${alpha(th.palette.primary.light, 0.5)} 48%, ${alpha(th.palette.primary.main, 0.4)})`
-              return `linear-gradient(${fill}, ${fill}) padding-box, ${edge} border-box`
-            },
+            borderColor: 'primary.main',
+            backgroundImage: (th) =>
+              `linear-gradient(135deg, ${alpha(th.palette.primary.main, 0.22)} 0%, ${alpha(th.palette.primary.main, 0.08)} 100%)`,
+            backgroundColor: 'transparent',
           },
         }}
       >

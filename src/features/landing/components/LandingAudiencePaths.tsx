@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Container,
+  Grid,
   Stack,
   Typography,
   useTheme,
@@ -14,12 +15,13 @@ import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
 import { useT } from '@/hooks/useT'
-import { rhElev, rhRadius } from '@/theme/tokens'
+import { softShadow, softShadowHover } from '@/theme/pageStyles'
 
 export type LandingAudiencePathsProps = {
   onFindVehicle: () => void
   sectionPy: { xs: number; sm: number; md: number }
   headingMb?: { xs: number; md: number }
+  gutters?: { xs: number; sm: number }
 }
 
 type PathStep = { n: number; title: string; line: string }
@@ -55,6 +57,7 @@ export default function LandingAudiencePaths({
   onFindVehicle,
   sectionPy,
   headingMb = { xs: 2.5, md: 3 },
+  gutters = { xs: 2, sm: 3 },
 }: LandingAudiencePathsProps) {
   const theme = useTheme()
   const isDark = theme.palette.mode === 'dark'
@@ -101,17 +104,16 @@ export default function LandingAudiencePaths({
         py: sectionPy,
         position: 'relative',
         overflow: 'hidden',
-        bgcolor: isDark ? theme.palette.background.default : alpha(theme.palette.grey[50], 0.85),
+        bgcolor: 'background.default',
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ px: gutters, position: 'relative' }}>
         <Stack
           spacing={1}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
+          alignItems="flex-start"
           sx={{
             mb: headingMb,
-            textAlign: { xs: 'left', md: 'center' },
-            mx: { md: 'auto' },
+            textAlign: 'left',
             maxWidth: 560,
           }}
         >
@@ -134,8 +136,8 @@ export default function LandingAudiencePaths({
             sx={{
               fontWeight: 800,
               letterSpacing: '-0.035em',
-              fontSize: { xs: '1.45rem', sm: '1.85rem', md: '2.05rem' },
-              lineHeight: 1.12,
+              fontSize: { xs: '1.7rem', sm: '2.25rem', md: 'clamp(2.15rem, 3.2vw, 2.65rem)' },
+              lineHeight: { xs: 1.15, md: 1.08 },
               color: 'text.primary',
             }}
           >
@@ -155,78 +157,45 @@ export default function LandingAudiencePaths({
           </Typography>
         </Stack>
 
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr auto 1fr' },
-            alignItems: 'stretch',
-            gap: { xs: 2, md: 0 },
-          }}
-        >
+        <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
           {paths.map((path, index) => {
             const Icon = path.Icon
             const isPrimaryAccent = path.accent === 'primary'
             const accentMain = isPrimaryAccent ? theme.palette.primary.main : theme.palette.text.primary
 
             return (
-              <Box key={path.key} sx={{ display: 'contents' }}>
-                {index === 1 && (
-                  <Box
-                    aria-hidden
-                    sx={{
-                      display: { xs: 'none', md: 'flex' },
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      px: 1.5,
-                    }}
-                  >
-                    <Typography
-                      component="span"
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: '50%',
-                        display: 'grid',
-                        placeItems: 'center',
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: alpha(theme.palette.divider, 0.95),
-                        fontSize: '0.6875rem',
-                        fontWeight: 800,
-                        letterSpacing: '0.06em',
-                        color: 'text.secondary',
-                        boxShadow: rhElev.elev1,
-                      }}
-                    >
-                      OR
-                    </Typography>
-                  </Box>
-                )}
-
+              <Grid key={path.key} item xs={12} md={6} lg={index === 0 ? 7 : 5}>
                 <Box
                   component="article"
                   sx={{
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: { xs: 2, md: 2.25 },
-                    p: { xs: 2.25, sm: 2.75, md: 3 },
-                    minHeight: { md: 380 },
+                    height: '100%',
+                    gap: { xs: 1.5, md: 1.75 },
+                    px: { xs: 1.5, sm: 2.25, md: 2.5 },
+                    pt: { xs: 1.5, sm: 2.25, md: 2.5 },
+                    pb: { xs: 1.5, sm: 2.25, md: 2.5 },
                     bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: isPrimaryAccent
-                      ? alpha(theme.palette.primary.main, isDark ? 0.35 : 0.18)
-                      : alpha(theme.palette.divider, 0.95),
-                    borderRadius: `${rhRadius.lg}px`,
-                    boxShadow: rhElev.elev1,
+                    borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
+                    borderRadius: { xs: 2.75, md: 3 },
+                    boxShadow: { xs: `0 1px 0 ${alpha('#000', 0.04)}, 0 8px 24px ${alpha('#000', 0.07)}`, sm: softShadow },
                     overflow: 'hidden',
-                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-                    '@media (hover: hover) and (pointer: fine)': {
+                    transition: 'box-shadow 0.25s ease, border-color 0.2s ease',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      inset: '0 0 auto 0',
+                      height: 3,
+                      background: isPrimaryAccent
+                        ? `linear-gradient(90deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.light, 0.75)})`
+                        : `linear-gradient(90deg, ${alpha(theme.palette.text.primary, 0.45)}, ${alpha(theme.palette.text.primary, 0.12)})`,
+                    },
+                    '@media (hover: hover)': {
                       '&:hover': {
-                        borderColor: isPrimaryAccent
-                          ? alpha(theme.palette.primary.main, 0.42)
-                          : alpha(theme.palette.text.primary, 0.22),
-                        boxShadow: rhElev.elev2,
+                        boxShadow: softShadowHover,
+                        borderColor: alpha(theme.palette.primary.main, 0.15),
                       },
                       '&:hover .path-cta': {
                         transform: 'translateY(-1px)',
@@ -242,43 +211,26 @@ export default function LandingAudiencePaths({
                     },
                   }}
                 >
-                  <Box
-                    aria-hidden
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 4,
-                      background: isPrimaryAccent
-                        ? `linear-gradient(90deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.light, 0.85)})`
-                        : `linear-gradient(90deg, ${alpha(theme.palette.text.primary, 0.55)}, ${alpha(theme.palette.text.primary, 0.12)})`,
-                    }}
-                  />
-
-                  <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Stack direction="row" spacing={1.25} alignItems="flex-start">
                     <Box
                       sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: `${rhRadius.md}px`,
+                        width: { xs: 38, sm: 42 },
+                        height: { xs: 38, sm: 42 },
+                        flexShrink: 0,
+                        borderRadius: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexShrink: 0,
                         bgcolor: isPrimaryAccent
-                          ? theme.palette.primary.main
-                          : alpha(theme.palette.text.primary, isDark ? 0.16 : 0.08),
-                        color: isPrimaryAccent ? theme.palette.primary.contrastText : 'text.primary',
-                        boxShadow: isPrimaryAccent
-                          ? `0 6px 16px ${alpha(theme.palette.primary.main, 0.28)}`
-                          : 'none',
+                          ? alpha(theme.palette.primary.main, 0.1)
+                          : alpha(theme.palette.text.primary, isDark ? 0.12 : 0.06),
+                        color: isPrimaryAccent ? 'primary.main' : 'text.primary',
                       }}
                       aria-hidden
                     >
-                      <Icon sx={{ fontSize: 24 }} />
+                      <Icon sx={{ fontSize: { xs: 20, sm: 22 } }} />
                     </Box>
-                    <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography
                         component="p"
                         sx={{
@@ -300,8 +252,8 @@ export default function LandingAudiencePaths({
                           mt: 0.4,
                           fontWeight: 800,
                           letterSpacing: '-0.025em',
-                          fontSize: { xs: '1.125rem', sm: '1.25rem' },
-                          lineHeight: 1.25,
+                          fontSize: { xs: '1.15rem', sm: '1.3rem' },
+                          lineHeight: 1.2,
                           color: 'text.primary',
                         }}
                       >
@@ -327,15 +279,11 @@ export default function LandingAudiencePaths({
                     aria-label={`${path.eyebrow} steps`}
                     sx={{
                       m: 0,
-                      p: 1.5,
+                      p: 0,
                       listStyle: 'none',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                      gap: { xs: 0.75, sm: 1 },
-                      borderRadius: `${rhRadius.md}px`,
-                      bgcolor: isPrimaryAccent
-                        ? alpha(theme.palette.primary.main, isDark ? 0.12 : 0.05)
-                        : alpha(theme.palette.text.primary, isDark ? 0.06 : 0.035),
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
                     }}
                   >
                     {path.steps.map((step) => (
@@ -343,39 +291,39 @@ export default function LandingAudiencePaths({
                         key={step.title}
                         component="li"
                         sx={{
-                          minWidth: 0,
-                          textAlign: 'center',
                           display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 0.6,
+                          alignItems: 'flex-start',
+                          gap: 1.25,
+                          minWidth: 0,
                         }}
                       >
                         <Box
                           sx={{
-                            width: 28,
-                            height: 28,
+                            width: 22,
+                            height: 22,
+                            mt: 0.15,
                             borderRadius: '50%',
                             display: 'grid',
                             placeItems: 'center',
+                            flexShrink: 0,
                             bgcolor: isPrimaryAccent
-                              ? alpha(theme.palette.primary.main, 0.14)
-                              : alpha(theme.palette.text.primary, 0.08),
+                              ? alpha(theme.palette.primary.main, 0.1)
+                              : alpha(theme.palette.text.primary, 0.06),
                             color: accentMain,
-                            fontSize: '0.75rem',
+                            fontSize: '0.6875rem',
                             fontWeight: 800,
                             lineHeight: 1,
                           }}
                         >
                           {step.n}
                         </Box>
-                        <Box>
+                        <Box sx={{ minWidth: 0 }}>
                           <Typography
                             component="span"
                             sx={{
                               display: 'block',
                               fontWeight: 800,
-                              fontSize: '0.8125rem',
+                              fontSize: '0.875rem',
                               letterSpacing: '-0.01em',
                               color: 'text.primary',
                             }}
@@ -387,9 +335,9 @@ export default function LandingAudiencePaths({
                             sx={{
                               display: 'block',
                               mt: 0.15,
-                              fontSize: '0.6875rem',
-                              fontWeight: 600,
-                              lineHeight: 1.3,
+                              fontSize: '0.8125rem',
+                              fontWeight: 500,
+                              lineHeight: 1.4,
                               color: 'text.secondary',
                             }}
                           >
@@ -473,10 +421,10 @@ export default function LandingAudiencePaths({
                     </Button>
                   </Stack>
                 </Box>
-              </Box>
+              </Grid>
             )
           })}
-        </Box>
+        </Grid>
       </Container>
     </Box>
   )

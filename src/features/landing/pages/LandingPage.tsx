@@ -24,6 +24,7 @@ import {
 } from '@mui/material'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
@@ -53,6 +54,63 @@ const WHY_RENTARAH = [
   { Icon: Key, titleKey: 'landing.flexible' as const, lineKey: 'landing.flexibleLine' as const },
 ] as const
 
+function WhyPointRow({
+  Icon,
+  title,
+  line,
+  compact,
+}: {
+  Icon: (typeof WHY_RENTARAH)[number]['Icon']
+  title: string
+  line: string
+  compact?: boolean
+}) {
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="flex-start"
+      sx={{ minWidth: 0, width: '100%' }}
+    >
+      <Box
+        sx={{
+          width: { xs: 28, sm: 32 },
+          height: { xs: 28, sm: 32 },
+          borderRadius: 1.5,
+          bgcolor: (th) => alpha(th.palette.primary.main, 0.1),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'primary.main',
+          flexShrink: 0,
+        }}
+      >
+        <Icon sx={{ fontSize: { xs: 15, sm: 16 } }} aria-hidden />
+      </Box>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Typography
+          variant="body2"
+          fontWeight={800}
+          title={compact ? `${title} · ${line}` : undefined}
+          sx={{
+            fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+            lineHeight: 1.25,
+          }}
+        >
+          {title}
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', mt: 0.15, lineHeight: 1.4 }}
+        >
+          {line}
+        </Typography>
+      </Box>
+    </Stack>
+  )
+}
+
 export default function LandingPage() {
   const t = useT()
   const theme = useTheme()
@@ -63,6 +121,10 @@ export default function LandingPage() {
   const landingSectionPy = { xs: 4, sm: 5, md: 6 } as const
   const landingHeadingMb = { xs: 2.5, md: 3 } as const
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true })
+  const reduceWhyMotion = useReducedMotion()
+  const [whyIndex, setWhyIndex] = useState(0)
+  const whyPoint = WHY_RENTARAH[whyIndex]
   const navigate = useNavigate()
   const setLocation = useSearchStore((s) => s.setLocation)
   const setDates = useSearchStore((s) => s.setDates)
@@ -76,6 +138,17 @@ export default function LandingPage() {
     prefetchPath('/map')
     prefetchPath('/become-a-host')
   }, [])
+
+  useEffect(() => {
+    if (!isXs) {
+      setWhyIndex(0)
+      return
+    }
+    const id = window.setInterval(() => {
+      setWhyIndex((i) => (i + 1) % WHY_RENTARAH.length)
+    }, 2000)
+    return () => window.clearInterval(id)
+  }, [isXs])
 
   const [loc, setLoc] = useState('')
   const [pickupAreaQuery, setPickupAreaQuery] = useState('')
@@ -117,7 +190,11 @@ export default function LandingPage() {
           borderWidth: '2px',
           borderColor: alpha(theme.palette.primary.main, 0.55),
         },
-        [theme.breakpoints.down('md')]: {
+        [theme.breakpoints.down('sm')]: {
+          alignItems: 'center',
+          minHeight: 48,
+        },
+        [theme.breakpoints.between('sm', 'md')]: {
           alignItems: 'center',
           minHeight: 44,
         },
@@ -128,7 +205,14 @@ export default function LandingPage() {
         [theme.breakpoints.up('md')]: {
           paddingLeft: `${theme.spacing(1.375)}`,
         },
-        [theme.breakpoints.down('md')]: {
+        [theme.breakpoints.down('sm')]: {
+          fontSize: '1rem',
+          lineHeight: 1.42,
+          paddingTop: `${theme.spacing(1.375)}`,
+          paddingBottom: `${theme.spacing(1.375)}`,
+          paddingLeft: `${theme.spacing(1.25)}`,
+        },
+        [theme.breakpoints.between('sm', 'md')]: {
           fontSize: '1rem',
           lineHeight: 1.42,
           paddingTop: `${theme.spacing(1.125)}`,
@@ -238,13 +322,13 @@ export default function LandingPage() {
           position: 'relative',
           overflow: 'hidden',
           background: `linear-gradient(168deg, ${alpha(theme.palette.primary.main, 0.078)} 0%, ${theme.palette.background.default} 38%, ${alpha(theme.palette.grey[50], 1)} 92%)`,
-          pt: { xs: 2.5, sm: landingSectionPy.sm, md: landingSectionPy.md },
-          pb: landingSectionPy,
+          pt: { xs: 2, sm: landingSectionPy.sm, md: landingSectionPy.md },
+          pb: { xs: 2, sm: landingSectionPy.sm, md: landingSectionPy.md },
         }}
       >
         <HeroAmbientBackground />
         <Container maxWidth="lg" sx={{ px: landingGutters, position: 'relative', zIndex: 1 }}>
-          <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
+          <Grid container spacing={{ xs: 1, md: 4 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7} sx={{ order: { xs: 1, md: 1 }, display: 'flex', alignItems: { xs: 'stretch', md: 'center' } }}>
               <Stack
                 data-onboarding="hero"
@@ -353,6 +437,77 @@ export default function LandingPage() {
                     </Box>
                   ))}
                 </Stack>
+
+                <Box component="section" aria-labelledby="landing-trust-heading">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="baseline"
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{ mb: { xs: 1, sm: 1.25 } }}
+                  >
+                    <Typography
+                      id="landing-trust-heading"
+                      variant="overline"
+                      component="h2"
+                      color="primary"
+                      sx={{ fontWeight: 800, letterSpacing: '0.14em', fontSize: '0.6875rem', lineHeight: 1.2 }}
+                    >
+                      {t('landing.whyTitle')}
+                    </Typography>
+                    <Typography
+                      component="span"
+                      sx={{
+                        display: { xs: 'none', sm: 'inline' },
+                        fontWeight: 800,
+                        letterSpacing: '-0.025em',
+                        fontSize: '1rem',
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      {t('landing.whyHeading')}
+                    </Typography>
+                  </Stack>
+                  <Box
+                    sx={{
+                      display: { xs: 'block', sm: 'none' },
+                      overflow: 'hidden',
+                      minHeight: 48,
+                    }}
+                    aria-live="polite"
+                  >
+                    <AnimatePresence mode="wait" initial={false}>
+                      <Box
+                        key={whyPoint.titleKey}
+                        component={motion.div}
+                        initial={reduceWhyMotion ? false : { y: 12, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={reduceWhyMotion ? { opacity: 1 } : { y: -12, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                        sx={{ display: 'flex', alignItems: 'flex-start' }}
+                      >
+                        <WhyPointRow
+                          Icon={whyPoint.Icon}
+                          title={t(whyPoint.titleKey)}
+                          line={t(whyPoint.lineKey)}
+                          compact
+                        />
+                      </Box>
+                    </AnimatePresence>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: { xs: 'none', sm: 'grid' },
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 1.25,
+                    }}
+                  >
+                    {WHY_RENTARAH.map(({ Icon, titleKey, lineKey }) => (
+                      <WhyPointRow key={titleKey} Icon={Icon} title={t(titleKey)} line={t(lineKey)} />
+                    ))}
+                  </Box>
+                </Box>
               </Stack>
             </Grid>
 
@@ -362,14 +517,15 @@ export default function LandingPage() {
                   id="trip-search"
                   data-onboarding="search"
                   elevation={0}
+                  aria-label={t('landing.findVehicle')}
                   sx={{
                     position: 'relative',
                     overflow: 'hidden',
                     height: '100%',
                     scrollMarginBottom: { xs: mobileNavClearBottom, md: undefined },
-                    px: { xs: 1.5, sm: 2.25, md: 2.5 },
-                    pb: { xs: 1.5, sm: 2.25, md: 2.5 },
-                    pt: { xs: 1.5, sm: 2.25, md: 2.5 },
+                    px: { xs: 1.75, sm: 2.25, md: 2.5 },
+                    pb: { xs: 1.75, sm: 2.25, md: 2.5 },
+                    pt: { xs: 1.75, sm: 2.25, md: 2.5 },
                     borderRadius: { xs: 2.75, md: 3 },
                     border: '1px solid',
                     borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
@@ -390,8 +546,13 @@ export default function LandingPage() {
                     },
                   }}
                 >
-                  <Stack spacing={{ xs: 1.25, sm: 1.5, md: 1.75 }}>
-                    <Stack direction="row" spacing={1.25} alignItems="flex-start">
+                  <Stack spacing={{ xs: 1.5, sm: 1.5, md: 1.75 }}>
+                    <Stack
+                      direction="row"
+                      spacing={1.25}
+                      alignItems="flex-start"
+                      sx={{ display: { xs: 'none', sm: 'flex' } }}
+                    >
                       <Box
                         sx={{
                           width: { xs: 38, sm: 42 },
@@ -471,7 +632,7 @@ export default function LandingPage() {
                         }}
                         sx={{
                           overflow: 'visible',
-                          pt: 0.5,
+                          pt: { xs: 0, sm: 0.5 },
                           '& .MuiAutocomplete-popupIndicator': {
                             color: 'text.secondary',
                           },
@@ -570,7 +731,7 @@ export default function LandingPage() {
                         )}
                       />
 
-                    <Stack spacing={0.75} sx={{ pt: 0.25 }}>
+                    <Stack spacing={{ xs: 1.5, sm: 0.75 }} sx={{ pt: 0 }}>
                       <DateRangePicker
                         pickup={pickup}
                         dropoff={dropoff}
@@ -579,7 +740,7 @@ export default function LandingPage() {
                           setDropoff(d)
                         }}
                         minDate={dayjs()}
-                        spacing={isMobile ? 1.5 : 1.75}
+                        spacing={isXs ? 1.5 : isMobile ? 1 : 1.75}
                         size={isMobile ? 'small' : 'medium'}
                         stacked
                         showPolicyCaption={false}
@@ -637,70 +798,10 @@ export default function LandingPage() {
 
       <LandingAudiencePaths
         onFindVehicle={focusTripPlanner}
-        sectionPy={landingSectionPy}
+        sectionPy={{ xs: 2.5, sm: landingSectionPy.sm, md: landingSectionPy.md }}
         headingMb={landingHeadingMb}
+        gutters={landingGutters}
       />
-
-      <Container
-        maxWidth="lg"
-        sx={{ px: landingGutters, py: landingSectionPy }}
-        component="section"
-        aria-labelledby="landing-trust-heading"
-      >
-        <Stack spacing={1} sx={{ mb: landingHeadingMb }}>
-          <Typography
-            variant="overline"
-            color="primary"
-            sx={{ fontWeight: 800, letterSpacing: '0.1em', display: 'block' }}
-          >
-            {t('landing.whyTitle')}
-          </Typography>
-          <Typography
-            id="landing-trust-heading"
-            variant="h5"
-            component="h2"
-            fontWeight={800}
-            sx={{ letterSpacing: '-0.02em' }}
-          >
-            {t('landing.whyHeading')}
-          </Typography>
-        </Stack>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
-            gap: { xs: 2, md: 2.5 },
-          }}
-        >
-          {WHY_RENTARAH.map(({ Icon, titleKey, lineKey }) => (
-            <Stack key={titleKey} spacing={1} direction="row" alignItems="flex-start">
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 2,
-                  bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'primary.main',
-                  flexShrink: 0,
-                }}
-              >
-                <Icon sx={{ fontSize: 18 }} aria-hidden />
-              </Box>
-              <Box>
-                <Typography variant="body2" fontWeight={800}>
-                  {t(titleKey)}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.45 }}>
-                  {t(lineKey)}
-                </Typography>
-              </Box>
-            </Stack>
-          ))}
-        </Box>
-      </Container>
     </Box>
   )
 }

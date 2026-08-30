@@ -159,14 +159,18 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
     <>
       <AppBar
         position="sticky"
+        color="inherit"
         elevation={0}
         sx={{
-          bgcolor: 'background.default',
           color: 'text.primary',
           border: 'none',
+          backgroundColor: theme.palette.background.default,
+          backgroundImage: elevated
+            ? 'linear-gradient(180deg, #D6E6FF 0%, #FFFFFF 100%)'
+            : 'linear-gradient(180deg, #8FB6F5 0%, #C5DAFB 42%, #F4F8FF 78%, #FFFFFF 100%)',
           boxShadow: elevated
-            ? `0 1px 0 ${alpha(theme.palette.primary.main, 0.1)}, 0 10px 24px ${alpha(theme.palette.common.black, 0.06)}`
-            : `0 6px 18px ${alpha(theme.palette.primary.main, 0.05)}`,
+            ? `0 10px 24px ${alpha(theme.palette.common.black, 0.07)}`
+            : 'none',
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
           '&::after': {
             content: '""',
@@ -174,10 +178,9 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             left: 0,
             right: 0,
             bottom: 0,
-            height: 1,
+            height: 2,
             pointerEvents: 'none',
-            opacity: elevated ? 0 : 1,
-            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.28)} 18%, ${alpha(theme.palette.text.primary, 0.1)} 50%, ${alpha(theme.palette.primary.main, 0.28)} 82%, transparent 100%)`,
+            background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${theme.palette.primary.main} 16%, ${alpha('#60A5FA', 1)} 50%, ${theme.palette.primary.main} 84%, ${alpha(theme.palette.primary.main, 0.2)} 100%)`,
           },
         }}
       >
@@ -200,17 +203,27 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             sx={{
               textDecoration: 'none',
               color: 'inherit',
-              mr: 1.5,
+              mr: 2,
               minWidth: 0,
-              flex: '1 1 auto',
+              flex: '0 0 auto',
               display: { xs: 'flex', md: 'none' },
               borderRadius: 2,
+              overflow: 'hidden',
               transition: 'none',
-              '& [data-rentara-logo]': { maxWidth: '100%' },
+              '& [data-rentara-logo]': {
+                minWidth: 0,
+                height: 46,
+                width: 'auto',
+                maxWidth: 'none',
+                objectFit: 'cover',
+                objectPosition: 'left center',
+              },
               '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
             }}
           >
-            <RentaraLogoMark size="sm" variant="navLockup" showTextFallback />
+            <Box sx={{ width: 46, height: 46, overflow: 'hidden', minWidth: 0, flexShrink: 0 }}>
+              <RentaraLogoMark size="sm" variant="mark" showTextFallback={false} />
+            </Box>
           </Stack>
 
           <Stack
@@ -431,7 +444,12 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             ))}
 
           {isMd && (
-            <Stack direction="row" alignItems="center" spacing={1.25} sx={{ ml: 'auto', flexShrink: 0, pl: 0.5 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={user ? 0.5 : 1.25}
+              sx={{ ml: 'auto', flexShrink: 0, pl: { xs: 1, sm: 0.5 } }}
+            >
               <LanguageSwitcher compact />
               <IconButton
                 onClick={() => openGeoDialog()}
