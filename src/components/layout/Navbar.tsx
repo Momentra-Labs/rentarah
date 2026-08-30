@@ -159,14 +159,26 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
     <>
       <AppBar
         position="sticky"
-        elevation={elevated ? 2 : 0}
+        elevation={0}
         sx={{
           bgcolor: 'background.default',
           color: 'text.primary',
-          borderBottom: elevated ? 'none' : '1px solid',
-          borderColor: 'divider',
-          transition: 'none',
+          border: 'none',
+          boxShadow: elevated
+            ? `0 1px 0 ${alpha(theme.palette.primary.main, 0.1)}, 0 10px 24px ${alpha(theme.palette.common.black, 0.06)}`
+            : `0 6px 18px ${alpha(theme.palette.primary.main, 0.05)}`,
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 1,
+            pointerEvents: 'none',
+            opacity: elevated ? 0 : 1,
+            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.28)} 18%, ${alpha(theme.palette.text.primary, 0.1)} 50%, ${alpha(theme.palette.primary.main, 0.28)} 82%, transparent 100%)`,
+          },
         }}
       >
         <Toolbar
