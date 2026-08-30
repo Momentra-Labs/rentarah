@@ -116,6 +116,7 @@ export const en = {
     driveStepLine: 'Meet and go',
     searchVehicles: 'Search vehicles',
     exploreMap: 'Explore the map',
+    listVehicle: 'List your vehicle',
     hosts: 'Hosts',
     hostTitle: 'Own a vehicle to share?',
     hostBody: 'List your car or bike, set price and pickup, and earn when someone nearby needs a ride.',

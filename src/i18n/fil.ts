@@ -118,6 +118,7 @@ export const fil: Messages = {
     driveStepLine: 'Magkita at umalis',
     searchVehicles: 'Maghanap ng sasakyan',
     exploreMap: 'Tingnan ang mapa',
+    listVehicle: 'Ilista ang iyong sasakyan',
     hosts: 'Mga host',
     hostTitle: 'May sasakyang puwedeng i-share?',
     hostBody: 'Ilista ang kotse o motorsiklo, itakda ang presyo at pickup, at kumita kapag may nangailangan ng biyahe.',

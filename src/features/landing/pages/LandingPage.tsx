@@ -238,17 +238,17 @@ export default function LandingPage() {
           position: 'relative',
           overflow: 'hidden',
           background: `linear-gradient(168deg, ${alpha(theme.palette.primary.main, 0.078)} 0%, ${theme.palette.background.default} 38%, ${alpha(theme.palette.grey[50], 1)} 92%)`,
-          pt: landingSectionPy,
+          pt: { xs: 2.5, sm: landingSectionPy.sm, md: landingSectionPy.md },
           pb: landingSectionPy,
         }}
       >
         <HeroAmbientBackground />
         <Container maxWidth="lg" sx={{ px: landingGutters, position: 'relative', zIndex: 1 }}>
           <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
-            <Grid item xs={12} md={6} lg={7} sx={{ order: { xs: 2, md: 1 }, display: 'flex', alignItems: { xs: 'stretch', md: 'center' } }}>
+            <Grid item xs={12} md={6} lg={7} sx={{ order: { xs: 1, md: 1 }, display: 'flex', alignItems: { xs: 'stretch', md: 'center' } }}>
               <Stack
                 data-onboarding="hero"
-                spacing={{ xs: 1.5, md: 1.75 }}
+                spacing={{ xs: 1, md: 1.75 }}
                 sx={{
                   width: '100%',
                   pr: { md: 0.5 },
@@ -259,8 +259,8 @@ export default function LandingPage() {
                     variant="h1"
                     sx={{
                       letterSpacing: '-0.035em',
-                      lineHeight: { xs: 1.12, md: 1.08 },
-                      fontSize: { xs: '1.85rem', sm: '2.25rem', md: 'clamp(2.15rem, 3.2vw, 2.65rem)' },
+                      lineHeight: { xs: 1.15, md: 1.08 },
+                      fontSize: { xs: '1.7rem', sm: '2.25rem', md: 'clamp(2.15rem, 3.2vw, 2.65rem)' },
                       fontWeight: 800,
                       color: 'text.primary',
                       textWrap: 'balance',
@@ -272,6 +272,7 @@ export default function LandingPage() {
                     variant="body1"
                     color="text.secondary"
                     sx={{
+                      display: { xs: 'none', sm: 'block' },
                       fontSize: { xs: '0.975rem', sm: '1.0625rem' },
                       lineHeight: 1.55,
                       maxWidth: '36em',
@@ -283,7 +284,7 @@ export default function LandingPage() {
                   <Stack
                     direction={{ xs: 'column', sm: 'row' }}
                     spacing={1.25}
-                    sx={{ width: '100%', maxWidth: { md: 460 } }}
+                    sx={{ display: { xs: 'none', sm: 'flex' }, width: '100%', maxWidth: { md: 460 } }}
                   >
                     <Button
                       component={RouterLink}
@@ -301,7 +302,7 @@ export default function LandingPage() {
                         boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.28)}`,
                       }}
                     >
-                      Explore the map
+                      {t('landing.exploreMap')}
                     </Button>
                     <Button
                       component={RouterLink}
@@ -319,13 +320,14 @@ export default function LandingPage() {
                         borderColor: alpha(theme.palette.text.primary, 0.18),
                       }}
                     >
-                      List your vehicle
+                      {t('landing.listVehicle')}
                     </Button>
                   </Stack>
 
                 <Stack
                   direction="row"
                   sx={{
+                    display: { xs: 'none', sm: 'flex' },
                     borderRadius: 2,
                     border: '1px solid',
                     borderColor: alpha(theme.palette.divider, 0.95),
@@ -354,7 +356,7 @@ export default function LandingPage() {
               </Stack>
             </Grid>
 
-            <Grid item xs={12} md={6} lg={5} sx={{ order: { xs: 1, md: 2 } }}>
+            <Grid item xs={12} md={6} lg={5} sx={{ order: { xs: 2, md: 2 } }}>
               <Box sx={{ height: '100%' }}>
                 <Paper
                   id="trip-search"
@@ -365,9 +367,9 @@ export default function LandingPage() {
                     overflow: 'hidden',
                     height: '100%',
                     scrollMarginBottom: { xs: mobileNavClearBottom, md: undefined },
-                    px: { xs: 2, sm: 2.25, md: 2.5 },
-                    pb: { xs: 2, sm: 2.25, md: 2.5 },
-                    pt: { xs: 2, sm: 2.25, md: 2.5 },
+                    px: { xs: 1.5, sm: 2.25, md: 2.5 },
+                    pb: { xs: 1.5, sm: 2.25, md: 2.5 },
+                    pt: { xs: 1.5, sm: 2.25, md: 2.5 },
                     borderRadius: { xs: 2.75, md: 3 },
                     border: '1px solid',
                     borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
@@ -388,7 +390,7 @@ export default function LandingPage() {
                     },
                   }}
                 >
-                  <Stack spacing={{ xs: 1.5, sm: 1.5, md: 1.75 }}>
+                  <Stack spacing={{ xs: 1.25, sm: 1.5, md: 1.75 }}>
                     <Stack direction="row" spacing={1.25} alignItems="flex-start">
                       <Box
                         sx={{
@@ -396,7 +398,7 @@ export default function LandingPage() {
                           height: { xs: 38, sm: 42 },
                           flexShrink: 0,
                           borderRadius: 2,
-                          display: 'flex',
+                          display: { xs: 'none', sm: 'flex' },
                           alignItems: 'center',
                           justifyContent: 'center',
                           bgcolor: alpha(theme.palette.primary.main, 0.1),
@@ -422,7 +424,13 @@ export default function LandingPage() {
                         <Typography
                           variant="body2"
                           color="text.secondary"
-                          sx={{ mt: 0.4, lineHeight: 1.5, fontWeight: 500, fontSize: { xs: '0.8125rem', sm: '0.875rem' } }}
+                          sx={{
+                            display: { xs: 'none', sm: 'block' },
+                            mt: 0.4,
+                            lineHeight: 1.5,
+                            fontWeight: 500,
+                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
+                          }}
                         >
                           {t('landing.findVehicleHint')}
                         </Typography>
@@ -537,7 +545,7 @@ export default function LandingPage() {
                             placeholder="Type to search — Cebu, Davao, Makati…"
                             helperText={loc ? t('landing.searchAround', { place: loc }) : undefined}
                             FormHelperTextProps={{
-                              sx: { mx: 0, mt: 0.6, fontWeight: 600 },
+                              sx: { display: { xs: 'none', sm: 'block' }, mx: 0, mt: 0.6, fontWeight: 600 },
                             }}
                             InputProps={{
                               ...params.InputProps,
