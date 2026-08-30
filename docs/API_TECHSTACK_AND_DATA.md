@@ -92,8 +92,8 @@ The UI today uses **Zustand + `localStorage`** (`useAuthStore`) with mock users.
 | Piece | Tech | APIs / URLs | Data |
 |-------|------|-------------|------|
 | **Map rendering** | **Leaflet** + **react-leaflet** | Client-only library | — |
-| **Basemap tiles** | **CARTO Voyager** (OSM-derived) | `https://{s}.basemaps.cartocdn.com/...` (`RENTARA_MAP_TILE_URL`) | Raster tiles (no key required for basic use; check CARTO terms for production volume) |
-| **Map data** | **OpenStreetMap** | Attribution via OSM / CARTO | Streets, places (indirect) |
+| **Basemap tiles** | **Esri World Street Map** | `RENTARA_MAP_TILE_URL` in `src/constants/rentaraMapStyle.ts` | No API key. CARTO Voyager now watermarks “API KEY REQUIRED” without a key — avoid unless you add `api_key`. |
+| **Map data** | Esri / street network | Attribution via Esri when control enabled | Streets, places |
 | **Driving route polyline** | **OSRM** (demo) | `https://router.project-osrm.org/route/v1/driving/...` (`fetchOsrmDrivingRoute`) | GeoJSON geometry; **not for production SLA** — self-host OSRM or use Mapbox/Google Directions for reliability |
 | **External “open in maps”** | **Google Maps** deep links | `https://www.google.com/maps/dir/...` | No API key for simple URLs |
 
@@ -182,7 +182,7 @@ Not required for MVP API; no dedicated APIs in repo.
 | Listings & bookings DB | Mock → **PostgreSQL** | **Prisma + Express** |
 | Login / sessions | localStorage mock | **Your JWT/session** **or** **Firebase / Auth0 / Clerk** |
 | Pay at checkout | Stripe.js test UI | **Stripe** server + webhooks |
-| Map display | Leaflet + Carto/OSM | **CARTO/OSM** (tiles); comply with terms |
+| Map display | Leaflet + Esri tiles | Comply with Esri basemap terms for production volume |
 | Turn-by-turn line | OSRM demo | **Self-hosted OSRM** or **Mapbox/Google** for prod |
 | User location | Browser geolocation | None (or store prefs in **your API**) |
 | Images | Static URLs | **S3 / Cloudinary / Firebase Storage** |

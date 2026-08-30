@@ -30,6 +30,8 @@ import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { prefetchPath } from '../../lib/routePrefetch'
 import { MOBILE_APP_BAR_TOOLBAR_PX } from '../../constants/mobileShell'
 import AppNavigationList from './AppNavigationList'
+import LanguageSwitcher from './LanguageSwitcher'
+import { useT } from '@/hooks/useT'
 import GeolocationShareDialog from './GeolocationShareDialog'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useGeolocationStore } from '../../store/useGeolocationStore'
@@ -47,6 +49,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
   const location = useLocation()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const t = useT()
 
   const [elevated, setElevated] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -150,7 +153,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
     setNotifEl(null)
   }, [location.pathname])
 
-  const notifAria = `Notifications${unread > 0 ? `, ${unread} unread` : ''}`
+  const notifAria = `${t('nav.notifications')}${unread > 0 ? `, ${unread}` : ''}`
 
   return (
     <>
@@ -205,16 +208,17 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
               onPointerDown={() => prefetchPath('/map')}
               sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
             >
-              Map
+              {t('nav.map')}
             </Button>
           </Stack>
 
           {!isMd &&
             (!user ? (
               <Stack direction="row" spacing={1} alignItems="center">
+                <LanguageSwitcher compact />
                 <IconButton
                   onClick={() => openGeoDialog()}
-                  aria-label={geoActive ? 'Location sharing is on. Open location settings' : 'Share your location for maps'}
+                  aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
                   sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
                 >
                   <MyLocation fontSize="small" />
@@ -225,7 +229,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                   onClick={() => onAuthOpen()}
                   sx={{ fontWeight: 600 }}
                 >
-                  Sign In
+                  {t('nav.signIn')}
                 </Button>
                 <Button
                   variant="contained"
@@ -233,18 +237,19 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                   onClick={() => onAuthOpen()}
                   sx={{ fontWeight: 600, borderRadius: 2, px: 2.5 }}
                 >
-                  Get Started
+                  {t('nav.getStarted')}
                 </Button>
               </Stack>
             ) : (
               <Stack direction="row" spacing={0.5} alignItems="center">
                 <IconButton
                   onClick={() => openGeoDialog()}
-                  aria-label={geoActive ? 'Location sharing is on. Open location settings' : 'Share your location for maps'}
+                  aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
                   sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
                 >
                   <MyLocation fontSize="small" />
                 </IconButton>
+                <LanguageSwitcher compact />
                 <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
                   <Badge
                     color="error"
@@ -260,7 +265,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                 <IconButton
                   ref={accountMenuButtonRef}
                   onClick={(e) => setAnchor(e.currentTarget)}
-                  aria-label="Open account menu"
+                  aria-label={t('nav.openAccount')}
                   sx={{ ml: 0 }}
                 >
                   <UserAvatar
@@ -335,7 +340,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       variant="outlined"
                       color="inherit"
                     >
-                      View profile
+                      {t('nav.viewProfile')}
                     </Button>
                   </Box>
                   <MenuItem
@@ -344,7 +349,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       navigate('/notifications')
                     }}
                   >
-                    Notifications
+                    {t('nav.notifications')}
                   </MenuItem>
                   <MenuItem
                     onClick={() => {
@@ -352,7 +357,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       navigate('/messages')
                     }}
                   >
-                    Messages
+                    {t('nav.messages')}
                     {chatUnread > 0 ? ` (${chatUnread > 9 ? '9+' : chatUnread})` : ''}
                   </MenuItem>
                   <MenuItem
@@ -361,7 +366,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       navigate('/dashboard?nav=trips')
                     }}
                   >
-                    My Trips
+                    {t('nav.myTrips')}
                   </MenuItem>
                   <MenuItem
                     onClick={() => {
@@ -369,7 +374,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       navigate('/dashboard?nav=profile')
                     }}
                   >
-                    Dashboard
+                    {t('nav.dashboard')}
                   </MenuItem>
                   {!user.isHost && (
                     <MenuItem
@@ -378,7 +383,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                         navigate('/host')
                       }}
                     >
-                      Become a Host
+                      {t('nav.becomeAHost')}
                     </MenuItem>
                   )}
                   <MenuItem
@@ -387,7 +392,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       navigate('/host')
                     }}
                   >
-                    Host Dashboard
+                    {t('nav.hostDashboard')}
                   </MenuItem>
                   <Divider />
                   <MenuItem
@@ -397,7 +402,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       navigate('/')
                     }}
                   >
-                    Sign Out
+                    {t('nav.signOut')}
                   </MenuItem>
                 </Menu>
               </Stack>
@@ -407,7 +412,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
               <IconButton
                 onClick={() => openGeoDialog()}
-                aria-label={geoActive ? 'Location sharing is on. Open location settings' : 'Share your location for maps'}
+                aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
                 sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
               >
                 <MyLocation fontSize="small" />
@@ -429,7 +434,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
               <IconButton
                 ref={mobileMenuButtonRef}
                 onClick={openMobileDrawer}
-                aria-label="Open navigation menu"
+                aria-label={t('nav.openMenu')}
                 edge="end"
                 sx={{ minWidth: 44, minHeight: 44 }}
               >
@@ -476,6 +481,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
         anchor="right"
         open={mobileOpen}
         onClose={closeMobileDrawer}
+        transitionDuration={280}
         ModalProps={{
           keepMounted: true,
           /** Default restore focuses the menu button and can scroll the page to the top on mobile. */
@@ -506,7 +512,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
           aria-label="Mobile navigation"
         >
           <Typography variant="overline" sx={{ px: 2, fontWeight: 700, letterSpacing: '0.08em', color: 'primary.main' }}>
-            Menu
+            {t('nav.menu')}
           </Typography>
           <AppNavigationList
             onNavigate={closeMobileDrawer}

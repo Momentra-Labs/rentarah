@@ -1,6 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect } from 'react'
 
-import { useCarsStore } from '../store/useCarsStore'
+import { vehicleQueryKeys } from '@/app/queryClient'
+import { getVehicles } from '@/services/vehicleService'
+import { useCarsStore } from '@/store/useCarsStore'
 
 export interface UseVehiclesResult {
   /** Merged list from the API and any host-created rows not in the response */
@@ -13,32 +16,69 @@ export interface UseVehiclesResult {
 }
 
 /**
- * Triggers the service-layer catalog load once on mount and exposes async state to the UI.
- * Safe to use in the layout and on the search page: duplicate mounts no-op via the store.
+ * Catalog load via TanStack Query; mirrors results into Zustand for host-local listings + saved IDs.
  */
 export function useVehicles(): UseVehiclesResult {
   const data = useCarsStore((s) => s.cars)
-  const status = useCarsStore((s) => s.vehiclesLoadStatus)
-  const err = useCarsStore((s) => s.vehiclesLoadError)
-  const hasFetched = useCarsStore((s) => s.hasFetchedVehicles)
-  const fetchVehicles = useCarsStore((s) => s.fetchVehicles)
+  const mergeApiCars = useCarsStore((s) => s.mergeApiCars)
+
+  const query = useQuery({
+    queryKey: vehicleQueryKeys.list(),
+    queryFn: ({ signal }) => getVehicles(signal),
+  })
 
   useEffect(() => {
-    void fetchVehicles()
-  }, [fetchVehicles])
+    if (query.data) {
+      mergeApiCars(query.data)
+    }
+  }, [query.data, mergeApiCars])
+
+  useEffect(() => {
+    if (query.isError) {
+      const message = query.error instanceof Error ? query.error.message : 'Failed to load vehicles'
+      useCarsStore.setState({
+        vehiclesLoadStatus: 'error',
+        vehiclesLoadError: message,
+        hasFetchedVehicles: false,
+      })
+      const store = useCarsStore.getState()
+      if (store.cars.length === 0) {
+        store.initCars()
+        useCarsStore.setState({
+          vehiclesLoadStatus: 'success',
+          vehiclesLoadError: null,
+          hasFetchedVehicles: true,
+        })
+      }
+    } else if (query.isFetching) {
+      useCarsStore.setState({ vehiclesLoadStatus: 'loading', vehiclesLoadError: null })
+    } else if (query.isSuccess) {
+      useCarsStore.setState({
+        vehiclesLoadStatus: 'success',
+        hasFetchedVehicles: true,
+        vehiclesLoadError: null,
+      })
+    }
+  }, [query.isError, query.error, query.isFetching, query.isSuccess])
 
   const refetch = useCallback(() => {
-    void fetchVehicles({ force: true })
-  }, [fetchVehicles])
+    void query.refetch()
+  }, [query])
 
-  const isLoading = status === 'loading' || (!hasFetched && status !== 'error')
+  const fallbackRecovered = data.length > 0
+  const isError = query.isError && !fallbackRecovered
+  const errorMessage =
+    isError && query.error instanceof Error
+      ? query.error.message
+      : isError
+        ? 'Failed to load vehicles'
+        : null
 
   return {
     data,
-    isLoading,
-    /** True when the last fetch failed and the catalog is still empty (no cache / fallback). */
-    isError: status === 'error' && data.length === 0,
-    error: err,
+    isLoading: query.isLoading || (query.isFetching && data.length === 0),
+    isError,
+    error: errorMessage,
     refetch,
   }
 }

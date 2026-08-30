@@ -69,6 +69,8 @@ export function useListingSearch(options: UseListingSearchOptions = {}): UseList
   )
 
   const { hits, error } = useMemo(() => {
+    // `retryEpoch` forces a recompute when the user taps retry after a transient failure.
+    void retryEpoch
     if (!enabled) {
       return { hits: [] as ListingSearchHit[], error: null as string | null }
     }

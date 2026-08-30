@@ -10,13 +10,9 @@ const TOUR_COPY = [
     description: 'Set where you’re going and your trip dates — we’ll match you with available cars and motorcycles.',
   },
   {
-    title: 'Listings',
-    description: 'Browse cards for photos, specs, and host info — tap through to book when you’re ready.',
-  },
-  {
     title: 'Start here',
     description:
-      'Use the trip planner or scroll to explore — search and categories are also in the sidebar.',
+      'Use the trip planner to find a vehicle, or list yours if you want to host.',
   },
 ] as const
 

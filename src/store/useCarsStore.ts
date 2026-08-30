@@ -15,6 +15,8 @@ export interface CarsStoreState {
   vehiclesLoadError: string | null
   hasFetchedVehicles: boolean
   initCars: () => void
+  /** Merge API/catalog rows with host-local listings kept in the store. */
+  mergeApiCars: (apiCars: Car[]) => void
   /** Loads from `getVehicles()` (mock or API), merging API rows with any local-only listings. */
   fetchVehicles: (options?: { force?: boolean }) => Promise<void>
   addBookedDates: (carId: string, dates: string[]) => void
@@ -39,6 +41,18 @@ export const useCarsStore = create<CarsStoreState>()(
         if (get().cars.length === 0) {
           set({ cars: mockCars.map((c) => ({ ...c })) })
         }
+      },
+
+      mergeApiCars: (apiCars) => {
+        const existing = get().cars
+        const apiIds = new Set(apiCars.map((c) => c.id))
+        const localOnly = existing.filter((c) => !apiIds.has(c.id))
+        set({
+          cars: [...apiCars, ...localOnly],
+          vehiclesLoadStatus: 'success',
+          hasFetchedVehicles: true,
+          vehiclesLoadError: null,
+        })
       },
 
       fetchVehicles: async (options) => {
@@ -145,7 +159,16 @@ export const useCarsStore = create<CarsStoreState>()(
     {
       name: 'rentara-cars',
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ cars: s.cars, savedCarIds: s.savedCarIds }),
+      partialize: (s) => {
+        // Production: do not persist the full catalog — server/Query is source of truth.
+        // Dev/mock: keep cars so offline demos survive reload.
+        const persistCatalog =
+          import.meta.env.DEV || import.meta.env.VITE_USE_MOCK !== 'false'
+        return {
+          ...(persistCatalog ? { cars: s.cars } : {}),
+          savedCarIds: s.savedCarIds,
+        }
+      },
     },
   ),
 )

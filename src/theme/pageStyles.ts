@@ -2,10 +2,12 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
 
 import { MOBILE_APP_BAR_TOOLBAR_PX, MOBILE_APP_MAX_WIDTH_PX } from '../constants/mobileShell'
+import { rhElev, rhRadius } from './tokens'
 
-/** Matches landing / marketing cards — soft elevation, no palette change */
-export const softShadow = '0 1px 2px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.06)'
-export const softShadowHover = '0 4px 16px rgba(0,0,0,0.08), 0 20px 48px rgba(0,0,0,0.08)'
+/** @deprecated Prefer rhElev.elev1 — kept for existing imports */
+export const softShadow = rhElev.elev1
+/** @deprecated Prefer rhElev.elev2 */
+export const softShadowHover = rhElev.elev2
 
 export const containerGutters: SxProps<Theme> = {
   px: { xs: 2, sm: 3 },
@@ -48,23 +50,23 @@ export function stickyToolbarPaper(theme: Theme): SxProps<Theme> {
 /** Hero-style trip planner / booking panel */
 export function softInteractiveSurface(theme: Theme, hover = true): SxProps<Theme> {
   return {
-    borderRadius: 3,
+    borderRadius: `${rhRadius.lg}px`,
     border: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.default',
-    boxShadow: softShadow,
+    boxShadow: rhElev.elev1,
     transition: 'box-shadow 0.22s ease, border-color 0.2s ease',
     ...(hover
       ? {
           '@media (pointer: fine)': {
             '&:hover': {
               borderColor: alpha(theme.palette.primary.main, 0.15),
-              boxShadow: softShadow,
+              boxShadow: rhElev.elev2,
             },
           },
           '@media (pointer: coarse)': {
             '&:active': {
-              boxShadow: softShadow,
+              boxShadow: rhElev.elev1,
             },
           },
         }
@@ -75,7 +77,7 @@ export function softInteractiveSurface(theme: Theme, hover = true): SxProps<Them
 /** List rows: outlined cards with subtle hover */
 export function listRowSurface(theme: Theme): SxProps<Theme> {
   return {
-    borderRadius: 3,
+    borderRadius: `${rhRadius.lg}px`,
     border: '1px solid',
     borderColor: 'divider',
     bgcolor: 'background.default',

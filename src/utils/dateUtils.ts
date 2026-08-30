@@ -80,12 +80,12 @@ export function parseSearchDateTimeParam(raw: string | null, role: 'pickup' | 'd
 
 /** Human-readable trip endpoint for chips and summaries. */
 export function formatTripDateTime(d: Dayjs): string {
-  return d.format('MMM D, YYYY · h:mm A')
+  return formatTripDateTimeHuman(d)
 }
 
 /**
  * Conversation-friendly scheduling line: uses Today / Tomorrow / Yesterday when applicable,
- * otherwise `Wed, Apr 28, 2026 · 3:30 PM`-style wording.
+ * otherwise `Wed, Apr 28, 2026 at 3:30 PM`.
  */
 export function formatTripDateTimeHuman(d: Dayjs, now: Dayjs = dayjs()): string {
   if (!d?.isValid()) return ''
@@ -98,7 +98,19 @@ export function formatTripDateTimeHuman(d: Dayjs, now: Dayjs = dayjs()): string 
   else if (diffDays === 1) dayLabel = 'Tomorrow'
   else if (diffDays === -1) dayLabel = 'Yesterday'
   else dayLabel = d.format('ddd, MMM D, YYYY')
-  return `${dayLabel} · ${clock}`
+  return `${dayLabel} at ${clock}`
+}
+
+/** Short day-only label for calendar headers / chips (no clock). */
+export function formatTripDateHuman(d: Dayjs, now: Dayjs = dayjs()): string {
+  if (!d?.isValid()) return ''
+  const dayStart = d.startOf('day')
+  const todayStart = now.startOf('day')
+  const diffDays = dayStart.diff(todayStart, 'day')
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Tomorrow'
+  if (diffDays === -1) return 'Yesterday'
+  return d.format('ddd, MMM D')
 }
 
 /**

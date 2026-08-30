@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { prefetchPath } from '../../lib/routePrefetch'
+import { useT } from '@/hooks/useT'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { AuthUser } from '../../types'
@@ -77,6 +78,7 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
   const { pathname } = useLocation()
   const user = useAuthStore((s) => s.user)
   const chatUnread = useChatUnreadForCurrentUser()
+  const t = useT()
 
   const go = useCallback(
     (to: string) => {
@@ -146,20 +148,20 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
           }}
         >
           <BottomNavigationAction
-            label="Home"
-            aria-label="Home — go to the home page"
+            label={t('nav.home')}
+            aria-label={t('nav.homeAria')}
             icon={<HomeOutlined fontSize="small" aria-hidden />}
             onPointerDown={() => prefetchPath('/')}
           />
           <BottomNavigationAction
-            label="Browse"
-            aria-label="Browse — search vehicles"
+            label={t('nav.browseShort')}
+            aria-label={t('nav.browseAria')}
             icon={<SearchOutlined fontSize="small" aria-hidden />}
             onPointerDown={() => prefetchPath('/search')}
           />
           <BottomNavigationAction
-            label="Map"
-            aria-label="Map — explore rentals on the map"
+            label={t('nav.map')}
+            aria-label={t('nav.mapAria')}
             icon={
               <Box
                 component="span"
@@ -194,8 +196,8 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
           />
           {user ? (
             <BottomNavigationAction
-              label="Chat"
-              aria-label="Chat — messages"
+              label={t('nav.chat')}
+              aria-label={t('nav.chatAria')}
               icon={
                 <Badge
                   color="error"
@@ -218,15 +220,15 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             />
           ) : (
             <BottomNavigationAction
-              label="Host"
-              aria-label="Host — become a host"
+              label={t('nav.host')}
+              aria-label={t('nav.hostAria')}
               icon={<StorefrontOutlined fontSize="small" aria-hidden />}
               onPointerDown={() => prefetchPath('/become-a-host')}
             />
           )}
           <BottomNavigationAction
-            label={user ? 'Account' : 'Sign in'}
-            aria-label={user ? 'Account' : 'Sign in'}
+            label={user ? t('nav.account') : t('auth.signIn')}
+            aria-label={user ? t('nav.account') : t('auth.signIn')}
             icon={user ? <AccountCircleOutlined fontSize="small" aria-hidden /> : <LoginOutlined fontSize="small" aria-hidden />}
             onPointerDown={() => {
               if (user) prefetchPath('/dashboard?nav=profile')

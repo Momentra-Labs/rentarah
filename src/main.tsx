@@ -1,13 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider, CssBaseline } from '@mui/material'
-import { LocalizationProvider } from '@mui/x-date-pickers'
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { BrowserRouter } from 'react-router-dom'
 
+import { AppProviders } from './app/providers'
 import App from './App'
 import faviconUrl from './assets/rentarah_lockup.svg'
 import { FirebaseAuthSync } from './components/auth/FirebaseAuthSync'
+import LocaleSync, { LocaleAwareDates } from './components/i18n/LocaleSync'
 import { theme } from './theme'
 
 import './index.css'
@@ -28,7 +28,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <LocaleAwareDates>
         <BrowserRouter
           basename={
             import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '')
@@ -38,10 +38,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             v7_relativeSplatPath: true,
           }}
         >
-          <FirebaseAuthSync />
-          <App />
+          <AppProviders>
+            <LocaleSync />
+            <FirebaseAuthSync />
+            <App />
+          </AppProviders>
         </BrowserRouter>
-      </LocalizationProvider>
+      </LocaleAwareDates>
     </ThemeProvider>
   </React.StrictMode>,
 )

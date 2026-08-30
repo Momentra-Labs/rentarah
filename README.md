@@ -1,84 +1,53 @@
-# RentaraH — car rental marketplace
+# RentaraH — customer marketplace (Web)
 
-React + Vite + TypeScript + MUI frontend for a Philippines-focused peer-to-peer vehicle rental experience (cars and two-wheelers). Catalog, search, maps, booking flow, host dashboard, and auth are implemented; **most booking and auth persistence is local** until the backend is fully wired.
+React + Vite + TypeScript + MUI frontend for a Philippines-focused peer-to-peer vehicle rental experience (cars and two-wheelers).
 
-An **Express + Prisma + PostgreSQL API** lives in **`/backend`** (separate `package.json`). This repo is a **monorepo**: one Git clone, two install targets.
+This repository is the **customer Web SPA** only. Backend and Admin live in sibling repos:
+
+| Repo | Role | Local port |
+|------|------|------------|
+| **This repo** | Customer marketplace | `5173` |
+| [`rentarah-api`](../rentarah-api) (sibling clone) | Express + Prisma API | `5000` |
+| [`rentarah-admin`](../rentarah-admin) (sibling clone) | Operations console | `5174` |
+
+**How to run everything:** **[docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md)**  
+Also: [docs/repository-separation.md](./docs/repository-separation.md) · [docs/SEPARATION_REPORT.md](./docs/SEPARATION_REPORT.md)
 
 ---
 
-## Quick start (full repo)
+## Quick start (Web only)
 
-Run these from the **repository root** (no `cd` into `backend` for installs or combined builds).
-
-| Step | Command | What it does |
-|------|---------|----------------|
-| 1. Install everything | **`npm run setup`** | Same as `npm run install:all` — runs `npm install` at the root **and** `npm install` in `backend/` (includes Prisma client generation). |
-| 2. Environment | Copy env files | Root: `.env.example` → `.env`. Staging/prod UI: `.env.staging.example` / `.env.production.example`. Backend: `backend/.env.example` → `backend/.env` (+ staging/prod templates in `backend/`). |
-| 3. Build frontend + API | **`npm run build:all`** | Production-mode frontend + backend `tsc`. Use **`npm run build:all:staging`** for a staging UI bundle. |
-| 4. Dev — frontend only | **`npm run dev`** | Vite **development** mode. Use **`npm run dev:staging`** for staging env files. |
-| 5. Dev — API only | **`npm run dev:backend`** | Express on **port 5000**. **`npm run dev:backend:staging`** for `APP_ENV=staging`. |
-
-**Fresh clone / CI checklist**
-
-```bash
-npm run setup
-npm run build:all
+```powershell
+cd C:\Projects\rentahub2026.github.io
+copy .env.example .env
+npm install
+npm run dev
 ```
 
-Optional checks:
+Open **http://localhost:5173**. Mocks are on by default (`VITE_USE_MOCK=true`) — API not required.
 
-```bash
-curl http://localhost:5000/api/health   # after starting the backend
-```
-
+For **Web + API + Admin** (three terminals), follow **[docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md)**.
 ---
 
 ## Staging vs production
 
-Full variable list, Vite modes, and `APP_ENV` for the API are in **[docs/ENVIRONMENTS.md](./docs/ENVIRONMENTS.md)**.
+Full variable list: **[docs/ENVIRONMENTS.md](./docs/ENVIRONMENTS.md)**.
 
 ---
 
-## NPM scripts (root `package.json`)
+## NPM scripts
 
 | Script | Description |
 |--------|-------------|
-| **`npm run setup`** | Install root + `backend` dependencies (alias for `install:all`). |
-| **`npm run install:all`** | `npm install && npm install --prefix backend`. |
-| **`npm run build:all`** | **Production** frontend + backend compile. |
-| **`npm run build:all:staging`** | **Staging** frontend + backend compile. |
-| **`npm run build`** | Frontend **production** build (`vite build --mode production`). |
-| **`npm run build:staging`** | Frontend **staging** build. |
-| **`npm run build:production`** | Same as **`npm run build`**. |
-| **`npm run build:backend`** | Backend `tsc` only (`--prefix backend`). |
-| **`npm run dev`** | Vite **development** mode. |
-| **`npm run dev:staging`** | Vite **staging** mode (uses `.env.staging`). |
-| **`npm run dev:backend`** | API **development** (`APP_ENV=development`). |
-| **`npm run dev:backend:staging`** | API **staging** (`APP_ENV=staging`). |
-| **`npm run preview`** | Serve frontend `dist/`. |
-| **`npm run typecheck`** | Frontend TypeScript check only. |
-| **`npm run lint`** | ESLint. |
+| **`npm install`** / **`npm run setup`** | Install Web dependencies |
+| **`npm run build`** | Production frontend build |
+| **`npm run build:staging`** | Staging frontend build |
+| **`npm run dev`** | Vite development |
+| **`npm run typecheck`** | TypeScript check |
+| **`npm run lint`** | ESLint |
+| **`npm test`** | Vitest |
 
----
-
-## Backend (`/backend`)
-
-| Doc | Contents |
-|-----|----------|
-| **[backend/README.md](./backend/README.md)** | API stack, Prisma migrations (`db:migrate`), local run, project layout. |
-| **[backend/DEPLOYMENT.md](./backend/DEPLOYMENT.md)** | Production deploy, env vars, `db:migrate:deploy`, CORS, GitHub Pages vs Node host. |
-
-Common backend commands (from repo root):
-
-```bash
-npm run dev:backend                   # API dev (development)
-npm run dev:backend:staging           # API dev (staging env files)
-npm run build --prefix backend        # compile API
-npm run db:migrate --prefix backend   # dev DB migrations (Prisma)
-```
-
-Staging/production process helpers (after `npm run build --prefix backend`):  
-`npm run start:staging --prefix backend` · `npm run start:production --prefix backend`
+Architecture: **[docs/architecture.md](./docs/architecture.md)**. Changelog: **[docs/CHANGELOG.md](./docs/CHANGELOG.md)**.
 
 ---
 
@@ -86,35 +55,30 @@ Staging/production process helpers (after `npm run build --prefix backend`):
 
 | File (template) | When |
 |-----------------|------|
-| `.env.example` → `.env` | Local **`npm run dev`** (mode `development`) |
-| `.env.staging.example` → `.env.staging` | **`npm run dev:staging`** / **`npm run build:staging`** |
-| `.env.production.example` → `.env.production` | **`npm run build`** (production bundle) |
+| `.env.example` → `.env` | Local **`npm run dev`** |
+| `.env.staging.example` → `.env.staging` | Staging mode |
+| `.env.production.example` → `.env.production` | Production bundle |
 
-Variables:
+Key variables:
 
-- **`VITE_APP_ENV`** — `development` | `staging` | `production`
-- **`VITE_API_URL`** — API base URL (no trailing slash). Required when `VITE_USE_MOCK=false`.
-- **`VITE_USE_MOCK`** — `true` uses `src/services/mockApi.ts`. Set to **`false`** to call the backend.
-- **`VITE_STRIPE_KEY`** — Stripe publishable key (test vs live per environment).
-- **`VITE_BASE`** — see `vite.config.ts` (GitHub Pages project subpaths).
+- **`VITE_API_URL`** — API base **including `/api`** (e.g. `http://localhost:5000/api`). Required when `VITE_USE_MOCK=false`.
+- **`VITE_USE_MOCK`** — `true` uses in-browser mocks (default for Pages-friendly demos).
+- **`VITE_STRIPE_KEY`**, **`VITE_FIREBASE_*`**, **`VITE_BASE`** — see `.env.example`.
 
 ---
 
-## Documentation (product & API shape)
+## Documentation
 
 | Doc | Contents |
 |-----|----------|
-| [docs/ENVIRONMENTS.md](./docs/ENVIRONMENTS.md) | **Staging / production** env files, `VITE_*`, `APP_ENV`, scripts matrix |
-| [docs/API_AND_DATA_REQUIREMENTS.md](./docs/API_AND_DATA_REQUIREMENTS.md) | HTTP paths the app uses, `Car`/listing JSON, availability & booking payloads, search parameters, client-only behavior |
-| [docs/DATA_MODEL_AND_ARCHITECTURE.md](./docs/DATA_MODEL_AND_ARCHITECTURE.md) | PostgreSQL-oriented entities, relationships, payments, reviews, scalability |
+| [docs/LOCAL_DEVELOPMENT.md](./docs/LOCAL_DEVELOPMENT.md) | **How to run** Web / API / Admin locally |
+| [docs/repository-separation.md](./docs/repository-separation.md) | How Web / API / Admin split |
+| [docs/ENVIRONMENTS.md](./docs/ENVIRONMENTS.md) | Env matrix |
+| [docs/API_AND_DATA_REQUIREMENTS.md](./docs/API_AND_DATA_REQUIREMENTS.md) | Client HTTP contracts (canonical copies also in rentarah-api) |
+| [docs/API_IMPLEMENTATION_BACKLOG.md](./docs/API_IMPLEMENTATION_BACKLOG.md) | Future API work |
 
 ---
 
-## Key source locations
+## Deploy
 
-- **Types:** `src/types/index.ts`
-- **HTTP:** `src/services/apiClient.ts`, `vehicleService.ts`, `bookingService.ts`
-- **Catalog + host edits:** `src/store/useCarsStore.ts`
-- **Search (in-memory):** `src/services/listingSearchService.ts`
-- **API server entry:** `backend/src/server.ts`
-- **DB schema:** `backend/prisma/schema.prisma`
+GitHub Pages deploys **this Web SPA only** (see `.github/workflows/`). The API must run on a Node host; Admin is a separate static site.

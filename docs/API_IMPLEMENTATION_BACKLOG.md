@@ -99,7 +99,7 @@
 1. `VITE_USE_MOCK=false` and `VITE_API_URL` set → **search, map, car detail, and booking happy path** work against Postgres with no mock catalog.
 2. **Auth:** logged-in user can complete a booking stored on server; host sees booking in dashboard data (API or same `GET /bookings` with role filter).
 3. **Availability** endpoint matches calendar + datetime rules used in car detail / checkout.
-4. **CORS + HTTPS** ready for staging/production per `backend/DEPLOYMENT.md`.
+4. **CORS + HTTPS** ready for staging/production per `rentarah-api` `docs/deployment.md` / `DEPLOYMENT.md`.
 
 ---
 

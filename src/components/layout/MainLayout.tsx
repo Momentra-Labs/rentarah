@@ -1,15 +1,14 @@
-import { Box, CircularProgress, useMediaQuery, useTheme } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import LoadingScreen from '../brand/LoadingScreen'
 import OnboardingFlow from '../onboarding/OnboardingFlow'
 import { AppNavSidebar } from './AppNavigationList'
 import Footer from './Footer'
 import MobileBottomNav, { MOBILE_BOTTOM_NAV_SX_PB } from './MobileBottomNav'
 import Navbar from './Navbar'
 import RouteFallback from './RouteFallback'
+import AuthDialogSkeleton from '@/components/skeletons/AuthDialogSkeleton'
 import { mobileShellColumnSx } from '../../theme/pageStyles'
 import { useVehicles } from '../../hooks/useVehicles'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -65,8 +64,8 @@ export default function MainLayout() {
   /** Survives re-renders: after auth, continue reserve → checkout if set. */
   const pendingBookCarIdRef = useRef<string | null>(null)
 
-  /** Boots the shared vehicle catalog (mock or API) for all routes. */
-  const { isLoading: vehiclesLoading } = useVehicles()
+  /** Boots the shared vehicle catalog (mock or API) for all routes — surfaces use local skeletons. */
+  useVehicles()
 
   useEffect(() => {
     if (!user) return
@@ -79,10 +78,7 @@ export default function MainLayout() {
     restoreIfPermittedOnLoad()
   }, [restoreIfPermittedOnLoad])
 
-  const showLoadingScreen = vehiclesLoading
-
   useEffect(() => {
-    if (showLoadingScreen) return
     const run = () => prefetchAuthDialogChunk()
     if (typeof requestIdleCallback !== 'undefined') {
       const id = requestIdleCallback(run, { timeout: 3500 })
@@ -90,10 +86,9 @@ export default function MainLayout() {
     }
     const t = window.setTimeout(run, 1800)
     return () => window.clearTimeout(t)
-  }, [showLoadingScreen])
+  }, [])
 
   useEffect(() => {
-    if (showLoadingScreen) return
     const run = () => prefetchPrimaryShellRoutes()
     if (typeof requestIdleCallback !== 'undefined') {
       const id = requestIdleCallback(run, { timeout: 1200 })
@@ -101,7 +96,7 @@ export default function MainLayout() {
     }
     const t = window.setTimeout(run, 500)
     return () => window.clearTimeout(t)
-  }, [showLoadingScreen])
+  }, [])
 
   const handleLogout = useCallback(() => {
     logout()
@@ -184,19 +179,6 @@ export default function MainLayout() {
         bgcolor: 'background.default',
       }}
     >
-      {showLoadingScreen ? (
-        <Box
-          sx={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: theme.zIndex.modal + 2,
-            pointerEvents: 'auto',
-          }}
-          role="presentation"
-        >
-          <LoadingScreen />
-        </Box>
-      ) : null}
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', alignItems: 'stretch' }}>
         <AppNavSidebar onAuthOpen={handleAuthOpen} onLogout={handleLogout} />
         <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -263,25 +245,7 @@ export default function MainLayout() {
         <MobileBottomNav onAuthOpen={handleAuthOpen} />
       ) : null}
       {authOpen ? (
-        <Suspense
-          fallback={
-            <Box
-              sx={{
-                position: 'fixed',
-                inset: 0,
-                zIndex: theme.zIndex.modal,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                bgcolor: alpha(theme.palette.background.default, 0.72),
-              }}
-              aria-busy="true"
-              aria-label="Loading sign-in"
-            >
-              <CircularProgress color="inherit" size={36} />
-            </Box>
-          }
-        >
+        <Suspense fallback={<AuthDialogSkeleton />}>
           <AuthDialogLazy
             open={authOpen}
             onClose={handleAuthClose}
@@ -291,7 +255,7 @@ export default function MainLayout() {
           />
         </Suspense>
       ) : null}
-      {!showLoadingScreen ? <OnboardingFlow /> : null}
+      <OnboardingFlow />
     </Box>
   )
 }

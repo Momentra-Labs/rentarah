@@ -4,20 +4,22 @@ import { Box, Container, Link, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
+import { useT } from '@/hooks/useT'
+
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import { MOBILE_FOOTER_ADDITIONAL_CLEAR_PX, MOBILE_TAB_BAR_INSET_PX } from './MobileBottomNav'
 
 const FOOTER_LINKS = [
-  { label: 'Home', to: '/' },
-  { label: 'Browse rentals', to: '/search' },
-  { label: 'Become a host', to: '/become-a-host' },
-  { label: 'Contact / support', href: 'mailto:hello@rentara.com', external: true },
+  { labelKey: 'footer.home' as const, to: '/' },
+  { labelKey: 'footer.browse' as const, to: '/search' },
+  { labelKey: 'footer.becomeHost' as const, to: '/become-a-host' },
+  { labelKey: 'footer.contact' as const, href: 'mailto:hello@rentara.com', external: true },
 ] as const
 
 /** Shown on small screens only — avoids duplicating the fixed bottom tab bar. */
 const FOOTER_COMPACT_LINKS = [
-  { label: 'Become a host', to: '/become-a-host' as const },
-  { label: 'Support', href: 'mailto:hello@rentara.com', external: true },
+  { labelKey: 'footer.becomeHost' as const, to: '/become-a-host' as const },
+  { labelKey: 'footer.support' as const, href: 'mailto:hello@rentara.com', external: true },
 ] as const
 
 const SOCIAL = [
@@ -52,32 +54,32 @@ const mobileSubtleLinkSx = {
   '&:active': { color: 'primary.dark' },
 }
 
-function FooterNavLink({ item }: { item: (typeof FOOTER_LINKS)[number] }) {
+function FooterNavLink({ item, label }: { item: (typeof FOOTER_LINKS)[number]; label: string }) {
   if ('href' in item && item.external) {
     return (
       <Link href={item.href} sx={linkSx}>
-        {item.label}
+        {label}
       </Link>
     )
   }
   return (
     <Typography component={RouterLink} to={'to' in item ? item.to : '/'} sx={linkSx}>
-      {item.label}
+      {label}
     </Typography>
   )
 }
 
-function CompactNavLink({ item }: { item: (typeof FOOTER_COMPACT_LINKS)[number] }) {
+function CompactNavLink({ item, label }: { item: (typeof FOOTER_COMPACT_LINKS)[number]; label: string }) {
   if ('to' in item) {
     return (
       <Typography component={RouterLink} to={item.to} sx={mobileSubtleLinkSx}>
-        {item.label}
+        {label}
       </Typography>
     )
   }
   return (
     <Link href={item.href} sx={mobileSubtleLinkSx}>
-      {item.label}
+      {label}
     </Link>
   )
 }
@@ -88,11 +90,12 @@ function CompactNavLink({ item }: { item: (typeof FOOTER_COMPACT_LINKS)[number] 
  */
 function MobileFooterStrip() {
   const year = new Date().getFullYear()
+  const t = useT()
 
   return (
     <Box
       component="section"
-      aria-label="Site footer"
+      aria-label={t('footer.site')}
       sx={{
         display: { xs: 'block', md: 'none' },
         /* Extra room above the outer footer `pb` so the legal line clears the tab bar. */
@@ -157,16 +160,16 @@ function MobileFooterStrip() {
             maxWidth: 360,
           }}
         >
-          Philippines rentals — book cars &amp; two-wheelers.
+          {t('footer.blurb')}
         </Typography>
 
         <Box
           component="nav"
-          aria-label="More links"
+          aria-label={t('footer.more')}
           sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 0.75, rowGap: 0.5 }}
         >
           {FOOTER_COMPACT_LINKS.map((item, i) => (
-              <Box key={item.label} component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+              <Box key={item.labelKey} component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
                 {i > 0 ? (
                   <Box
                     component="span"
@@ -176,7 +179,7 @@ function MobileFooterStrip() {
                     ·
                   </Box>
                 ) : null}
-                <CompactNavLink item={item} />
+                <CompactNavLink item={item} label={t(item.labelKey)} />
               </Box>
             ))}
         </Box>
@@ -196,7 +199,7 @@ function MobileFooterStrip() {
             scrollMarginBottom: { xs: 4, md: 0 },
           }}
         >
-          © {year} RentaraH · demo
+          {t('footer.demo', { year })}
         </Typography>
       </Stack>
     </Box>
@@ -208,6 +211,7 @@ function MobileFooterStrip() {
  */
 export default function Footer() {
   const year = new Date().getFullYear()
+  const t = useT()
 
   return (
     <Box
@@ -290,7 +294,7 @@ export default function Footer() {
                         ·
                       </Box>
                     ) : null}
-                    <FooterNavLink item={item} />
+                    <FooterNavLink item={item} label={t(item.labelKey)} />
                   </Box>
                 ))}
                 <Box
@@ -342,10 +346,10 @@ export default function Footer() {
               }}
             >
               <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.75rem' }}>
-                © {year} RentaraH
+                {t('footer.copyright', { year })}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', fontWeight: 500 }}>
-                Demo · PHP · mock data
+                {t('footer.demoPhp')}
               </Typography>
             </Stack>
           </Stack>

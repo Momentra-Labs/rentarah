@@ -9,6 +9,8 @@ import {
   Typography,
 } from '@mui/material'
 
+import { useT } from '@/hooks/useT'
+
 import type { SearchFilters } from '../../types'
 import FilterPanelScrollColumn from './FilterPanelScrollColumn'
 
@@ -19,13 +21,23 @@ interface FilterDrawerProps {
   onChange: (partial: Partial<SearchFilters>) => void
   onClear: () => void
   hasActive: boolean
+  showVehicleType?: boolean
 }
 
 /**
  * Bottom-sheet filters for mobile — easier to reach than a side drawer.
  * Swipe down (or tap Apply / backdrop) to close.
  */
-export default function FilterDrawer({ open, onClose, filters, onChange, onClear, hasActive }: FilterDrawerProps) {
+export default function FilterDrawer({
+  open,
+  onClose,
+  filters,
+  onChange,
+  onClear,
+  hasActive,
+  showVehicleType = false,
+}: FilterDrawerProps) {
+  const t = useT()
   const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   return (
@@ -68,17 +80,13 @@ export default function FilterDrawer({ open, onClose, filters, onChange, onClear
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, pb: 0.5 }}>
           <Badge color="primary" variant="dot" invisible={!hasActive}>
             <Typography variant="subtitle1" component="span" fontWeight={800}>
-              Filters
+              {t('search.filters')}
             </Typography>
           </Badge>
-          <IconButton edge="end" aria-label="Close filters" onClick={onClose} size="small">
+          <IconButton edge="end" aria-label={t('search.closeFilters')} onClick={onClose} size="small">
             <Close />
           </IconButton>
         </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ px: 2, pb: 1, display: 'block', lineHeight: 1.45 }}>
-          Tap quick presets, then scroll the gray filter list for pricing, seats, transmission, fuel, and more — updates
-          apply live.
-        </Typography>
 
         <FilterPanelScrollColumn
           active={open}
@@ -87,8 +95,8 @@ export default function FilterDrawer({ open, onClose, filters, onChange, onClear
           onChange={onChange}
           onClear={onClear}
           hasActiveFilters={hasActive}
+          showVehicleType={showVehicleType}
           scrollBoxSx={{ px: 2, pb: 1 }}
-          hintBannerSx={{ px: 2, pt: 0.25, pb: 0.75, justifyContent: 'center' }}
         />
 
         <Box
@@ -103,7 +111,7 @@ export default function FilterDrawer({ open, onClose, filters, onChange, onClear
           }}
         >
           <Button variant="contained" fullWidth size="large" onClick={onClose} sx={{ minHeight: 46 }}>
-            Done
+            {t('search.done')}
           </Button>
         </Box>
       </Stack>

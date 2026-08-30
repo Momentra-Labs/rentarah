@@ -34,6 +34,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom'
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { prefetchExploreNavChunks, prefetchPath } from '../../lib/routePrefetch'
+import { useT } from '@/hooks/useT'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
 import type { VehicleType } from '../../types'
@@ -49,11 +50,11 @@ export type NavRow = {
   icon: ReactNode
 }
 
-const VEHICLE_QUICK_FILTER: { key: string; label: string; vt: VehicleType; icon: ReactNode }[] = [
-  { key: 'v-car', label: 'Cars', vt: 'car', icon: <DirectionsCarOutlined fontSize="small" /> },
-  { key: 'v-moto', label: 'Motorcycles', vt: 'motorcycle', icon: <TwoWheelerOutlined fontSize="small" /> },
-  { key: 'v-sco', label: 'Scooters', vt: 'scooter', icon: <ElectricMopedOutlined fontSize="small" /> },
-  { key: 'v-bb', label: 'Big bikes', vt: 'bigbike', icon: <SportsMotorsportsOutlined fontSize="small" /> },
+const VEHICLE_QUICK_FILTER: { key: string; labelKey: 'nav.cars' | 'nav.motorcycles' | 'nav.scooters' | 'nav.bigBikes'; vt: VehicleType; icon: ReactNode }[] = [
+  { key: 'v-car', labelKey: 'nav.cars', vt: 'car', icon: <DirectionsCarOutlined fontSize="small" /> },
+  { key: 'v-moto', labelKey: 'nav.motorcycles', vt: 'motorcycle', icon: <TwoWheelerOutlined fontSize="small" /> },
+  { key: 'v-sco', labelKey: 'nav.scooters', vt: 'scooter', icon: <ElectricMopedOutlined fontSize="small" /> },
+  { key: 'v-bb', labelKey: 'nav.bigBikes', vt: 'bigbike', icon: <SportsMotorsportsOutlined fontSize="small" /> },
 ]
 
 function getVtParam(search: string) {
@@ -69,45 +70,11 @@ function navLinkPrefetchHandlers(to: string): { onPointerDown: () => void; onFoc
   }
 }
 
-const EXPLORE_CORE: NavRow[] = [
-  {
-    key: 'home',
-    label: 'Home',
-    kind: 'link',
-    to: '/',
-    icon: <HomeOutlined fontSize="small" />,
-  },
-  {
-    key: 'browse',
-    label: 'Browse vehicles',
-    kind: 'link',
-    to: '/search',
-    icon: <SearchOutlined fontSize="small" />,
-  },
-  {
-    key: 'map',
-    label: 'Map',
-    kind: 'link',
-    to: '/map',
-    icon: <MapOutlined fontSize="small" />,
-  },
-]
-
-const BECOME_HOST_ROW: NavRow = {
-  key: 'host-invite',
-  label: 'Become a host',
-  kind: 'link',
-  to: '/become-a-host',
-  icon: <StorefrontOutlined fontSize="small" />,
-}
-
-const LIST_VEHICLE_ROW: NavRow = {
-  key: 'list',
-  label: 'List a vehicle',
-  kind: 'link',
-  to: '/host?section=list',
-  icon: <DirectionsCarOutlined fontSize="small" />,
-}
+const EXPLORE_CORE_ICONS = {
+  home: <HomeOutlined fontSize="small" />,
+  browse: <SearchOutlined fontSize="small" />,
+  map: <MapOutlined fontSize="small" />,
+} as const
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -129,54 +96,56 @@ function SectionLabel({ children }: { children: string }) {
   )
 }
 
+const NAV_MOTION = 'background-color 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease'
+
 function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
-  const base = rail
-    ? ({
-        mx: 0.5,
-        borderRadius: 2,
-        py: 1,
-        px: 0.5,
-        mb: 0.25,
-        minHeight: 48,
-        justifyContent: 'center',
-        transition: 'none',
-        '& .MuiListItemIcon-root': {
-          minWidth: 0,
-          justifyContent: 'center',
-          margin: 0,
-        },
-        '&:hover': {
-          bgcolor: alpha(theme.palette.primary.main, 0.06),
-        },
-      } as const)
-    : ({
-        mx: 1,
-        borderRadius: 2,
-        py: 1.15,
-        pr: 1.5,
-        pl: 1.25,
-        mb: 0.25,
-        minHeight: 48,
-        transition: 'none',
-        '&:hover': {
-          bgcolor: alpha(theme.palette.primary.main, 0.06),
-        },
-      } as const)
-  if (selected) {
-    return {
-      ...base,
-      bgcolor: alpha(theme.palette.primary.main, 0.12),
-      color: theme.palette.primary.main,
-      fontWeight: 700,
-      '&:hover': {
-        bgcolor: alpha(theme.palette.primary.main, 0.16),
-      },
-      '& .MuiListItemIcon-root': { color: theme.palette.primary.main },
-    }
-  }
+  const iconColor = selected ? theme.palette.primary.main : theme.palette.text.secondary
   return {
-    ...base,
-    '& .MuiListItemIcon-root': { color: theme.palette.text.secondary },
+    position: 'relative' as const,
+    mx: rail ? 0.5 : 1,
+    borderRadius: 2,
+    py: rail ? 1 : 1.15,
+    px: rail ? 0.5 : undefined,
+    pr: rail ? undefined : 1.5,
+    pl: rail ? undefined : 1.25,
+    mb: 0.25,
+    minHeight: 48,
+    justifyContent: rail ? 'center' : undefined,
+    transition: NAV_MOTION,
+    bgcolor: selected ? alpha(theme.palette.primary.main, 0.12) : undefined,
+    color: selected ? theme.palette.primary.main : undefined,
+    fontWeight: selected ? 700 : undefined,
+    '& .MuiListItemIcon-root': {
+      minWidth: rail ? 0 : undefined,
+      justifyContent: rail ? 'center' : undefined,
+      margin: rail ? 0 : undefined,
+      color: iconColor,
+      transition: 'color 0.16s ease',
+    },
+    '&:hover': {
+      bgcolor: alpha(theme.palette.primary.main, selected ? 0.16 : 0.06),
+    },
+    '&:active': {
+      transform: 'scale(0.98)',
+    },
+    '&:focus-visible': {
+      outline: 'none',
+      boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.38)}`,
+    },
+    ...(selected
+      ? {
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            top: rail ? 10 : 8,
+            bottom: rail ? 10 : 8,
+            width: 3,
+            borderRadius: '0 3px 3px 0',
+            bgcolor: theme.palette.primary.main,
+          },
+        }
+      : {}),
   }
 }
 
@@ -201,34 +170,54 @@ export default function AppNavigationList({
   const search = location.search
   const user = useAuthStore((s) => s.user)
   const chatUnread = useChatUnreadForCurrentUser()
+  const t = useT()
 
   useLayoutEffect(() => {
     prefetchExploreNavChunks()
   }, [])
 
-  const exploreNav: NavRow[] = user
-    ? [...EXPLORE_CORE, ...(user.isHost ? [LIST_VEHICLE_ROW] : [BECOME_HOST_ROW])]
-    : [...EXPLORE_CORE, BECOME_HOST_ROW]
+  const hostRow: NavRow = user?.isHost
+    ? {
+        key: 'list',
+        label: t('nav.listVehicle'),
+        kind: 'link',
+        to: '/host?section=list',
+        icon: <DirectionsCarOutlined fontSize="small" />,
+      }
+    : {
+        key: 'host-invite',
+        label: t('nav.becomeHost'),
+        kind: 'link',
+        to: '/become-a-host',
+        icon: <StorefrontOutlined fontSize="small" />,
+      }
+
+  const exploreNav: NavRow[] = [
+    { key: 'home', label: t('nav.home'), kind: 'link', to: '/', icon: EXPLORE_CORE_ICONS.home },
+    { key: 'browse', label: t('nav.browse'), kind: 'link', to: '/search', icon: EXPLORE_CORE_ICONS.browse },
+    { key: 'map', label: t('nav.map'), kind: 'link', to: '/map', icon: EXPLORE_CORE_ICONS.map },
+    hostRow,
+  ]
 
   const accountLinks: NavRow[] = user
     ? [
         {
           key: 'my-trips',
-          label: 'My Trips',
+          label: t('nav.myTrips'),
           kind: 'link',
           to: '/dashboard?nav=trips',
           icon: <LuggageOutlined fontSize="small" />,
         },
         {
           key: 'dashboard',
-          label: 'Dashboard',
+          label: t('nav.dashboard'),
           kind: 'link',
           to: '/dashboard?nav=profile',
           icon: <EventNoteOutlined fontSize="small" />,
         },
         {
           key: 'messages',
-          label: 'Messages',
+          label: t('nav.messages'),
           kind: 'link',
           to: '/messages',
           icon: <ChatBubbleOutline fontSize="small" />,
@@ -237,7 +226,7 @@ export default function AppNavigationList({
           ? [
               {
                 key: 'host-dash',
-                label: 'Host dashboard',
+                label: t('nav.hostDashboard'),
                 kind: 'link' as const,
                 to: '/host',
                 icon: <StorefrontOutlined fontSize="small" />,
@@ -328,14 +317,15 @@ export default function AppNavigationList({
 
   return (
     <List component="nav" disablePadding sx={{ py: 1, ...(rail ? { px: 0.25 } : {}) }}>
-      {!rail ? <SectionLabel>Explore</SectionLabel> : null}
+      {!rail ? <SectionLabel>{t('nav.explore')}</SectionLabel> : null}
       {exploreNav.map(renderRow)}
 
       {!user ? (
         <>
-          {!rail ? <SectionLabel>Vehicles</SectionLabel> : null}
+          {!rail ? <SectionLabel>{t('nav.vehicles')}</SectionLabel> : null}
           {VEHICLE_QUICK_FILTER.map((row) => {
             const selected = pathname.startsWith('/search') && getVtParam(search) === row.vt
+            const label = t(row.labelKey)
             const vbtn = (
               <ListItemButton
                 key={row.key}
@@ -348,19 +338,19 @@ export default function AppNavigationList({
               >
                 <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>{row.icon}</ListItemIcon>
                 <ListItemText
-                  primary={row.label}
+                  primary={label}
                   primaryTypographyProps={{ fontWeight: selected ? 700 : 600, fontSize: '0.9375rem' }}
                 />
               </ListItemButton>
             )
-            return rail ? wrapRail(row.key, row.label, vbtn) : vbtn
+            return rail ? wrapRail(row.key, label, vbtn) : vbtn
           })}
         </>
       ) : null}
 
       {user ? (
         <>
-          {!rail ? <SectionLabel>Your account</SectionLabel> : null}
+          {!rail ? <SectionLabel>{t('nav.yourAccount')}</SectionLabel> : null}
           {accountLinks.map(renderRow)}
           {(() => {
             const out = (
@@ -375,15 +365,15 @@ export default function AppNavigationList({
                 <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
                   <LogoutOutlined fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Sign Out" primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
+                <ListItemText primary={t('nav.signOut')} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
               </ListItemButton>
             )
-            return rail ? wrapRail('sign-out', 'Sign Out', out) : out
+            return rail ? wrapRail('sign-out', t('nav.signOut'), out) : out
           })()}
         </>
       ) : (
         <>
-          {!rail ? <SectionLabel>Access</SectionLabel> : null}
+          {!rail ? <SectionLabel>{t('nav.access')}</SectionLabel> : null}
           {(() => {
             const signIn = (
               <ListItemButton
@@ -398,7 +388,7 @@ export default function AppNavigationList({
                 <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
                   <LoginOutlined fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Sign In" primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
+                <ListItemText primary={t('nav.signIn')} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
               </ListItemButton>
             )
             const getStarted = (
@@ -414,13 +404,13 @@ export default function AppNavigationList({
                 <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
                   <PersonAddOutlined fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Get Started" primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
+                <ListItemText primary={t('nav.getStarted')} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
               </ListItemButton>
             )
             return rail ? (
               <>
-                {wrapRail('sign-in', 'Sign In', signIn)}
-                {wrapRail('get-started', 'Get Started', getStarted)}
+                {wrapRail('sign-in', t('nav.signIn'), signIn)}
+                {wrapRail('get-started', t('nav.getStarted'), getStarted)}
               </>
             ) : (
               <>
@@ -439,6 +429,7 @@ const MAP_NAV_RAIL_COLLAPSED_KEY = 'rentara-map-nav-rail-collapsed'
 
 /** Desktop persistent rail; on `/map` the user can collapse to an icon rail for more map width. */
 export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void; onLogout: () => void }) {
+  const t = useT()
   const location = useLocation()
   const isMapRoute = location.pathname === '/map'
   const [mapNavCollapsed, setMapNavCollapsed] = useState(false)
@@ -485,9 +476,9 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           borderColor: 'divider',
         }}
       >
-        <Tooltip title="Expand navigation" placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
+        <Tooltip title={t('nav.expandNav')} placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
           <IconButton
-            aria-label="Expand navigation"
+            aria-label={t('nav.expandNav')}
             size="small"
             onClick={() => setMapNavCollapsed(false)}
             sx={{ color: 'text.secondary' }}
@@ -507,7 +498,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
             textDecoration: 'none',
             color: 'inherit',
             borderRadius: 2,
-            transition: 'none',
+            transition: NAV_MOTION,
             '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06) },
           }}
         >
@@ -540,16 +531,16 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
             py: 0,
             textDecoration: 'none',
             color: 'inherit',
-            transition: 'none',
+            transition: NAV_MOTION,
             '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
           }}
         >
           <RentaraLogoMark size="md" variant="navLockup" showTextFallback />
         </Box>
         {isMapRoute ? (
-          <Tooltip title="Collapse navigation" placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
+          <Tooltip title={t('nav.collapseNav')} placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
             <IconButton
-              aria-label="Collapse navigation"
+              aria-label={t('nav.collapseNav')}
               size="small"
               onClick={() => setMapNavCollapsed(true)}
               sx={{ mr: 1, flexShrink: 0, color: 'text.secondary' }}
@@ -564,7 +555,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
   return (
     <Box
       component="aside"
-      aria-label="Main navigation"
+      aria-label={t('nav.mainNav')}
       sx={{
         display: { xs: 'none', md: 'flex' },
         flexDirection: 'column',
@@ -576,7 +567,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
         borderRight: 1,
         borderColor: 'divider',
         bgcolor: 'background.default',
-        transition: 'width 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {brandRow}

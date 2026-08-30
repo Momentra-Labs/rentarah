@@ -1,15 +1,21 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 
-const cardShadow = '0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06)'
-const modalShadow = '0 20px 60px rgba(0,0,0,0.18)'
+import {
+  RH_PRIMARY,
+  RH_PRIMARY_DARK,
+  RH_PRIMARY_LIGHT,
+  rhElev,
+  rhFocusRing,
+  rhRadius,
+} from './tokens'
 
 const baseTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1A56DB',
-      dark: '#1549c2',
-      light: '#EFF6FF',
+      main: RH_PRIMARY,
+      dark: RH_PRIMARY_DARK,
+      light: RH_PRIMARY_LIGHT,
       contrastText: '#FFFFFF',
     },
     secondary: {
@@ -43,7 +49,7 @@ const baseTheme = createTheme({
     },
   },
   shape: {
-    borderRadius: 10,
+    borderRadius: rhRadius.md,
   },
   typography: {
     fontFamily: '"Urbanist", "Inter", "Segoe UI", sans-serif',
@@ -113,6 +119,18 @@ const baseTheme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        ':root': {
+          '--rh-primary': RH_PRIMARY,
+          '--rh-primary-dark': RH_PRIMARY_DARK,
+          '--rh-primary-light': RH_PRIMARY_LIGHT,
+          '--rh-radius-sm': `${rhRadius.sm}px`,
+          '--rh-radius-md': `${rhRadius.md}px`,
+          '--rh-radius-lg': `${rhRadius.lg}px`,
+          '--rh-elev-1': rhElev.elev1,
+          '--rh-elev-2': rhElev.elev2,
+          '--rh-elev-3': rhElev.elev3,
+          '--rh-focus-ring': rhFocusRing,
+        },
         html: {
           WebkitTapHighlightColor: 'transparent',
           overscrollBehaviorX: 'none',
@@ -120,6 +138,19 @@ const baseTheme = createTheme({
         body: {
           backgroundColor: '#FFFFFF',
           WebkitFontSmoothing: 'antialiased',
+        },
+        'a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [role="link"]:focus-visible, .MuiButtonBase-root:focus-visible':
+          {
+            outline: 'none',
+            boxShadow: rhFocusRing,
+          },
+        '@media (prefers-reduced-motion: reduce)': {
+          '*, *::before, *::after': {
+            animationDuration: '0.01ms !important',
+            animationIterationCount: '1 !important',
+            transitionDuration: '0.01ms !important',
+            scrollBehavior: 'auto !important',
+          },
         },
       },
     },
@@ -131,23 +162,28 @@ const baseTheme = createTheme({
         root: {
           textTransform: 'none',
           fontWeight: 600,
-          borderRadius: '8px',
+          borderRadius: `${rhRadius.sm}px`,
           minHeight: 44,
           '@media (min-width: 900px)': {
             minHeight: 40,
           },
+          '@media (pointer: fine) and (prefers-reduced-motion: no-preference)': {
+            '&:active': {
+              transform: 'scale(0.98)',
+            },
+          },
         },
         containedPrimary: {
-          backgroundColor: '#1A56DB',
+          backgroundColor: RH_PRIMARY,
           color: '#FFFFFF',
           '@media (pointer: fine)': {
             '&:hover': {
-              backgroundColor: '#1748b8',
+              backgroundColor: RH_PRIMARY_DARK,
             },
           },
           '@media (pointer: coarse)': {
             '&:active': {
-              backgroundColor: '#1748b8',
+              backgroundColor: RH_PRIMARY_DARK,
             },
           },
         },
@@ -156,13 +192,13 @@ const baseTheme = createTheme({
           '@media (pointer: fine)': {
             '&:hover': {
               borderWidth: '1.5px',
-              backgroundColor: '#EFF6FF',
+              backgroundColor: RH_PRIMARY_LIGHT,
             },
           },
           '@media (pointer: coarse)': {
             '&:active': {
               borderWidth: '1.5px',
-              backgroundColor: '#EFF6FF',
+              backgroundColor: RH_PRIMARY_LIGHT,
             },
           },
         },
@@ -171,7 +207,7 @@ const baseTheme = createTheme({
     MuiIconButton: {
       styleOverrides: {
         root: {
-          borderRadius: 10,
+          borderRadius: rhRadius.md,
           minWidth: 44,
           minHeight: 44,
           '@media (min-width: 900px)': {
@@ -191,13 +227,14 @@ const baseTheme = createTheme({
       styleOverrides: {
         root: {
           border: '1px solid #E5E7EB',
-          borderRadius: '16px',
-          boxShadow: cardShadow,
+          borderRadius: `${rhRadius.lg}px`,
+          boxShadow: rhElev.elev1,
           backgroundColor: '#FFFFFF',
-          transition: 'border-color 0.2s ease',
+          transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
           '@media (pointer: fine)': {
             '&:hover': {
               borderColor: '#D1D5DB',
+              boxShadow: rhElev.elev2,
             },
           },
         },
@@ -216,7 +253,7 @@ const baseTheme = createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          borderRadius: '8px',
+          borderRadius: `${rhRadius.sm}px`,
           backgroundColor: '#F9FAFB',
           '& fieldset': {
             borderColor: '#E5E7EB',
@@ -224,14 +261,16 @@ const baseTheme = createTheme({
           '&:hover fieldset': {
             borderColor: '#D1D5DB',
           },
+          '&.Mui-focused': {
+            boxShadow: rhFocusRing,
+          },
           '&.Mui-focused fieldset': {
             borderWidth: '2px',
-            borderColor: '#1A56DB',
+            borderColor: RH_PRIMARY,
           },
         },
       },
     },
-    /** Default is overflow:hidden + textOverflow:ellipsis; with shrink transforms that clips the tops of labels (esp. after responsiveFontSizes on body1). */
     MuiInputLabel: {
       styleOverrides: {
         root: {
@@ -248,7 +287,7 @@ const baseTheme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: '6px',
+          borderRadius: `${rhRadius.sm}px`,
           fontWeight: 500,
         },
       },
@@ -256,14 +295,15 @@ const baseTheme = createTheme({
     MuiPaper: {
       styleOverrides: {
         rounded: {
-          borderRadius: '16px',
+          borderRadius: `${rhRadius.lg}px`,
         },
       },
     },
     MuiDialog: {
       styleOverrides: {
         paper: {
-          boxShadow: modalShadow,
+          boxShadow: rhElev.elev3,
+          borderRadius: `${rhRadius.lg}px`,
         },
       },
     },

@@ -1,18 +1,9 @@
 import type { Dayjs } from 'dayjs'
 import { create } from 'zustand'
 
+import { DEFAULT_SEARCH_FILTERS } from '../config/searchFilters'
 import { DEFAULT_SEARCH_LOCATION } from '../constants/geo'
 import type { SearchFilters } from '../types'
-
-const defaultFilters: SearchFilters = {
-  priceRange: [0, 15000],
-  types: [],
-  vehicleType: 'all',
-  transmission: 'all',
-  fuel: 'all',
-  seats: 0,
-  availableOnly: true,
-}
 
 export interface SearchStoreState {
   location: string
@@ -33,7 +24,7 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
   location: DEFAULT_SEARCH_LOCATION,
   pickup: null,
   dropoff: null,
-  filters: { ...defaultFilters },
+  filters: { ...DEFAULT_SEARCH_FILTERS },
   sortBy: 'recommended',
   viewMode: 'grid',
   setLocation: (location) => set({ location }),
@@ -44,5 +35,5 @@ export const useSearchStore = create<SearchStoreState>((set) => ({
     })),
   setSortBy: (sortBy) => set({ sortBy }),
   setViewMode: (viewMode) => set({ viewMode }),
-  clearFilters: () => set({ filters: { ...defaultFilters } }),
+  clearFilters: () => set({ filters: { ...DEFAULT_SEARCH_FILTERS } }),
 }))

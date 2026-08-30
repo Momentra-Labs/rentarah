@@ -1,9 +1,12 @@
 /**
- * Client-only ID uploads: when `false`, submissions stay `pending_review` until a backend admin approves.
- * Default unset / any value except `"false"` auto-approves so static demos remain usable without an API.
- *
- * `.env.example`: `VITE_ID_VERIFICATION_INSTANT_APPROVE=false` for staging manual review simulations.
+ * Client-only ID uploads.
+ * - Explicit `true` / `false` wins.
+ * - Production builds default to **manual review** (`pending_review`).
+ * - Dev/demo defaults to instant approve so static demos remain usable.
  */
 export function shouldInstantApproveIdVerification(): boolean {
-  return String(import.meta.env.VITE_ID_VERIFICATION_INSTANT_APPROVE ?? '').toLowerCase() !== 'false'
+  const raw = String(import.meta.env.VITE_ID_VERIFICATION_INSTANT_APPROVE ?? '').toLowerCase()
+  if (raw === 'true') return true
+  if (raw === 'false') return false
+  return import.meta.env.PROD !== true
 }

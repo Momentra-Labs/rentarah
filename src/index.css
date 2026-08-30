@@ -32,7 +32,7 @@ body {
 }
 
 /**
- * Navbar brand wordmark only — geometric type (Outfit) to match logo artwork.
+ * Navbar brand wordmark — Urbanist to match app typography.
  * Color inherits from the themed nav link (MUI palette); do not set color here.
  */
 /* Leaflet divIcon: remove default white tile behind custom HTML marker */
@@ -76,15 +76,15 @@ body {
   min-width: 0;
   border-radius: 999px;
   background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1);
+  border: none;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 8px 0 4px;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 12px;
+  gap: 5px;
+  padding: 0 11px 0 5px;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12.5px;
   line-height: 1;
   color: #0f172a;
   white-space: nowrap;
@@ -94,7 +94,6 @@ body {
     transform 0.16s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.16s ease,
     background-color 0.16s ease,
-    border-color 0.16s ease,
     color 0.16s ease;
 }
 
@@ -123,10 +122,11 @@ body {
 }
 
 .rentara-price-tag-inner--selected {
-  background: #1a56db;
-  border-color: #1647b8;
+  background: var(--rh-primary, #1a56db);
+  border-color: transparent;
   color: #fff;
-  box-shadow: 0 4px 16px rgba(26, 86, 219, 0.38);
+  box-shadow: 0 6px 18px rgba(26, 86, 219, 0.42);
+  transform: scale(1.06);
 }
 
 .rentara-price-tag-inner--selected .rentara-price-tag-unit {
@@ -148,43 +148,50 @@ body {
   }
 }
 
-/* --- Renta map “chrome”: Voyager basemap; warm container + soft vignette --- */
+/* --- RentaraH map: Grab-like light streets + soft brand wash --- */
 .rentara-leaflet-surface.leaflet-container {
-  /* Warm paper behind tiles (loading / letterboxing) — pairs with Carto Voyager greens & roads */
-  background: linear-gradient(165deg, #eef4f0 0%, #e2ebe4 45%, #dde6df 100%);
+  background: #e8eef5;
   font-family: inherit;
   border-radius: inherit;
-  /* Contain panes; page chrome uses overflow hidden so popups must fit via autoPan + scroll inside card */
   overflow: hidden;
-  box-shadow: inset 0 0 100px rgba(15, 23, 42, 0.045);
+  box-shadow: none;
 }
 
-/*
- * Slightly above .leaflet-control (500) and tiles; stay below MUI AppBar (1100) so we don’t
- * cover the listing strip / page when the map wrapper is overflow: hidden.
- */
 .rentara-leaflet-surface .leaflet-popup-pane {
   z-index: 650;
 }
 
-/* Strip-hover preview: stack above neighbouring popups/clusters inside the pane (still below app chrome ~1100). */
 .leaflet-container.rentara-leaflet-surface .leaflet-popup-pane .leaflet-popup.rentara-explore-popup-hover-front {
   z-index: 800 !important;
 }
 
-/*
- * Tile visibility: Leaflet 1.9 sets mix-blend-mode: plus-lighter on raster tiles (Chromium seam fix).
- * Tailwind preflight also sets img { max-width: 100%; height: auto } — reinforce Leaflet’s overrides.
- * Gentle saturation helps Voyager read crisp on wide flex layouts.
- */
 .rentara-leaflet-surface.leaflet-container .leaflet-tile-pane img.leaflet-tile {
   max-width: none !important;
   max-height: none !important;
   mix-blend-mode: normal !important;
-  filter: saturate(1.05) contrast(1.02);
+  filter: saturate(0.78) brightness(1.06) contrast(0.96);
 }
 
-/* Default on-map attribution hidden — product maps use tiles without the floating OSM chip */
+@media (prefers-reduced-motion: reduce) {
+  .rentara-leaflet-surface.leaflet-container .leaflet-tile-pane img.leaflet-tile {
+    filter: saturate(0.85) brightness(1.03);
+  }
+}
+
+.rentara-leaflet-surface .leaflet-tile-pane {
+  position: relative;
+}
+
+.rentara-leaflet-surface .leaflet-tile-pane::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+  background: rgba(239, 246, 255, 0.2);
+  mix-blend-mode: soft-light;
+}
+
 .rentara-leaflet-surface .leaflet-control-attribution {
   display: none !important;
 }
@@ -193,42 +200,58 @@ body {
   z-index: 500;
 }
 
+/* Circular white zoom FABs (Grab-style) */
 .rentara-leaflet-surface .leaflet-control-zoom {
-  margin: 10px 10px 0 0 !important;
-  border: 1px solid rgba(26, 86, 219, 0.12);
-  border-radius: 14px;
-  box-shadow:
-    0 4px 20px rgba(15, 23, 42, 0.12),
-    0 1px 0 rgba(255, 255, 255, 0.9) inset;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 249, 0.96) 100%);
+  margin: 12px !important;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  overflow: visible;
+  background: transparent !important;
+}
+
+.rentara-leaflet-surface .leaflet-bottom.leaflet-left .leaflet-control-zoom {
+  margin: 0 0 calc(118px + env(safe-area-inset-bottom, 0px)) 12px !important;
+}
+
+.rentara-leaflet-surface .leaflet-bottom.leaflet-right .leaflet-control-zoom {
+  margin: 0 12px calc(118px + env(safe-area-inset-bottom, 0px)) 0 !important;
+}
+
+@media (min-width: 900px) {
+  .rentara-leaflet-surface .leaflet-bottom.leaflet-left .leaflet-control-zoom,
+  .rentara-leaflet-surface .leaflet-bottom.leaflet-right .leaflet-control-zoom {
+    margin: 0 14px 16px 14px !important;
+  }
 }
 
 .rentara-leaflet-surface .leaflet-control-zoom a {
-  width: 44px;
-  height: 44px;
-  line-height: 44px;
-  font-size: 22px;
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  font-size: 20px !important;
   font-weight: 500;
-  color: #1a56db;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  color: #0f172a !important;
+  background: #fff !important;
+  border: none !important;
+  border-radius: 999px !important;
+  margin-bottom: 10px !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14) !important;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+.rentara-leaflet-surface .leaflet-control-zoom a:last-child {
+  margin-bottom: 0 !important;
+}
+
 .rentara-leaflet-surface .leaflet-control-zoom a:hover {
-  background: rgba(26, 86, 219, 0.09);
-  color: #1647b8;
+  background: #f8fafc !important;
+  color: var(--rh-primary, #1a56db) !important;
 }
 
-.rentara-leaflet-surface .leaflet-control-zoom-in {
-  border-radius: 13px 13px 0 0;
-}
-
+.rentara-leaflet-surface .leaflet-control-zoom-in,
 .rentara-leaflet-surface .leaflet-control-zoom-out {
-  border-radius: 0 0 13px 13px;
-  border-bottom: none;
+  border-radius: 999px !important;
 }
 
 /* Popups: card-like, not default Leaflet gray box */
@@ -238,9 +261,9 @@ body {
 }
 
 .rentara-leaflet-surface .leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  border: 1px solid rgba(26, 86, 219, 0.14);
+  box-shadow: 0 14px 44px rgba(26, 86, 219, 0.12), 0 4px 16px rgba(15, 23, 42, 0.08);
   padding: 0;
   overflow: hidden;
   background: #fff;
@@ -306,11 +329,10 @@ body {
 }
 
 .nav-logo-text {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Urbanist', 'Inter', sans-serif;
   font-weight: 700;
   text-rendering: optimizeLegibility;
   letter-spacing: -0.04em;
   text-transform: capitalize;
-  font-feature-settings: 'ss01' on;
   color: inherit;
 }
