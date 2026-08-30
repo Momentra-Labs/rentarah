@@ -78,18 +78,18 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         onClick={(e) => setAnchor(e.currentTarget)}
-        endIcon={<KeyboardArrowDown sx={{ fontSize: compact ? 16 : 18, ml: -0.25 }} />}
+        endIcon={compact ? undefined : <KeyboardArrowDown sx={{ fontSize: 18, ml: -0.25 }} />}
         sx={{
           flexShrink: 0,
-          minWidth: compact ? 0 : undefined,
-          minHeight: compact ? 32 : 36,
-          px: compact ? 0.85 : 1.15,
-          py: 0.35,
+          minWidth: compact ? 40 : undefined,
+          minHeight: 36,
+          px: compact ? 0.9 : 1.15,
+          py: compact ? 0.5 : 0.35,
           borderRadius: 2,
           borderColor: 'divider',
           textTransform: 'none',
           fontWeight: 700,
-          fontSize: compact ? '0.75rem' : '0.8125rem',
+          fontSize: '0.8125rem',
           letterSpacing: '0.02em',
           color: 'text.primary',
           '& .MuiButton-endIcon': { ml: 0.25 },

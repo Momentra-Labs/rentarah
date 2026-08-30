@@ -169,7 +169,16 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
         }}
       >
-        <Toolbar sx={{ width: '100%', mx: 'auto', px: { xs: 2, md: 2.5 }, minHeight: { xs: MOBILE_APP_BAR_TOOLBAR_PX, md: 64 } }}>
+        <Toolbar
+          sx={{
+            width: '100%',
+            mx: 'auto',
+            px: { xs: 2, md: 2.5 },
+            minHeight: { xs: MOBILE_APP_BAR_TOOLBAR_PX, md: 64 },
+            height: { xs: MOBILE_APP_BAR_TOOLBAR_PX, md: 64 },
+            boxSizing: 'border-box',
+          }}
+        >
           <Stack
             direction="row"
             alignItems="center"
@@ -179,12 +188,13 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             sx={{
               textDecoration: 'none',
               color: 'inherit',
-              mr: 'auto',
+              mr: 1.5,
+              minWidth: 0,
+              flex: '1 1 auto',
               display: { xs: 'flex', md: 'none' },
-              py: 0.5,
-              px: 0.5,
               borderRadius: 2,
               transition: 'none',
+              '& [data-rentara-logo]': { maxWidth: '100%' },
               '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
             }}
           >
@@ -409,7 +419,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             ))}
 
           {isMd && (
-            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
+            <Stack direction="row" alignItems="center" spacing={1.25} sx={{ ml: 'auto', flexShrink: 0, pl: 0.5 }}>
               <LanguageSwitcher compact />
               <IconButton
                 onClick={() => openGeoDialog()}

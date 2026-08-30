@@ -8,4 +8,4 @@ export const MOBILE_APP_MAX_WIDTH_PX = 480
  * Toolbar content height under the status bar (not including `env(safe-area-inset-top)`).
  * Keep in sync with {@link Navbar} mobile `Toolbar` minHeight.
  */
-export const MOBILE_APP_BAR_TOOLBAR_PX = 48
+export const MOBILE_APP_BAR_TOOLBAR_PX = 64
