@@ -20,7 +20,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  # Needed so the deploy job can switch Pages source from "branch" to this workflow.
 
 concurrency:
   group: pages
@@ -83,13 +82,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Use GitHub Actions as the Pages source
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api --method PUT "repos/${{ github.repository }}/pages" \
-            -f build_type=workflow \
-            || gh api --method POST "repos/${{ github.repository }}/pages" \
-            -f build_type=workflow
       - id: deployment
         uses: actions/deploy-pages@v4
