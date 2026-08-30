@@ -82,3 +82,5 @@ Key variables:
 ## Deploy
 
 GitHub Pages deploys **this Web SPA only** (see `.github/workflows/`). The API must run on a Node host; Admin is a separate static site.
+
+If the live site is a **white page** and the console says `Expected a JavaScript-or-Wasm module script` / `application/octet-stream`, Pages is serving the **source** `index.html` (`/src/main.tsx`) instead of the Vite `dist` build. Fix: **Settings → Pages → Source → GitHub Actions** (this repo’s “Deploy to GitHub Pages” workflow). Do not use “Deploy from a branch” on the repo root.
