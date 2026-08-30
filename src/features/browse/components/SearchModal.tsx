@@ -1,12 +1,11 @@
 import CloseRounded from '@mui/icons-material/CloseRounded'
-import { Stack, TextField } from '@mui/material'
-import type { TextFieldProps } from '@mui/material/TextField'
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import { Stack } from '@mui/material'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { Dayjs } from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import FriendlyDateTimePicker from '@/components/common/FriendlyDateTimePicker'
 import PhPickupCityAutocomplete from '@/components/search/PhPickupCityAutocomplete'
 import { useT } from '@/hooks/useT'
 import { pickerFocusOutlineSx } from '@/styles/pickerFocus'
@@ -54,7 +53,9 @@ export default function SearchModal({
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key !== 'Escape') return
+      if (document.querySelector('[data-testid="date-time-picker-dialog"]')) return
+      onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -84,6 +85,15 @@ export default function SearchModal({
     onPickupChange(next)
     if (!next) onDropoffChange(null)
   }
+
+  const fieldSx = (section: Section) => ({
+    ...(pickerFocusOutlineSx as Record<string, unknown>),
+    ...(activeSection === section
+      ? {
+          '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
+        }
+      : {}),
+  })
 
   const modal = (
     <AnimatePresence>
@@ -146,69 +156,33 @@ export default function SearchModal({
               </div>
 
               <Stack spacing={2} sx={{ '& .MuiFormControl-root': { width: '100%' } }}>
-                <DateTimePicker
-                  ampm
-                  views={['year', 'month', 'day', 'hours', 'minutes']}
-                  minutesStep={30}
-                  inputFormat="MMM D, YYYY · h:mm A"
+                <FriendlyDateTimePicker
                   label={t('search.pickupLabel')}
                   value={pickup}
                   onChange={handlePickupChange}
                   minDate={minPickup}
+                  showTime
+                  inputFormat={t('picker.dateTimeFormat')}
                   onOpen={() => setActiveSection('pickup')}
-                  renderInput={(params) => {
-                    const sectionSx =
-                      activeSection === 'pickup'
-                        ? {
-                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
-                          }
-                        : {}
-                    const merged = [
-                      pickerFocusOutlineSx,
-                      params.sx ?? {},
-                      sectionSx,
-                    ] as TextFieldProps['sx']
-                    return (
-                      <TextField
-                        {...params}
-                        onFocus={() => setActiveSection('pickup')}
-                        InputLabelProps={{ ...params.InputLabelProps, sx: { fontWeight: 600 } }}
-                        sx={merged}
-                      />
-                    )
+                  textFieldProps={{
+                    onFocus: () => setActiveSection('pickup'),
+                    InputLabelProps: { sx: { fontWeight: 600 } },
+                    sx: fieldSx('pickup'),
                   }}
                 />
-                <DateTimePicker
-                  ampm
-                  views={['year', 'month', 'day', 'hours', 'minutes']}
-                  minutesStep={30}
-                  inputFormat="MMM D, YYYY · h:mm A"
+                <FriendlyDateTimePicker
                   label={t('search.returnLabel')}
                   value={dropoff}
                   onChange={onDropoffChange}
                   minDate={dropoffMin}
                   disabled={!pickup}
+                  showTime
+                  inputFormat={t('picker.dateTimeFormat')}
                   onOpen={() => setActiveSection('return')}
-                  renderInput={(params) => {
-                    const sectionSx =
-                      activeSection === 'return'
-                        ? {
-                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.87)', borderWidth: 2 },
-                          }
-                        : {}
-                    const merged = [
-                      pickerFocusOutlineSx,
-                      params.sx ?? {},
-                      sectionSx,
-                    ] as TextFieldProps['sx']
-                    return (
-                      <TextField
-                        {...params}
-                        onFocus={() => setActiveSection('return')}
-                        InputLabelProps={{ ...params.InputLabelProps, sx: { fontWeight: 600 } }}
-                        sx={merged}
-                      />
-                    )
+                  textFieldProps={{
+                    onFocus: () => setActiveSection('return'),
+                    InputLabelProps: { sx: { fontWeight: 600 } },
+                    sx: fieldSx('return'),
                   }}
                 />
               </Stack>

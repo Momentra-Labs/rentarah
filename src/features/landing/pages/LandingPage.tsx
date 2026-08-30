@@ -577,8 +577,8 @@ export default function LandingPage() {
                         showPolicyCaption={false}
                         showHumanReadableSummary={false}
                         preferDesktopPickers
-                        pickupLabel="Pick-up"
-                        dropoffLabel="Return"
+                        pickupLabel={t('picker.pickup')}
+                        dropoffLabel={t('picker.return')}
                         slotProps={{
                           textField: {
                             sx: tripPlannerFieldSx,

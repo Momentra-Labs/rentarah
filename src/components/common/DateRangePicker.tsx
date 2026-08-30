@@ -13,13 +13,14 @@ import {
 import type { TextFieldProps } from '@mui/material/TextField'
 import type { SxProps, Theme } from '@mui/material/styles'
 import { alpha } from '@mui/material/styles'
-import { DatePicker } from '@mui/x-date-pickers/DatePicker'
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { TimePicker } from '@mui/x-date-pickers/TimePicker'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 
+import { useT } from '@/hooks/useT'
+
+import FriendlyDateTimePicker from './FriendlyDateTimePicker'
 import { pickerFocusOutlineSx } from '../../styles/pickerFocus'
 import {
   applyMinutesFromMidnightToDay,
@@ -98,8 +99,8 @@ export default function DateRangePicker({
   pickup,
   dropoff,
   onChange,
-  pickupLabel = 'Pick-up',
-  dropoffLabel = 'Return',
+  pickupLabel,
+  dropoffLabel,
   minDate,
   slotProps,
   spacing = 2,
@@ -115,10 +116,20 @@ export default function DateRangePicker({
   denseSummary = false,
   preferDesktopPickers = false,
 }: DateRangePickerProps) {
+  const t = useT()
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
+  const pickupText = pickupLabel ?? t('picker.pickup')
+  const dropoffText = dropoffLabel ?? t('picker.return')
 
-  const desktopPickerProps = preferDesktopPickers ? { desktopModeMediaQuery: '@media (min-width: 0px)' } : {}
+  /** Desktop popovers on md+ only — phones keep the mobile calendar dialog. */
+  const desktopPickerProps =
+    preferDesktopPickers && isMdUp ? { desktopModeMediaQuery: '@media (min-width: 0px)' } : {}
+  const mobilePickerChrome = {
+    cancelText: t('common.cancel'),
+    okText: t('common.ok'),
+    toolbarTitle: t('picker.date'),
+  }
 
   const now = dayjs()
   const halfHourOptions = useMemo(() => [...halfHourMinutesFromMidnightOptions()], [])
@@ -291,9 +302,9 @@ export default function DateRangePicker({
   }
 
   /** Compact readable formats — long weekday strings clip in narrow book panels. */
-  const dateInputFormat = 'MMM D, YYYY'
-  const dateTimeInputFormat = 'MMM D, YYYY · h:mm A'
-  const timeInputFormat = 'h:mm A'
+  const dateInputFormat = t('picker.dateFormat')
+  const dateTimeInputFormat = t('picker.dateTimeFormat')
+  const timeInputFormat = t('picker.timeFormat')
 
   const renderTimeControl = (
     role: 'pickup' | 'dropoff',
@@ -318,17 +329,17 @@ export default function DateRangePicker({
       return (
         <FormControl fullWidth size={size} disabled={disabled} sx={selectFormSx}>
           <InputLabel id={`rentara-time-${role}-label`} sx={{ fontWeight: 700 }}>
-            {role === 'pickup' ? 'Pick-up time' : 'Return time'}
+            {role === 'pickup' ? t('picker.pickupTime') : t('picker.returnTime')}
           </InputLabel>
           <Select<string>
             labelId={`rentara-time-${role}-label`}
-            label={role === 'pickup' ? 'Pick-up time' : 'Return time'}
+            label={role === 'pickup' ? t('picker.pickupTime') : t('picker.returnTime')}
             value={String(minsVal)}
             onChange={(e) => onSel(Number(e.target.value))}
             MenuProps={{
               PaperProps: { sx: { maxHeight: 280 }, role: 'listbox' },
             }}
-            aria-label={role === 'pickup' ? 'Pick-up time, 30-minute steps' : 'Return time, 30-minute steps'}
+            aria-label={role === 'pickup' ? t('picker.pickupTimeAria') : t('picker.returnTimeAria')}
           >
             {halfHourOptions.map((m) => (
               <MenuItem key={m} value={String(m)}>
@@ -343,7 +354,9 @@ export default function DateRangePicker({
     return (
       <TimePicker
         {...desktopPickerProps}
-        label={role === 'pickup' ? 'Pick-up time' : 'Return time'}
+        {...mobilePickerChrome}
+        toolbarTitle={role === 'pickup' ? t('picker.pickupTime') : t('picker.returnTime')}
+        label={role === 'pickup' ? t('picker.pickupTime') : t('picker.returnTime')}
         value={base}
         onChange={role === 'pickup' ? handlePickupTime : handleDropoffTime}
         ampm
@@ -362,7 +375,7 @@ export default function DateRangePicker({
             size={size}
             fullWidth
             disabled={disabled}
-            helperText={role === 'pickup' ? 'Meet the host' : 'Hand the keys back'}
+            helperText={role === 'pickup' ? t('picker.meetHost') : t('picker.handKeys')}
             FormHelperTextProps={{ sx: { mx: 0.5, mt: 0.5, fontWeight: 600 } }}
             sx={role === 'pickup' ? pickupSxMerged : dropoffSxMerged}
           />
@@ -391,27 +404,20 @@ export default function DateRangePicker({
         sx={{ width: '100%', minWidth: 0, '& > .MuiBox-root, & > .MuiFormControl-root': { minWidth: 0, width: '100%' } }}
       >
         <Box sx={{ flex: splitFieldsDirection === 'row' ? '1.6 1 0%' : 'none', width: '100%', minWidth: 0 }}>
-          <DatePicker
-            {...desktopPickerProps}
-            label="Date"
+          <FriendlyDateTimePicker
+            label={t('picker.date')}
             value={pickup}
             onChange={handlePickupDate}
-            minDate={minDate ?? undefined}
+            minDate={minDate}
+            showTime={false}
+            size={size}
             inputFormat={dateInputFormat}
-            disableMaskedInput
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                margin="none"
-                {...tfCommonRest}
-                {...pickupRest}
-                InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
-                size={size}
-                fullWidth
-                placeholder="e.g. Apr 28, 2026"
-                sx={pickupSxMerged}
-              />
-            )}
+            placeholder={t('picker.placeholderDate')}
+            textFieldProps={{
+              ...tfCommonRest,
+              ...pickupRest,
+              sx: pickupSxMerged,
+            }}
           />
         </Box>
         <Box sx={{ flex: splitFieldsDirection === 'row' ? '1 1 0%' : 'none', width: '100%', minWidth: 0 }}>
@@ -446,29 +452,21 @@ export default function DateRangePicker({
         sx={{ width: '100%', minWidth: 0, '& > .MuiBox-root, & > .MuiFormControl-root': { minWidth: 0, width: '100%' } }}
       >
         <Box sx={{ flex: splitFieldsDirection === 'row' ? '1.6 1 0%' : 'none', width: '100%', minWidth: 0 }}>
-          <DatePicker
-            {...desktopPickerProps}
-            label="Date"
+          <FriendlyDateTimePicker
+            label={t('picker.date')}
             value={dropoff}
             onChange={handleDropoffDate}
-            minDate={dropoffMin ?? minDate ?? undefined}
+            minDate={dropoffMin ?? minDate}
             disabled={dis}
+            showTime={false}
+            size={size}
             inputFormat={dateInputFormat}
-            disableMaskedInput
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                margin="none"
-                {...tfCommonRest}
-                {...dropoffRest}
-                InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
-                size={size}
-                fullWidth
-                disabled={dis}
-                placeholder="e.g. May 1, 2026"
-                sx={dropoffSxMerged}
-              />
-            )}
+            placeholder={t('picker.placeholderReturn')}
+            textFieldProps={{
+              ...tfCommonRest,
+              ...dropoffRest,
+              sx: dropoffSxMerged,
+            }}
           />
         </Box>
         <Box sx={{ flex: splitFieldsDirection === 'row' ? '1 1 0%' : 'none', width: '100%', minWidth: 0 }}>
@@ -505,7 +503,7 @@ export default function DateRangePicker({
         component="aside"
         role="status"
         aria-live="polite"
-        aria-label="Pick-up time, return time, and total rent duration"
+        aria-label={t('picker.summaryAria')}
         spacing={0.75}
         sx={{
           width: '100%',
@@ -521,7 +519,7 @@ export default function DateRangePicker({
         {pickup?.isValid() ? (
           <Typography variant="body2" sx={{ lineHeight: 1.45 }}>
             <Box component="span" sx={{ fontWeight: 800, color: 'primary.main', mr: 0.75 }}>
-              Pick-up
+              {t('picker.pickup')}
             </Box>
             <Box component="span" sx={{ fontWeight: 650, color: 'text.primary' }}>
               {formatTripDateTimeHuman(pickup)}
@@ -531,7 +529,7 @@ export default function DateRangePicker({
         {dropoff?.isValid() ? (
           <Typography variant="body2" sx={{ lineHeight: 1.45 }}>
             <Box component="span" sx={{ fontWeight: 800, color: 'primary.main', mr: 0.75 }}>
-              Return
+              {t('picker.return')}
             </Box>
             <Box component="span" sx={{ fontWeight: 650, color: 'text.primary' }}>
               {formatTripDateTimeHuman(dropoff)}
@@ -551,7 +549,7 @@ export default function DateRangePicker({
             }}
           >
             <Box component="span" sx={{ fontWeight: 800, color: 'text.primary', mr: 0.75 }}>
-              Trip length
+              {t('picker.tripLength')}
             </Box>
             {spanSentence}
           </Typography>
@@ -606,14 +604,14 @@ export default function DateRangePicker({
           >
             <Stack spacing={0.35} sx={{ flex: '1 1 0%', minWidth: 0 }}>
               <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
-                {pickupLabel}
+                {pickupText}
               </Typography>
               <PickupRow />
             </Stack>
             {connector}
             <Stack spacing={0.35} sx={{ flex: '1 1 0%', minWidth: 0 }}>
               <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
-                {dropoffLabel}
+                {dropoffText}
               </Typography>
               <ReturnRow />
             </Stack>
@@ -627,7 +625,7 @@ export default function DateRangePicker({
       <Stack spacing={spacing} sx={{ width: '100%' }}>
         <Stack spacing={0.65}>
           <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
-            {pickupLabel}
+            {pickupText}
           </Typography>
           <PickupRow wrapBox={mobWrap} />
         </Stack>
@@ -636,7 +634,7 @@ export default function DateRangePicker({
 
         <Stack spacing={0.65} sx={{ opacity: pickup?.isValid() ? 1 : 0.52 }}>
           <Typography variant="caption" color="text.secondary" sx={rowLabelSx}>
-            {dropoffLabel}
+            {dropoffText}
           </Typography>
           <ReturnRow wrapBox={mobWrap} />
         </Stack>
@@ -645,7 +643,7 @@ export default function DateRangePicker({
 
         {showPolicyCaption ? (
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block', fontWeight: 500 }}>
-            Times are for meeting the host. Pricing still counts calendar days between pick-up and return.
+            {t('picker.policy')}
           </Typography>
         ) : null}
       </Stack>
@@ -654,7 +652,7 @@ export default function DateRangePicker({
 
   const policyCaption = (
     <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, display: 'block', fontWeight: 500 }}>
-      Times are for meeting the host. Pricing still counts calendar days between pick-up and return.
+      {t('picker.policy')}
     </Typography>
   )
 
@@ -671,53 +669,35 @@ export default function DateRangePicker({
           ...pickerFocusOutlineSx,
         }}
       >
-        <DateTimePicker
-          {...desktopPickerProps}
-          ampm
-          views={['year', 'month', 'day', 'hours', 'minutes']}
-          minutesStep={30}
-          inputFormat={dateTimeInputFormat}
-          label={pickupLabel}
+        <FriendlyDateTimePicker
+          label={pickupText}
           value={pickup}
           onChange={handlePickup}
-          minDate={minDate ?? undefined}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              margin="none"
-              {...tfCommonRest}
-              {...pickupRest}
-              InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
-              size={size}
-              fullWidth
-              placeholder="Apr 28, 2026 · 10:00 AM"
-              sx={pickupSxMerged}
-            />
-          )}
-        />
-        <DateTimePicker
-          {...desktopPickerProps}
-          ampm
-          views={['year', 'month', 'day', 'hours', 'minutes']}
-          minutesStep={30}
+          minDate={minDate}
+          showTime
+          size={size}
           inputFormat={dateTimeInputFormat}
-          label={dropoffLabel}
+          placeholder={t('picker.placeholderDateTime')}
+          textFieldProps={{
+            ...tfCommonRest,
+            ...pickupRest,
+            sx: pickupSxMerged,
+          }}
+        />
+        <FriendlyDateTimePicker
+          label={dropoffText}
           value={dropoff}
           onChange={handleDropoff}
-          minDate={dropoffMin ?? minDate ?? undefined}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              margin="none"
-              {...tfCommonRest}
-              {...dropoffRest}
-              InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
-              size={size}
-              fullWidth
-              placeholder="May 1, 2026 · 10:00 AM"
-              sx={dropoffSxMerged}
-            />
-          )}
+          minDate={dropoffMin ?? minDate}
+          showTime
+          size={size}
+          inputFormat={dateTimeInputFormat}
+          placeholder={t('picker.placeholderReturnDateTime')}
+          textFieldProps={{
+            ...tfCommonRest,
+            ...dropoffRest,
+            sx: dropoffSxMerged,
+          }}
         />
       </Stack>
       {humanReadableSummary}

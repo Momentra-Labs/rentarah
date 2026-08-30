@@ -36,6 +36,7 @@ import AvailabilityCalendar from '@/components/detail/AvailabilityCalendar'
 import ReviewsList from '@/components/detail/ReviewsList'
 import CarDetailSkeleton from '@/components/skeletons/CarDetailSkeleton'
 import { useDateValidation } from '@/hooks/useDateValidation'
+import { useT } from '@/hooks/useT'
 import { useOfferGeoPrompt } from '@/hooks/useOfferGeoPrompt'
 import { usePricing } from '@/hooks/usePricing'
 import { useVehicles } from '@/hooks/useVehicles'
@@ -187,6 +188,7 @@ function ListingPhotoStage({
 }
 
 export default function CarDetailPage() {
+  const t = useT()
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
   const { id } = useParams<{ id: string }>()
@@ -586,8 +588,8 @@ export default function CarDetailPage() {
                     if (p?.isValid() && d?.isValid()) setSearchDates(p, d)
                   }}
                   minDate={dayjs()}
-                  pickupLabel="Pick-up"
-                  dropoffLabel="Return"
+                  pickupLabel={t('picker.pickup')}
+                  dropoffLabel={t('picker.return')}
                   splitDateTime
                   timeGranularity="halfHourSelect"
                   mobileGroupedBoxes

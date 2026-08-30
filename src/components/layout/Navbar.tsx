@@ -410,6 +410,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
 
           {isMd && (
             <Stack direction="row" alignItems="center" spacing={0.5} sx={{ ml: 'auto' }}>
+              <LanguageSwitcher compact />
               <IconButton
                 onClick={() => openGeoDialog()}
                 aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
