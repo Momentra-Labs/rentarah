@@ -18,7 +18,7 @@ import { PickersDay } from '@mui/x-date-pickers/PickersDay'
 import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { useEffect, useMemo, useState, type Key } from 'react'
+import { useEffect, useMemo, useState, type Key, type ReactNode } from 'react'
 
 import { useT } from '@/hooks/useT'
 import { applyMinutesFromMidnightToDay } from '@/utils/dateUtils'
@@ -41,6 +41,98 @@ const WEEK_ROW = 40
 const WEEK_ROWS = 6
 const CALENDAR_WEEKS_HEIGHT = WEEK_ROW * WEEK_ROWS
 const DIALOG_GUTTER = { xs: 2.5, sm: 3 }
+
+const HOURS_12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const
+
+function TimeColumn({
+  label,
+  listLabel,
+  children,
+}: {
+  label: string
+  listLabel: string
+  children: ReactNode
+}) {
+  return (
+    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      <Typography
+        variant="overline"
+        color="text.secondary"
+        sx={{ fontWeight: 700, letterSpacing: '0.08em', mb: 0.75, px: 0.25 }}
+      >
+        {label}
+      </Typography>
+      <Box
+        role="listbox"
+        aria-label={listLabel}
+        sx={{
+          flex: 1,
+          maxHeight: 260,
+          overflowY: 'auto',
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: (th) => alpha(th.palette.divider, 0.95),
+          bgcolor: (th) => (th.palette.mode === 'dark' ? alpha(th.palette.common.white, 0.04) : alpha(th.palette.grey[500], 0.05)),
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  )
+}
+
+function TimeOption({
+  selected,
+  disabled,
+  text,
+  ariaLabel,
+  mark,
+  onClick,
+}: {
+  selected: boolean
+  disabled: boolean
+  text: string
+  ariaLabel: string
+  mark?: 'hour' | 'minute'
+  onClick: () => void
+}) {
+  return (
+    <Box
+      component="button"
+      type="button"
+      role="option"
+      aria-selected={selected}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      data-time-selected={selected ? mark : undefined}
+      onClick={onClick}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        minHeight: 44,
+        px: 1.5,
+        border: 'none',
+        borderLeft: '3px solid',
+        borderLeftColor: selected ? 'primary.main' : 'transparent',
+        bgcolor: (th) => (selected ? alpha(th.palette.primary.main, 0.08) : 'transparent'),
+        color: disabled ? 'text.disabled' : selected ? 'primary.main' : 'text.primary',
+        fontWeight: selected ? 700 : 500,
+        fontSize: '1rem',
+        fontVariantNumeric: 'tabular-nums',
+        fontFamily: 'inherit',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.42 : 1,
+        '&:hover': disabled
+          ? undefined
+          : { bgcolor: (th) => alpha(th.palette.primary.main, selected ? 0.1 : 0.04) },
+      }}
+    >
+      {text}
+    </Box>
+  )
+}
 
 const weekGridSx = {
   display: 'grid',
@@ -85,6 +177,17 @@ export default function DateTimePickerDialog({
       setStep('date')
     }
   }, [open, value, minDate, showTime])
+
+  useEffect(() => {
+    if (!open || step !== 'time') return
+    const id = window.requestAnimationFrame(() => {
+      const hourEl = document.querySelector('[data-time-selected="hour"]') as HTMLElement | null
+      const minuteEl = document.querySelector('[data-time-selected="minute"]') as HTMLElement | null
+      hourEl?.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+      minuteEl?.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [open, step])
 
   const earliest = useMemo(() => earliestAllowedInstant(minDate), [minDate])
   const tooSoon = showTime ? draft.isBefore(earliest) : draft.isBefore(earliest, 'day')
@@ -284,7 +387,7 @@ export default function DateTimePickerDialog({
             {title}
           </Typography>
           {showTime ? (
-            <Typography variant="caption" color="primary.main" sx={{ display: 'block', fontWeight: 800 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ display: 'block', fontWeight: 600 }}>
               {onDateStep ? t('picker.stepDate') : t('picker.stepTime')}
             </Typography>
           ) : null}
@@ -309,9 +412,14 @@ export default function DateTimePickerDialog({
                     size="small"
                     clickable
                     color={draft.isSame(item.day, 'day') ? 'primary' : 'default'}
-                    variant={draft.isSame(item.day, 'day') ? 'filled' : 'outlined'}
+                    variant="outlined"
                     onClick={() => setDay(item.day)}
-                    sx={{ fontWeight: 700 }}
+                    sx={{
+                      fontWeight: 700,
+                      bgcolor: draft.isSame(item.day, 'day')
+                        ? (th) => alpha(th.palette.primary.main, 0.08)
+                        : 'transparent',
+                    }}
                   />
                 ))}
               </Stack>
@@ -329,10 +437,20 @@ export default function DateTimePickerDialog({
             </Box>
           </Stack>
         ) : (
-          <Stack spacing={1.25} sx={{ mt: 2 }}>
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                {t('picker.hour')}
+          <Stack spacing={2} sx={{ mt: 2.5 }}>
+            <Stack alignItems="center" spacing={1.25}>
+              <Typography
+                aria-hidden
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '2.5rem', sm: '2.75rem' },
+                  letterSpacing: '-0.04em',
+                  lineHeight: 1,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: 'text.primary',
+                }}
+              >
+                {hour12}:{String(minute).padStart(2, '0')}
               </Typography>
               <ToggleButtonGroup
                 exclusive
@@ -342,82 +460,61 @@ export default function DateTimePickerDialog({
                   if (next === 'am' || next === 'pm') setClock(hour12, next === 'pm', minute)
                 }}
                 aria-label={t('picker.time')}
+                sx={{
+                  '& .MuiToggleButton-root': {
+                    px: 2,
+                    py: 0.5,
+                    fontWeight: 700,
+                    fontSize: '0.8125rem',
+                    borderColor: (th) => alpha(th.palette.divider, 0.95),
+                    '&.Mui-selected': {
+                      bgcolor: (th) => alpha(th.palette.primary.main, 0.1),
+                      color: 'primary.main',
+                      borderColor: (th) => alpha(th.palette.primary.main, 0.35),
+                    },
+                  },
+                }}
               >
-                <ToggleButton value="am" sx={{ px: 1.5, fontWeight: 800 }}>
-                  {t('picker.am')}
-                </ToggleButton>
-                <ToggleButton value="pm" sx={{ px: 1.5, fontWeight: 800 }}>
-                  {t('picker.pm')}
-                </ToggleButton>
+                <ToggleButton value="am">{t('picker.am')}</ToggleButton>
+                <ToggleButton value="pm">{t('picker.pm')}</ToggleButton>
               </ToggleButtonGroup>
             </Stack>
 
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-                gap: 0.75,
-              }}
-            >
-              {([12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const).map((h) => {
-                const candidate = applyMinutesFromMidnightToDay(draft, toHour24(h, isPm) * 60 + minute)
-                const disabled = candidate.isBefore(earliest)
-                const selected = hour12 === h
-                return (
-                  <Button
-                    key={h}
-                    size="small"
-                    disabled={disabled}
-                    variant={selected ? 'contained' : 'outlined'}
-                    onClick={() => setClock(h, isPm, minute)}
-                    sx={{
-                      minWidth: 0,
-                      px: 0,
-                      py: 0.75,
-                      fontWeight: 800,
-                      borderRadius: 1.5,
-                      bgcolor: selected ? undefined : (th) => alpha(th.palette.primary.main, 0.04),
-                    }}
-                  >
-                    {h}
-                  </Button>
-                )
-              })}
-            </Box>
-
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-              {t('picker.minute')}
-            </Typography>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-                gap: 0.75,
-              }}
-            >
-              {MINUTE_STEPS.map((m) => {
-                const candidate = applyMinutesFromMidnightToDay(draft, toHour24(hour12, isPm) * 60 + m)
-                const disabled = candidate.isBefore(earliest)
-                return (
-                  <Button
-                    key={m}
-                    size="small"
-                    disabled={disabled}
-                    variant={minute === m ? 'contained' : 'outlined'}
-                    onClick={() => setClock(hour12, isPm, m)}
-                    sx={{
-                      minWidth: 0,
-                      px: 0,
-                      py: 0.75,
-                      fontWeight: 800,
-                      borderRadius: 1.5,
-                    }}
-                  >
-                    :{String(m).padStart(2, '0')}
-                  </Button>
-                )
-              })}
-            </Box>
+            <Stack direction="row" spacing={1.5} alignItems="stretch">
+              <TimeColumn label={t('picker.hour')} listLabel={t('picker.hour')}>
+                {HOURS_12.map((h) => {
+                  const candidate = applyMinutesFromMidnightToDay(draft, toHour24(h, isPm) * 60 + minute)
+                  return (
+                    <TimeOption
+                      key={h}
+                      mark="hour"
+                      text={String(h)}
+                      ariaLabel={`${t('picker.hour')} ${h}`}
+                      selected={hour12 === h}
+                      disabled={candidate.isBefore(earliest)}
+                      onClick={() => setClock(h, isPm, minute)}
+                    />
+                  )
+                })}
+              </TimeColumn>
+              <TimeColumn label={t('picker.minute')} listLabel={t('picker.minute')}>
+                {MINUTE_STEPS.map((m) => {
+                  const candidate = applyMinutesFromMidnightToDay(draft, toHour24(hour12, isPm) * 60 + m)
+                  const text = String(m).padStart(2, '0')
+                  return (
+                    <TimeOption
+                      key={m}
+                      mark="minute"
+                      text={text}
+                      ariaLabel={`${t('picker.minute')} ${text}`}
+                      selected={minute === m}
+                      disabled={candidate.isBefore(earliest)}
+                      onClick={() => setClock(hour12, isPm, m)}
+                    />
+                  )
+                })}
+              </TimeColumn>
+            </Stack>
 
             {tooSoon ? (
               <Typography variant="caption" color="error" sx={{ fontWeight: 700 }}>

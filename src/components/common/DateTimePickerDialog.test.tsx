@@ -36,15 +36,15 @@ describe('DateTimePickerDialog', () => {
     renderDialog()
 
     expect(screen.getByTestId('date-time-picker-dialog')).toBeInTheDocument()
-    expect(screen.getByText('1 · Date')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: ':15' })).not.toBeInTheDocument()
+    expect(screen.getByText('Choose a date')).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Minute 15' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'AM' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Confirm' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('2 · Time')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: ':15' })).toBeInTheDocument()
+    expect(screen.getByText('Choose a time')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Minute 15' })).toBeInTheDocument()
   })
 
   it('lets the user pick a 5-minute time and confirm', async () => {
@@ -52,7 +52,7 @@ describe('DateTimePickerDialog', () => {
     const { onAccept, onClose, value } = renderDialog()
 
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(screen.getByRole('button', { name: ':15' }))
+    await user.click(screen.getByRole('option', { name: 'Minute 15' }))
     expect(screen.getByText(new RegExp(`${value.format('ddd, MMM D')} · 10:15 AM`))).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Confirm' }))
@@ -68,11 +68,11 @@ describe('DateTimePickerDialog', () => {
     renderDialog()
 
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    expect(screen.getByText('2 · Time')).toBeInTheDocument()
+    expect(screen.getByText('Choose a time')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Back' }))
-    expect(screen.getByText('1 · Date')).toBeInTheDocument()
+    expect(screen.getByText('Choose a date')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: ':15' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Minute 15' })).not.toBeInTheDocument()
   })
 
   it('does not commit when cancelled', async () => {
