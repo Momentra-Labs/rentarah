@@ -78,7 +78,9 @@ export default function SearchModal({
   }, [open])
 
   const handleBackdropMouseDown = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose()
+    if (e.target !== e.currentTarget) return
+    if (document.querySelector('[data-testid="date-time-picker-dialog"]')) return
+    onClose()
   }
 
   const handlePickupChange = (next: Dayjs | null) => {

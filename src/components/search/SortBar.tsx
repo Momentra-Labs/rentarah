@@ -6,7 +6,7 @@ import { useT } from '@/hooks/useT'
 
 import type { SearchStoreState } from '../../store/useSearchStore'
 
-/** Result count, sort control, and optional grid/list toggle. Full filter UI: sidebar (md+) or SearchPage FAB (< md). */
+/** Result count, sort control, and optional grid/list toggle. Filters live in the overlay sheet. */
 interface SortBarProps {
   total: number
   /** Current search area for “N vehicles in …” (full city name, not a comma-split token). */

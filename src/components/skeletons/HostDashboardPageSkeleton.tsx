@@ -1,5 +1,6 @@
 import { Box, Container, Grid } from '@mui/material'
 
+import { MOBILE_BOTTOM_NAV_SX_PB } from '@/components/layout/MobileBottomNav'
 import { containerGutters } from '@/theme/pageStyles'
 
 import {
@@ -17,7 +18,7 @@ export default function HostDashboardPageSkeleton() {
       aria-busy="true"
       aria-label="Loading host dashboard"
     >
-      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: 12, md: 10 }, ...containerGutters }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 10 }, ...containerGutters }}>
         <PageHeaderSkeleton />
         <NextStepStripSkeleton />
         <DashboardTabsSkeleton count={4} />

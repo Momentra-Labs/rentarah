@@ -11,13 +11,9 @@ import { prefetchPath } from '@/lib/routePrefetch'
 import { useSearchStore } from '@/store/useSearchStore'
 import { containerGutters } from '@/theme/pageStyles'
 import type { Car } from '@/types'
-import {
-  formatSearchDateTimeParam,
-  parseSearchDateTimeParam,
-  withDefaultDropoffTime,
-} from '@/utils/dateUtils'
+import { applyBrowseUrlToStore, buildBrowseSearchParams } from '@/utils/browseSearchUrl'
+import { formatSearchDateTimeParam } from '@/utils/dateUtils'
 import { areUrlSearchQueriesEqual } from '@/utils/urlQueryCompare'
-import { isValidVehicleType } from '@/utils/vehicleUtils'
 
 export default function SearchPage() {
   const t = useT()
@@ -50,59 +46,17 @@ export default function SearchPage() {
   const pickupKey = pickup?.isValid() ? formatSearchDateTimeParam(pickup) : ''
   const dropoffKey = dropoff?.isValid() ? formatSearchDateTimeParam(dropoff) : ''
 
-  useEffect(() => {
-    const q = new URLSearchParams(routeLocation.search)
-    const st = useSearchStore.getState()
-
-    const rawLoc = q.get('location')
-    const locTrim = rawLoc?.trim()
-    if (locTrim && locTrim !== st.location) setLocation(locTrim)
-
-    const vtRaw = q.get('vt')
-    if (vtRaw && isValidVehicleType(vtRaw)) {
-      if (st.filters.vehicleType !== vtRaw) setFilter({ vehicleType: vtRaw })
-    } else if (st.filters.vehicleType !== 'all') {
-      setFilter({ vehicleType: 'all' })
-    }
-
-    const typesCsv = q.get('types')
-    const typesParsed = typesCsv?.split(',').filter(Boolean)
-    if (typesParsed?.length) {
-      const incoming = [...typesParsed].sort().join('|')
-      const existing = [...st.filters.types].sort().join('|')
-      if (incoming !== existing) setFilter({ types: typesParsed })
-    } else if (st.filters.types.length > 0) {
-      setFilter({ types: [] })
-    }
-
-    const puParsed = parseSearchDateTimeParam(q.get('pickup'), 'pickup')
-    const drParsed = parseSearchDateTimeParam(q.get('dropoff'), 'dropoff')
-
-    if (puParsed?.isValid() && drParsed?.isValid()) {
-      const samePu =
-        st.pickup?.isValid() && formatSearchDateTimeParam(st.pickup) === formatSearchDateTimeParam(puParsed)
-      const sameDr =
-        st.dropoff?.isValid() && formatSearchDateTimeParam(st.dropoff) === formatSearchDateTimeParam(drParsed)
-      if (!samePu || !sameDr) setDates(puParsed, drParsed)
-    } else if (puParsed?.isValid()) {
-      const defDrop = withDefaultDropoffTime(puParsed.startOf('day').add(3, 'day'))
-      const samePu =
-        st.pickup?.isValid() && formatSearchDateTimeParam(st.pickup) === formatSearchDateTimeParam(puParsed)
-      const sameDr =
-        st.dropoff?.isValid() &&
-        formatSearchDateTimeParam(st.dropoff) === formatSearchDateTimeParam(defDrop)
-      if (!samePu || !sameDr) setDates(puParsed, defDrop)
-    }
+  /**
+   * Apply the URL first (layout), then write the store back using getState().
+   * Writing the first-render snapshot used to replace `location=Philippines` with the
+   * default Metro Manila city.
+   */
+  useLayoutEffect(() => {
+    applyBrowseUrlToStore(routeLocation.search, useSearchStore.getState())
   }, [routeLocation.search, setLocation, setDates, setFilter])
 
   useEffect(() => {
-    const params = new URLSearchParams()
-    params.set('location', location)
-    if (pickup?.isValid()) params.set('pickup', formatSearchDateTimeParam(pickup))
-    if (dropoff?.isValid()) params.set('dropoff', formatSearchDateTimeParam(dropoff))
-    if (filters.types.length) params.set('types', filters.types.join(','))
-    if (filters.vehicleType !== 'all') params.set('vt', filters.vehicleType)
-
+    const params = buildBrowseSearchParams(useSearchStore.getState())
     const next = params.toString()
     const dest = next ? `?${next}` : ''
     if (areUrlSearchQueriesEqual(routeLocation.search ?? '', dest)) return

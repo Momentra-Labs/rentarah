@@ -5,7 +5,6 @@ import PersonOutline from '@mui/icons-material/PersonOutline'
 import PhotoCameraOutlined from '@mui/icons-material/PhotoCameraOutlined'
 import RateReviewOutlined from '@mui/icons-material/RateReviewOutlined'
 import {
-  Badge,
   Box,
   Button,
   Card,
@@ -16,8 +15,6 @@ import {
   Grid,
   Paper,
   Stack,
-  Tab,
-  Tabs,
   TextField,
   Typography,
   useTheme,
@@ -34,6 +31,7 @@ import EmptyState from '../components/ui/EmptyState'
 import UserAvatar from '../components/common/UserAvatar'
 import PhilippineDriversLicenseTextField from '../components/auth/PhilippineDriversLicenseTextField'
 import PhilippineNationalMobileTextField from '../components/auth/PhilippineNationalMobileTextField'
+import DashboardSectionTabs from '../components/layout/DashboardSectionTabs'
 import PageHeader from '../components/layout/PageHeader'
 import { formatBookingStoredDate } from '../utils/dateUtils'
 import { useAuthStore } from '../store/useAuthStore'
@@ -53,7 +51,7 @@ import { useBookingStore } from '../store/useBookingStore'
 import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
-import { containerGutters, dashboardSectionTabsSx, dashboardTabsBarWrapSx, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
+import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
 import CarGridSkeleton from '../components/skeletons/CarGridSkeleton'
 import DashboardPageSkeleton from '../components/skeletons/DashboardPageSkeleton'
 import { useT } from '../hooks/useT'
@@ -348,51 +346,28 @@ export default function DashboardPage() {
           </Paper>
         ) : null}
 
-        <Box sx={dashboardTabsBarWrapSx}>
-          <Tabs
-            value={tab}
-            onChange={(_, v) => {
-              const idx = typeof v === 'number' ? v : 0
-              const nav = RENTER_TAB_NAV_KEYS[Math.min(RENTER_TAB_NAV_KEYS.length - 1, Math.max(0, idx))] ?? 'trips'
-              goToNav(nav)
-            }}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            aria-label="Account sections"
-            sx={dashboardSectionTabsSx}
-          >
-            <Tab
-              icon={<CalendarMonthOutlined fontSize="small" />}
-              iconPosition="start"
-              label={
-                <Badge
-                  badgeContent={pendingBookingsCount}
-                  color="warning"
-                  invisible={pendingBookingsCount === 0}
-                  max={99}
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      position: 'relative',
-                      transform: 'none',
-                      ml: 0.75,
-                      fontSize: 10,
-                      fontWeight: 800,
-                      minWidth: 18,
-                      height: 18,
-                    },
-                  }}
-                >
-                  {t('renter.trips')}
-                </Badge>
-              }
-            />
-            <Tab icon={<HistoryOutlined fontSize="small" />} iconPosition="start" label={t('renter.past')} />
-            <Tab icon={<FavoriteBorder fontSize="small" />} iconPosition="start" label={t('renter.saved')} />
-            <Tab icon={<RateReviewOutlined fontSize="small" />} iconPosition="start" label={t('renter.reviews')} />
-            <Tab icon={<PersonOutline fontSize="small" />} iconPosition="start" label={t('renter.profile')} />
-          </Tabs>
-        </Box>
+        <DashboardSectionTabs
+          ariaLabel="Account sections"
+          value={RENTER_TAB_NAV_KEYS[tab] ?? 'trips'}
+          onChange={(key) => {
+            if ((RENTER_TAB_NAV_KEYS as readonly string[]).includes(key)) {
+              goToNav(key as RenterTabNav)
+            }
+          }}
+          primaryKeys={['trips', 'saved']}
+          items={[
+            {
+              key: 'trips',
+              label: t('renter.trips'),
+              icon: <CalendarMonthOutlined fontSize="small" />,
+              badge: pendingBookingsCount,
+            },
+            { key: 'past', label: t('renter.past'), icon: <HistoryOutlined fontSize="small" /> },
+            { key: 'saved', label: t('renter.saved'), icon: <FavoriteBorder fontSize="small" /> },
+            { key: 'reviews', label: t('renter.reviews'), icon: <RateReviewOutlined fontSize="small" /> },
+            { key: 'profile', label: t('renter.profile'), icon: <PersonOutline fontSize="small" /> },
+          ]}
+        />
 
       {tab === 4 && (
         <Card
@@ -697,7 +672,7 @@ export default function DashboardPage() {
           <Grid container spacing={{ xs: 2.5, md: 3 }}>
             {savedCars.map((car) => (
               <Grid item xs={12} md={6} key={car.id}>
-                <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: 3, height: '100%' } }}>
+                <Box sx={{ height: '100%' }}>
                   <CarCard car={car} onNavigate={(c) => navigate(`/cars/${c.id}`)} />
                 </Box>
               </Grid>

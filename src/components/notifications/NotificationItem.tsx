@@ -2,9 +2,12 @@ import { Box, Typography, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import { motion } from 'framer-motion'
 
-import { formatNotificationTime } from '../../utils/notificationTime'
-import type { AppNotification } from '../../types'
-import { colorSx, getNotificationMeta } from './notificationMeta'
+import { useT } from '@/hooks/useT'
+import { rhFocusRing } from '@/theme/tokens'
+import { formatNotificationTime } from '@/utils/notificationTime'
+import type { AppNotification } from '@/types'
+
+import { colorSx, getNotificationMeta, notificationKindKey } from './notificationMeta'
 
 const MotionBox = motion.create(Box)
 
@@ -16,10 +19,13 @@ export type NotificationItemProps = {
 }
 
 export default function NotificationItem({ notification, onOpen, compact }: NotificationItemProps) {
+  const t = useT()
   const theme = useTheme()
   const { Icon, color } = getNotificationMeta(notification.type)
   const { bg, fg } = colorSx(theme, color)
   const unread = !notification.read
+  const kind = t(notificationKindKey(notification.type))
+  const when = formatNotificationTime(notification.createdAt)
 
   return (
     <MotionBox
@@ -42,23 +48,27 @@ export default function NotificationItem({ notification, onOpen, compact }: Noti
         display: 'flex',
         alignItems: 'flex-start',
         gap: compact ? 1.25 : 1.5,
-        p: compact ? 1.5 : 2,
+        px: compact ? 1.75 : 2,
+        py: compact ? 1.25 : 1.75,
         minHeight: compact ? 64 : 72,
-        borderRadius: 2,
         cursor: 'pointer',
         textAlign: 'left',
-        border: '1px solid',
+        bgcolor: unread ? 'primary.light' : 'transparent',
+        border: 'none',
+        borderBottom: '1px solid',
         borderColor: 'divider',
-        bgcolor: unread ? alpha(theme.palette.primary.main, 0.04) : 'background.default',
-        boxShadow: unread ? `inset 3px 0 0 ${theme.palette.primary.main}` : 'none',
-        transition: 'background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-        '&:hover': {
-          bgcolor: unread ? alpha(theme.palette.primary.main, 0.07) : alpha(theme.palette.action.hover, 0.5),
-          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        transition: 'background-color 0.15s ease',
+        '&:last-of-type': { borderBottom: 'none' },
+        '@media (pointer: fine)': {
+          '&:hover': {
+            bgcolor: unread ? alpha(theme.palette.primary.main, 0.1) : alpha(theme.palette.primary.main, 0.04),
+          },
         },
         '&:focus-visible': {
-          outline: `2px solid ${theme.palette.primary.main}`,
-          outlineOffset: 2,
+          outline: 'none',
+          boxShadow: rhFocusRing,
+          position: 'relative',
+          zIndex: 1,
         },
       }}
     >
@@ -66,27 +76,30 @@ export default function NotificationItem({ notification, onOpen, compact }: Noti
         sx={{
           width: compact ? 40 : 44,
           height: compact ? 40 : 44,
-          borderRadius: 1.5,
+          borderRadius: '50%',
           bgcolor: bg,
           color: fg,
           display: 'grid',
           placeItems: 'center',
           flexShrink: 0,
-          mt: 0.25,
+          mt: 0.125,
           '& .MuiSvgIcon-root': { fontSize: compact ? 20 : 22 },
         }}
       >
         <Icon fontSize="inherit" />
       </Box>
       <Box sx={{ flex: 1, minWidth: 0, pt: 0.1 }}>
-        <Box sx={{ mb: 0.25 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
           <Typography
             variant="subtitle2"
             fontWeight={unread ? 700 : 600}
             color="text.primary"
             component="h3"
             sx={{
+              flex: 1,
+              minWidth: 0,
               lineHeight: 1.35,
+              letterSpacing: '-0.01em',
               display: '-webkit-box',
               WebkitLineClamp: compact ? 1 : 2,
               WebkitBoxOrient: 'vertical',
@@ -95,6 +108,19 @@ export default function NotificationItem({ notification, onOpen, compact }: Noti
           >
             {notification.title}
           </Typography>
+          {unread ? (
+            <Box
+              aria-hidden
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                bgcolor: 'primary.main',
+                flexShrink: 0,
+                mt: 0.75,
+              }}
+            />
+          ) : null}
         </Box>
         <Typography
           variant="body2"
@@ -105,13 +131,14 @@ export default function NotificationItem({ notification, onOpen, compact }: Noti
             WebkitLineClamp: compact ? 2 : 3,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            mb: 0.5,
+            mt: 0.25,
           }}
         >
           {notification.message}
         </Typography>
-        <Typography variant="caption" color="text.secondary" component="p" sx={{ m: 0, fontWeight: 500 }}>
-          {formatNotificationTime(notification.createdAt)}
+        <Typography variant="caption" color="text.secondary" component="p" sx={{ m: 0, mt: 0.5, fontWeight: 600 }}>
+          {kind}
+          {when ? ` · ${when}` : ''}
         </Typography>
       </Box>
     </MotionBox>

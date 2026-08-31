@@ -18,7 +18,7 @@ import { PickersDay } from '@mui/x-date-pickers/PickersDay'
 import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { useEffect, useMemo, useState, type Key, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type Key, type ReactNode } from 'react'
 
 import { useT } from '@/hooks/useT'
 import { applyMinutesFromMidnightToDay } from '@/utils/dateUtils'
@@ -41,6 +41,8 @@ const WEEK_ROW = 40
 const WEEK_ROWS = 6
 const CALENDAR_WEEKS_HEIGHT = WEEK_ROW * WEEK_ROWS
 const DIALOG_GUTTER = { xs: 2.5, sm: 3 }
+/** Cover the 300ms iOS/Android ghost click after Next (button swap / sheet resize). */
+const STEP_CHANGE_SETTLE_MS = 450
 
 const HOURS_12 = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const
 
@@ -170,24 +172,57 @@ export default function DateTimePickerDialog({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [draft, setDraft] = useState(() => createPickerDraft(value, minDate, showTime))
   const [step, setStep] = useState<'date' | 'time'>('date')
+  /** Ignore backdrop / footer taps while the sheet resizes from calendar → time (mobile ghost clicks). */
+  const settleLockRef = useRef(false)
+  const [settleLock, setSettleLock] = useState(false)
+  const settleTimerRef = useRef(0)
+  const goToTimeTimerRef = useRef(0)
+
+  const armSettleLock = useCallback(() => {
+    settleLockRef.current = true
+    setSettleLock(true)
+    window.clearTimeout(settleTimerRef.current)
+    settleTimerRef.current = window.setTimeout(() => {
+      settleLockRef.current = false
+      setSettleLock(false)
+    }, STEP_CHANGE_SETTLE_MS)
+  }, [])
 
   useEffect(() => {
-    if (open) {
-      setDraft(createPickerDraft(value, minDate, showTime))
-      setStep('date')
-    }
-  }, [open, value, minDate, showTime])
+    if (!open) return
+    setDraft(createPickerDraft(value, minDate, showTime))
+    setStep('date')
+    settleLockRef.current = false
+    setSettleLock(false)
+    // Reset only when the dialog opens. `minDate={dayjs()}` from parents is a new object every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open-only reset
+  }, [open])
 
   useEffect(() => {
     if (!open || step !== 'time') return
+    armSettleLock()
     const id = window.requestAnimationFrame(() => {
-      const hourEl = document.querySelector('[data-time-selected="hour"]') as HTMLElement | null
-      const minuteEl = document.querySelector('[data-time-selected="minute"]') as HTMLElement | null
-      hourEl?.scrollIntoView?.({ block: 'center', inline: 'nearest' })
-      minuteEl?.scrollIntoView?.({ block: 'center', inline: 'nearest' })
+      const scrollSelected = (mark: 'hour' | 'minute') => {
+        const el = document.querySelector(`[data-time-selected="${mark}"]`) as HTMLElement | null
+        const box = el?.closest('[role="listbox"]') as HTMLElement | null
+        if (!el || !box) return
+        const top = el.offsetTop - box.clientHeight / 2 + el.offsetHeight / 2
+        box.scrollTop = Math.max(0, top)
+      }
+      scrollSelected('hour')
+      scrollSelected('minute')
     })
-    return () => window.cancelAnimationFrame(id)
-  }, [open, step])
+    return () => {
+      window.cancelAnimationFrame(id)
+    }
+  }, [open, step, armSettleLock])
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(settleTimerRef.current)
+      window.clearTimeout(goToTimeTimerRef.current)
+    }
+  }, [])
 
   const earliest = useMemo(() => earliestAllowedInstant(minDate), [minDate])
   const tooSoon = showTime ? draft.isBefore(earliest) : draft.isBefore(earliest, 'day')
@@ -225,8 +260,19 @@ export default function DateTimePickerDialog({
     { id: 'nextWeek', label: t('picker.nextWeek'), day: nextWeek },
   ].filter((item) => !isDayBeforeMin(item.day, minDate))
 
+  const handleDialogClose = (_event: unknown, reason?: string) => {
+    if (reason === 'backdropClick' && settleLockRef.current) return
+    onClose()
+  }
+
+  const goToTimeStep = () => {
+    armSettleLock()
+    window.clearTimeout(goToTimeTimerRef.current)
+    goToTimeTimerRef.current = window.setTimeout(() => setStep('time'), 0)
+  }
+
   const handleConfirm = () => {
-    if (tooSoon) return
+    if (settleLockRef.current || tooSoon) return
     onAccept(showTime ? draft.second(0).millisecond(0) : draft.startOf('day'))
     onClose()
   }
@@ -333,17 +379,22 @@ export default function DateTimePickerDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleDialogClose}
       fullWidth
       maxWidth="sm"
+      disableAutoFocus
+      disableRestoreFocus
       aria-labelledby="rentara-dt-picker-title"
       PaperProps={{
         'data-testid': 'date-time-picker-dialog',
+        'data-settling': settleLock ? 'true' : undefined,
+        onMouseDown: (e) => e.stopPropagation(),
         sx: {
           m: { xs: 0, sm: 2 },
           width: { xs: '100%', sm: 440 },
           maxHeight: { xs: '96dvh', sm: '92vh' },
-          height: 'auto',
+          minHeight: { xs: 'min(92dvh, 640px)', sm: 0 },
+          height: { xs: 'min(92dvh, 720px)', sm: 'auto' },
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',
@@ -527,6 +578,7 @@ export default function DateTimePickerDialog({
 
       <DialogActions
         sx={{
+          position: 'relative',
           px: DIALOG_GUTTER,
           pt: 2,
           pb: { xs: 2, sm: 2.5 },
@@ -537,6 +589,15 @@ export default function DateTimePickerDialog({
           justifyContent: 'flex-end',
         }}
       >
+        {settleLock ? (
+          <Box
+            aria-hidden
+            data-testid="picker-settle-capture"
+            onClick={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            sx={{ position: 'absolute', inset: 0, zIndex: 2 }}
+          />
+        ) : null}
         <Button onClick={onClose} sx={{ fontWeight: 700 }}>
           {t('common.cancel')}
         </Button>
@@ -548,7 +609,7 @@ export default function DateTimePickerDialog({
         {showTime && onDateStep ? (
           <Button
             variant="contained"
-            onClick={() => setStep('time')}
+            onClick={goToTimeStep}
             disabled={!dateReady}
             sx={{ fontWeight: 800, px: 2.5 }}
           >

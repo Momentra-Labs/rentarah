@@ -1,10 +1,10 @@
-import FilterAlt from '@mui/icons-material/FilterAlt'
+import Tune from '@mui/icons-material/Tune'
 import {
   Badge,
   Box,
+  Button,
   Chip,
   Container,
-  Fab,
   Grid,
   Pagination,
   Paper,
@@ -13,21 +13,21 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import CarCard from '@/components/common/CarCard'
 import EmptyState from '@/components/common/EmptyState'
-import { MOBILE_TAB_BAR_FAB_BOTTOM } from '@/components/layout/MobileBottomNav'
+import { MOBILE_BOTTOM_NAV_SX_PB } from '@/components/layout/MobileBottomNav'
 import FilterDrawer from '@/components/search/FilterDrawer'
-import FilterPanelScrollColumn from '@/components/search/FilterPanelScrollColumn'
 import SortBar from '@/components/search/SortBar'
 import CarGridSkeleton from '@/components/skeletons/CarGridSkeleton'
 import { DEFAULT_SEARCH_FILTERS, SEARCH_PAGE_SIZE } from '@/config/searchFilters'
 import { isScopedCitySearch, searchAreaLabel } from '@/utils/searchLocation'
 import type { ListingSearchHit } from '@/services/listingSearchService'
 import { useSearchStore } from '@/store/useSearchStore'
-import { containerGutters, softInteractiveSurface, stickyToolbarPaper } from '@/theme/pageStyles'
+import { containerGutters, stickyToolbarPaper } from '@/theme/pageStyles'
 import type { Car, SearchFilters } from '@/types'
 import { useT } from '@/hooks/useT'
 import { VEHICLE_TYPE_LABELS } from '@/utils/vehicleUtils'
@@ -46,7 +46,8 @@ export type SearchResultsShellProps = {
   refetchVehicles: () => void
   refetchSearch: () => void
   onNavigate: (car: Car) => void
-  onReserve: (car: Car) => void
+  /** @deprecated Listing cards no longer show a Reserve control; click opens the vehicle. */
+  onReserve?: (car: Car) => void
   emptyTitle: string
   emptyDescription: string
   showVehicleTypeChips?: boolean
@@ -80,7 +81,6 @@ export default function SearchResultsShell({
   refetchVehicles,
   refetchSearch,
   onNavigate,
-  onReserve,
   emptyTitle,
   emptyDescription,
   showVehicleTypeChips = false,
@@ -88,8 +88,7 @@ export default function SearchResultsShell({
 }: SearchResultsShellProps) {
   const t = useT()
   const theme = useTheme()
-  const isMd = useMediaQuery(theme.breakpoints.down('md'))
-  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'))
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true })
 
   const location = useSearchStore((s) => s.location)
   const filters = useSearchStore((s) => s.filters)
@@ -102,28 +101,28 @@ export default function SearchResultsShell({
   const clearFilters = useSearchStore((s) => s.clearFilters)
 
   const [page, setPage] = useState(1)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const searchToolbarRef = useRef<HTMLDivElement | null>(null)
-  const [searchToolbarH, setSearchToolbarH] = useState(108)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const searchChromeRef = useRef<HTMLDivElement | null>(null)
+  const [searchChromeBottom, setSearchChromeBottom] = useState(128)
 
   useLayoutEffect(() => {
-    const el = searchToolbarRef.current
+    const el = searchChromeRef.current
     if (!el || typeof ResizeObserver === 'undefined') return
     let raf = 0
-    const ro = new ResizeObserver(() => {
+    const update = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
-        setSearchToolbarH(Math.round(el.getBoundingClientRect().height))
+        setSearchChromeBottom(Math.round(el.getBoundingClientRect().bottom))
       })
-    })
+    }
+    const ro = new ResizeObserver(update)
     ro.observe(el)
+    update()
     return () => {
       cancelAnimationFrame(raf)
       ro.disconnect()
     }
   }, [])
-
-  const desktopFiltersStickyTop = 64 + searchToolbarH
   const effectiveViewMode = isSmDown ? 'list' : viewMode
   const totalCount = hits.length
   const filtersTypesKey = useMemo(() => [...filters.types].sort().join('|'), [filters.types])
@@ -231,224 +230,224 @@ export default function SearchResultsShell({
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', pb: { xs: 8, md: 6 } }}>
-      <Paper ref={searchToolbarRef} elevation={0} sx={stickyToolbarPaper(theme)}>
+      <Paper ref={searchChromeRef} elevation={0} sx={stickyToolbarPaper(theme)}>
         {toolbar}
       </Paper>
 
-      <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 }, pb: { xs: 10, md: 6 }, ...containerGutters }}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 3 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 6 }, ...containerGutters }}>
         {header}
 
-        <Grid container spacing={{ xs: 2.5, md: 3 }}>
-          {!isMd && (
-            <Grid item xs={12} md={3}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: { xs: 2, md: 2.25 },
-                  position: 'sticky',
-                  top: desktopFiltersStickyTop,
-                  maxHeight: `calc(100vh - ${desktopFiltersStickyTop + 16}px)`,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  ...softInteractiveSurface(theme, false),
-                }}
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap="wrap"
+          alignItems="center"
+          sx={{ mb: 1.5 }}
+        >
+          <Button
+            variant="outlined"
+            color={hasActiveFilters ? 'primary' : 'inherit'}
+            startIcon={
+              <Badge
+                color="error"
+                variant="dot"
+                invisible={!hasActiveFilters}
+                overlap="circular"
               >
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={800}
-                  component="h2"
-                  sx={{ mb: 1.25, flexShrink: 0, fontSize: '1.05rem', lineHeight: 1.25 }}
-                >
-                  {t('search.filters')}
-                </Typography>
-                <FilterPanelScrollColumn
-                  active
-                  filters={filters}
-                  onChange={setFilter}
-                  onClear={handleClearFilters}
-                  hasActiveFilters={hasActiveFilters}
-                  showVehicleType={showVehicleTypeChips}
-                  scrollBoxSx={{ pb: 0.5 }}
-                />
-              </Paper>
-            </Grid>
-          )}
-          <Grid item xs={12} md={isMd ? 12 : 9}>
-            <SortBar
-              total={totalCount}
-              areaLabel={areaLabel}
-              sortBy={sortBy}
-              viewMode={effectiveViewMode}
-              onSort={setSortBy}
-              onViewMode={setViewMode}
-              showViewModeToggle={!isSmDown}
-              loading={vehiclesLoading || searchLoading}
-            />
+                <Tune fontSize="small" />
+              </Badge>
+            }
+            aria-label={t('search.filterVehiclesAria')}
+            aria-expanded={advancedOpen}
+            aria-controls="browse-advanced-search"
+            onClick={() => setAdvancedOpen((open) => !open)}
+            sx={{
+              textTransform: 'none',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              borderRadius: 2,
+              minHeight: 52,
+              py: 0.75,
+              px: 1.5,
+              bgcolor: (th) =>
+                alpha(th.palette.primary.main, hasActiveFilters ? 0.1 : 0.05),
+              borderColor: (th) =>
+                hasActiveFilters ? th.palette.primary.main : alpha(th.palette.primary.main, 0.28),
+              '&:hover': {
+                bgcolor: (th) => alpha(th.palette.primary.main, 0.12),
+                borderColor: 'primary.main',
+              },
+            }}
+          >
+            <Stack alignItems="flex-start" spacing={0} sx={{ textAlign: 'left', lineHeight: 1.2 }}>
+              <Typography variant="body2" fontWeight={800} color="text.primary">
+                {t('search.filterVehicles')}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {t('search.filterVehiclesHint')}
+              </Typography>
+            </Stack>
+          </Button>
+          {hasActiveFilters ? (
+            <Button
+              variant="text"
+              color="primary"
+              size="small"
+              onClick={handleClearFilters}
+              sx={{ textTransform: 'none', fontWeight: 700, minHeight: 40 }}
+            >
+              {t('search.clear')}
+            </Button>
+          ) : null}
+        </Stack>
 
-            {(showLocationChip || activeFilterChips.length > 0) && (
-              <Stack
-                direction="row"
-                spacing={1}
-                useFlexGap
-                flexWrap="wrap"
-                alignItems="center"
-                sx={{ mb: 2, mt: 1 }}
-              >
-                {showLocationChip && (
-                  <Chip
-                    label={location.trim()}
-                    size="small"
-                    variant="outlined"
-                    onDelete={handleSearchNationwide}
-                    aria-label={t('search.removeLocationAria', { location: location.trim() })}
-                  />
-                )}
-                {activeFilterChips.map((c) => (
-                  <Chip key={c.key} label={c.label} size="small" onDelete={c.onDelete} />
-                ))}
-                {activeFilterChips.length > 0 && (
-                  <Chip
-                    label={t('search.clearAll')}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    onClick={handleClearFilters}
-                    sx={{ fontWeight: 700 }}
-                  />
-                )}
+        {(showLocationChip || activeFilterChips.length > 0) && (
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap="wrap"
+            alignItems="center"
+            sx={{ mb: 2 }}
+          >
+            {showLocationChip && (
+              <Chip
+                label={location.trim()}
+                size="small"
+                variant="outlined"
+                onDelete={handleSearchNationwide}
+                aria-label={t('search.removeLocationAria', { location: location.trim() })}
+              />
+            )}
+            {activeFilterChips.map((c) => (
+              <Chip key={c.key} label={c.label} size="small" onDelete={c.onDelete} />
+            ))}
+            {activeFilterChips.length > 0 && (
+              <Chip
+                label={t('search.clearAll')}
+                size="small"
+                color="primary"
+                variant="outlined"
+                onClick={handleClearFilters}
+                sx={{ fontWeight: 700 }}
+              />
+            )}
+          </Stack>
+        )}
+
+        <SortBar
+          total={totalCount}
+          areaLabel={areaLabel}
+          sortBy={sortBy}
+          viewMode={effectiveViewMode}
+          onSort={setSortBy}
+          onViewMode={setViewMode}
+          showViewModeToggle={!isSmDown}
+          loading={vehiclesLoading || searchLoading}
+        />
+
+        {vehiclesLoading || searchLoading ? (
+          <CarGridSkeleton count={SEARCH_PAGE_SIZE} layout={effectiveViewMode} />
+        ) : vehiclesFatalError && vehiclesError ? (
+          <EmptyState
+            title={t('search.loadFail')}
+            description={vehiclesError}
+            actionLabel={t('common.tryAgain')}
+            onAction={() => refetchVehicles()}
+          />
+        ) : searchError ? (
+          <EmptyState
+            title={t('search.refreshFail')}
+            description={searchError}
+            actionLabel={t('common.tryAgain')}
+            onAction={() => refetchSearch()}
+          />
+        ) : pageItems.length === 0 ? (
+          <EmptyState
+            title={
+              showLocationChip
+                ? t('search.nothingIn', { area: areaLabel })
+                : emptyTitle
+            }
+            description={
+              showLocationChip
+                ? availabilityApplied
+                  ? t('search.noDatesIn', { area: areaLabel })
+                  : t('search.noListingsIn', { area: areaLabel })
+                : emptyDescription
+            }
+            actionLabel={showLocationChip ? t('search.searchNationwide') : t('common.clearFilters')}
+            onAction={showLocationChip ? handleSearchNationwide : handleClearFilters}
+            secondaryActionLabel={showLocationChip ? t('common.clearFilters') : undefined}
+            onSecondaryAction={showLocationChip ? handleClearFilters : undefined}
+          />
+        ) : (
+          <>
+            <Grid
+              container
+              spacing={{ xs: 2.5, md: 3 }}
+              sx={
+                totalCount > 24
+                  ? {
+                      contentVisibility: 'auto',
+                      containIntrinsicSize: '0 800px',
+                    }
+                  : undefined
+              }
+            >
+              {pageItems.map((hit) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={effectiveViewMode === 'grid' ? 6 : 12}
+                  md={effectiveViewMode === 'grid' ? 4 : 12}
+                  key={hit.vehicle.id}
+                >
+                  <Box sx={{ height: '100%' }}>
+                    <CarCard
+                      car={hit.vehicle}
+                      layout={effectiveViewMode}
+                      showDateAvailabilityHint={
+                        availabilityApplied && hit.availability.availableForRange
+                      }
+                      distanceKm={hit.distanceKm}
+                      onNavigate={onNavigate}
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+            {pageCount > 1 && (
+              <Stack alignItems="center" sx={{ mt: 4 }}>
+                <Pagination
+                  count={pageCount}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="small"
+                  siblingCount={0}
+                  boundaryCount={1}
+                  sx={{
+                    '& .MuiPagination-ul': { flexWrap: 'wrap', justifyContent: 'center', gap: 0.5 },
+                  }}
+                />
               </Stack>
             )}
-
-            {vehiclesLoading || searchLoading ? (
-              <CarGridSkeleton count={SEARCH_PAGE_SIZE} layout={effectiveViewMode} />
-            ) : vehiclesFatalError && vehiclesError ? (
-              <EmptyState
-                title={t('search.loadFail')}
-                description={vehiclesError}
-                actionLabel={t('common.tryAgain')}
-                onAction={() => refetchVehicles()}
-              />
-            ) : searchError ? (
-              <EmptyState
-                title={t('search.refreshFail')}
-                description={searchError}
-                actionLabel={t('common.tryAgain')}
-                onAction={() => refetchSearch()}
-              />
-            ) : pageItems.length === 0 ? (
-              <EmptyState
-                title={
-                  showLocationChip
-                    ? t('search.nothingIn', { area: areaLabel })
-                    : emptyTitle
-                }
-                description={
-                  showLocationChip
-                    ? availabilityApplied
-                      ? t('search.noDatesIn', { area: areaLabel })
-                      : t('search.noListingsIn', { area: areaLabel })
-                    : emptyDescription
-                }
-                actionLabel={showLocationChip ? t('search.searchNationwide') : t('common.clearFilters')}
-                onAction={showLocationChip ? handleSearchNationwide : handleClearFilters}
-                secondaryActionLabel={showLocationChip ? t('common.clearFilters') : undefined}
-                onSecondaryAction={showLocationChip ? handleClearFilters : undefined}
-              />
-            ) : (
-              <>
-                <Grid
-                  container
-                  spacing={{ xs: 2.5, md: 3 }}
-                  sx={
-                    totalCount > 24
-                      ? {
-                          // Soft virtualization hint: contain layout for large grids
-                          contentVisibility: 'auto',
-                          containIntrinsicSize: '0 800px',
-                        }
-                      : undefined
-                  }
-                >
-                  {pageItems.map((hit) => (
-                    <Grid
-                      item
-                      xs={12}
-                      sm={effectiveViewMode === 'grid' ? 6 : 12}
-                      md={effectiveViewMode === 'grid' ? 4 : 12}
-                      key={hit.vehicle.id}
-                    >
-                      <Box sx={{ height: '100%', '& .MuiCard-root': { borderRadius: 3, height: '100%' } }}>
-                        <CarCard
-                          car={hit.vehicle}
-                          layout={effectiveViewMode}
-                          showDateAvailabilityHint={
-                            availabilityApplied && hit.availability.availableForRange
-                          }
-                          distanceKm={hit.distanceKm}
-                          onNavigate={onNavigate}
-                          onReserve={onReserve}
-                        />
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-                {pageCount > 1 && (
-                  <Stack alignItems="center" sx={{ mt: 4 }}>
-                    <Pagination
-                      count={pageCount}
-                      page={page}
-                      onChange={handlePageChange}
-                      color="primary"
-                      size="small"
-                      siblingCount={0}
-                      boundaryCount={1}
-                      sx={{
-                        '& .MuiPagination-ul': { flexWrap: 'wrap', justifyContent: 'center', gap: 0.5 },
-                      }}
-                    />
-                  </Stack>
-                )}
-              </>
-            )}
-          </Grid>
-        </Grid>
+          </>
+        )}
       </Container>
 
-      {isMd && (
-        <>
-          <Fab
-            color="primary"
-            size="medium"
-            aria-label={t('search.openFilters')}
-            sx={{
-              position: 'fixed',
-              zIndex: theme.zIndex.speedDial,
-              right: 16,
-              bottom: MOBILE_TAB_BAR_FAB_BOTTOM,
-            }}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Badge
-              color="error"
-              variant="dot"
-              invisible={!hasActiveFilters}
-              sx={{ '& .MuiBadge-badge': { right: 6, top: 6 } }}
-            >
-              <FilterAlt />
-            </Badge>
-          </Fab>
-          <FilterDrawer
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            filters={filters}
-            onChange={setFilter}
-            onClear={handleClearFilters}
-            hasActive={hasActiveFilters}
-            showVehicleType={showVehicleTypeChips}
-          />
-        </>
-      )}
+      <FilterDrawer
+        open={advancedOpen}
+        onClose={() => setAdvancedOpen(false)}
+        filters={filters}
+        onChange={setFilter}
+        onClear={handleClearFilters}
+        hasActive={hasActiveFilters}
+        showVehicleType={showVehicleTypeChips}
+        insetTop={searchChromeBottom}
+      />
     </Box>
   )
 }

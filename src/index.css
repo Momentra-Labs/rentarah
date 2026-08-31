@@ -13,7 +13,7 @@ html {
 /* Extra bottom scroll slack when the fixed tab bar is shown (matches ~MOBILE_TAB_BAR_INSET_PX). */
 @media (max-width: 899.95px) {
   html {
-    scroll-padding-bottom: max(40px, calc(180px + env(safe-area-inset-bottom, 0px)));
+    scroll-padding-bottom: max(40px, calc(112px + env(safe-area-inset-bottom, 0px)));
   }
 }
 

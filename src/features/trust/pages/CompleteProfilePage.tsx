@@ -38,6 +38,7 @@ import {
   wantsHostTrust,
 } from '@/lib/trustOnboarding'
 import { useAuthStore } from '@/store/useAuthStore'
+import { containerGutters } from '@/theme/pageStyles'
 import { useBookingStore } from '@/store/useBookingStore'
 import { useCarsStore } from '@/store/useCarsStore'
 import { useSearchStore } from '@/store/useSearchStore'
@@ -215,7 +216,7 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 3, md: 5 }, ...containerGutters }}>
       <Stack spacing={2.5} component="form" onSubmit={(e) => void handleSubmit(onSubmit)(e)} noValidate>
         <Stack spacing={0.75}>
           <Typography variant="h5" component="h1" fontWeight={800} sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}>

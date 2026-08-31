@@ -427,6 +427,9 @@ export default function AppNavigationList({
 
 const MAP_NAV_RAIL_COLLAPSED_KEY = 'rentara-map-nav-rail-collapsed'
 
+/** Expanded desktop nav rail — keep filter overlays in the main column, not over this rail. */
+export const APP_NAV_SIDEBAR_EXPANDED_PX = 268
+
 /** Desktop persistent rail; on `/map` the user can collapse to an icon rail for more map width. */
 export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void; onLogout: () => void }) {
   const t = useT()
@@ -460,7 +463,7 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
   }, [isMapRoute, mapNavCollapsed])
 
   const rail = isMapRoute && mapNavCollapsed
-  const navWidth = rail ? 72 : 268
+  const navWidth = rail ? 72 : APP_NAV_SIDEBAR_EXPANDED_PX
 
   const brandRow =
     rail ? (

@@ -1,79 +1,57 @@
-import { Box, Card, CardActions, CardContent, Grid, Skeleton, Stack } from '@mui/material'
+import { Box, Grid, Skeleton, Stack } from '@mui/material'
+
+import { rhRadius } from '@/theme/tokens'
 
 export interface CarGridSkeletonProps {
   count?: number
   layout?: 'grid' | 'list'
 }
 
+const GRID_PHOTO_H = { xs: 220, sm: 240 }
+const LIST_PHOTO_H_XS = 200
+const LIST_PHOTO_W_SM = 268
+
 function CardSkeleton({ layout }: { layout: 'grid' | 'list' }) {
-  const mediaHeights =
-    layout === 'grid' ? { xs: 196, sm: 228 } : { xs: 156, sm: 192 }
+  const isList = layout === 'list'
 
   const media = (
     <Skeleton
-      variant="rectangular"
+      variant="rounded"
       animation="wave"
       sx={{
         display: 'block',
-        width: layout === 'list' ? { xs: '100%', sm: 200 } : '100%',
-        height: mediaHeights,
-        minHeight: mediaHeights,
-        maxHeight: mediaHeights,
         flexShrink: 0,
-        borderRadius:
-          layout === 'list' ? { xs: '16px 16px 0 0', sm: '16px 0 0 16px' } : '16px 16px 0 0',
+        width: isList ? { xs: '100%', sm: LIST_PHOTO_W_SM } : '100%',
+        height: isList ? { xs: LIST_PHOTO_H_XS, sm: 200 } : GRID_PHOTO_H,
+        minHeight: isList ? { xs: LIST_PHOTO_H_XS, sm: 200 } : GRID_PHOTO_H,
+        borderRadius: `${rhRadius.lg}px`,
       }}
     />
   )
 
   const body = (
-    <CardContent
-      sx={{
-        pt: { xs: 1.5, sm: 2 },
-        px: { xs: 1.5, sm: 2 },
-        flex: 1,
-        minHeight: 0,
-        pb: 0,
-        '&:last-child': { pb: 0 },
-      }}
-    >
-      <Stack spacing={1}>
-        <Skeleton variant="text" animation="wave" width="42%" height={28} />
-        <Skeleton variant="text" animation="wave" width="78%" height={22} />
-        <Skeleton variant="text" animation="wave" width="56%" height={18} />
-        <Skeleton variant="text" animation="wave" width="64%" height={16} />
-      </Stack>
-    </CardContent>
+    <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0, pt: isList ? { xs: 0, sm: 0.25 } : 1.25 }}>
+      <Skeleton variant="text" animation="wave" width="72%" height={22} />
+      <Skeleton variant="text" animation="wave" width="48%" height={18} />
+      <Skeleton variant="text" animation="wave" width="64%" height={16} />
+      <Skeleton variant="text" animation="wave" width="36%" height={20} sx={{ mt: 0.5 }} />
+    </Stack>
   )
 
-  const actions = (
-    <CardActions sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 }, pt: { xs: 1, sm: 1.25 } }}>
-      <Skeleton variant="rounded" animation="wave" height={44} sx={{ width: '100%', borderRadius: 999 }} />
-    </CardActions>
-  )
-
-  if (layout === 'list') {
+  if (isList) {
     return (
-      <Card variant="outlined" sx={{ height: '100%', borderRadius: 3, overflow: 'hidden' }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ alignItems: 'stretch' }}>
-          {media}
-          <Stack flex={1} minWidth={0}>
-            {body}
-            {actions}
-          </Stack>
-        </Stack>
-      </Card>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.25, sm: 2.5 }} alignItems="stretch">
+        {media}
+        {body}
+      </Stack>
     )
   }
 
   return (
-    <Card variant="outlined" sx={{ height: '100%', borderRadius: 3, overflow: 'hidden' }}>
-      <Stack>
-        {media}
-        {body}
-        {actions}
-      </Stack>
-    </Card>
+    <Box>
+      {media}
+      {body}
+    </Box>
   )
 }
 
@@ -94,9 +72,7 @@ export default function CarGridSkeleton({ count = 6, layout = 'grid' }: CarGridS
           md={layout === 'grid' ? 4 : 12}
           key={i}
         >
-          <Box sx={{ height: '100%' }}>
-            <CardSkeleton layout={layout} />
-          </Box>
+          <CardSkeleton layout={layout} />
         </Grid>
       ))}
     </Grid>

@@ -1,6 +1,6 @@
 import { Box, Container, Grid, Paper, Skeleton, Stack, useMediaQuery, useTheme } from '@mui/material'
 
-import { MOBILE_TAB_BAR_INSET_PX } from '@/components/layout/MobileBottomNav'
+import { MOBILE_FOOTER_ADDITIONAL_CLEAR_PX, MOBILE_TAB_BAR_INSET_PX } from '@/components/layout/MobileBottomNav'
 import { containerGutters } from '@/theme/pageStyles'
 
 /** Detail chrome that matches {@link CarDetailPage} while the catalog hydrates. */
@@ -68,7 +68,7 @@ export default function CarDetailSkeleton() {
       sx={{
         bgcolor: 'background.default',
         minHeight: '100vh',
-        pb: { xs: `calc(${MOBILE_TAB_BAR_INSET_PX + 88}px + env(safe-area-inset-bottom, 0px))`, md: 10 },
+        pb: { xs: `calc(${MOBILE_TAB_BAR_INSET_PX + MOBILE_FOOTER_ADDITIONAL_CLEAR_PX}px + env(safe-area-inset-bottom, 0px))`, md: 10 },
       }}
       aria-busy="true"
       aria-label="Loading vehicle"

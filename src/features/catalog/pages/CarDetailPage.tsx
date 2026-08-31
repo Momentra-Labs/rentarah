@@ -26,7 +26,7 @@ import type { Dayjs } from 'dayjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 
-import { MOBILE_TAB_BAR_INSET_PX } from '@/components/layout/MobileBottomNav'
+import { MOBILE_FOOTER_ADDITIONAL_CLEAR_PX, MOBILE_TAB_BAR_INSET_PX } from '@/components/layout/MobileBottomNav'
 
 import DateRangePicker from '@/components/common/DateRangePicker'
 import PriceBreakdown from '@/components/common/PriceBreakdown'
@@ -321,7 +321,7 @@ export default function CarDetailPage() {
       sx={{
         bgcolor: 'background.default',
         minHeight: '100vh',
-        pb: { xs: `calc(${MOBILE_TAB_BAR_INSET_PX + 88}px + env(safe-area-inset-bottom, 0px))`, md: 10 },
+        pb: { xs: `calc(${MOBILE_TAB_BAR_INSET_PX + MOBILE_FOOTER_ADDITIONAL_CLEAR_PX}px + env(safe-area-inset-bottom, 0px))`, md: 10 },
       }}
     >
       {/* Mobile: edge-to-edge gallery first */}

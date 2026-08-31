@@ -7,6 +7,7 @@ import PaymentsOutlined from '@mui/icons-material/PaymentsOutlined'
 import { alpha, type Theme } from '@mui/material/styles'
 import type { ElementType } from 'react'
 
+import type { MessageKey } from '@/i18n/translate'
 import type { AppNotificationType } from '../../types'
 
 export function getNotificationMeta(
@@ -25,6 +26,21 @@ export function getNotificationMeta(
       return { Icon: EventAvailableOutlined, color: 'warning' }
     case 'system_promo':
       return { Icon: CampaignOutlined, color: 'info' }
+  }
+}
+
+export function notificationKindKey(type: AppNotificationType): MessageKey {
+  switch (type) {
+    case 'booking_confirmed':
+    case 'booking_cancelled':
+      return 'notify.kindBooking'
+    case 'payment_success':
+    case 'payment_failed':
+      return 'notify.kindPayment'
+    case 'upcoming_rental_reminder':
+      return 'notify.kindReminder'
+    case 'system_promo':
+      return 'notify.kindUpdate'
   }
 }
 

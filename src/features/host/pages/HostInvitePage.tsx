@@ -23,7 +23,7 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import PageHeader from '@/components/layout/PageHeader'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { AuthLocationState } from '@/types/authFlow'
-import { listRowSurface, primaryCtaShadow, softShadow } from '@/theme/pageStyles'
+import { containerGutters, listRowSurface, primaryCtaShadow, softShadow } from '@/theme/pageStyles'
 
 const STEPS = [
   {
@@ -84,7 +84,7 @@ export default function HostInvitePage() {
           borderColor: 'divider',
         }}
       >
-        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative' }}>
+        <Container maxWidth="lg" sx={{ ...containerGutters, position: 'relative' }}>
           <Grid container spacing={{ xs: 4, md: 6 }} alignItems="center">
             <Grid item xs={12} md={7}>
               <Chip
@@ -192,7 +192,7 @@ export default function HostInvitePage() {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 6, md: 8 } }}>
+      <Container maxWidth="lg" sx={{ ...containerGutters, pt: { xs: 6, md: 8 } }}>
         <PageHeader
           overline="Hosting"
           title="Everything you need to get started"
@@ -221,7 +221,7 @@ export default function HostInvitePage() {
         </Grid>
       </Container>
 
-      <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 }, pt: { xs: 7, md: 9 } }}>
+      <Container maxWidth="md" sx={{ ...containerGutters, pt: { xs: 7, md: 9 } }}>
         <PageHeader
           overline="Simple steps"
           title="From signup to your first booking"

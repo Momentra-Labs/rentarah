@@ -9,7 +9,6 @@ import Shield from '@mui/icons-material/Shield'
 import Speed from '@mui/icons-material/Speed'
 import {
   alpha,
-  Badge,
   Box,
   Button,
   Card,
@@ -27,8 +26,6 @@ import {
   Paper,
   Stack,
   Switch,
-  Tab,
-  Tabs,
   Typography,
   useTheme,
 } from '@mui/material'
@@ -36,8 +33,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 
 import ListingForm from '@/components/host/ListingForm'
+import DashboardSectionTabs from '@/components/layout/DashboardSectionTabs'
 import PageHeader from '@/components/layout/PageHeader'
-import { MOBILE_TAB_BAR_FAB_BOTTOM } from '@/components/layout/MobileBottomNav'
+import { MOBILE_BOTTOM_NAV_SX_PB, MOBILE_TAB_BAR_FAB_BOTTOM } from '@/components/layout/MobileBottomNav'
 import HostEarningsSection from '@/components/host/HostEarningsSection'
 import HostDashboardPageSkeleton from '@/components/skeletons/HostDashboardPageSkeleton'
 import { useT } from '@/hooks/useT'
@@ -49,13 +47,7 @@ import { useSnackbarStore } from '@/store/useSnackbarStore'
 import type { BookingRecord, BookingStatus } from '@/types'
 import { formatBookingStoredDate } from '@/utils/dateUtils'
 import { formatPeso } from '@/utils/formatCurrency'
-import {
-  containerGutters,
-  dashboardSectionTabsSx,
-  dashboardTabsBarWrapSx,
-  listRowSurface,
-  primaryCtaShadow,
-} from '@/theme/pageStyles'
+import { containerGutters, listRowSurface, primaryCtaShadow } from '@/theme/pageStyles'
 
 const HOST_TAB_SECTION_KEYS = ['listings', 'bookings', 'earnings', 'settings'] as const
 
@@ -321,7 +313,7 @@ export default function HostDashboardPage() {
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
-      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: 12, md: 10 }, ...containerGutters }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 10 }, ...containerGutters }}>
         <PageHeader
           overline={t('host.overline')}
           title={t('host.greeting', { name: user.firstName })}
@@ -384,50 +376,27 @@ export default function HostDashboardPage() {
           </Paper>
         ) : null}
 
-        <Box sx={dashboardTabsBarWrapSx}>
-          <Tabs
-            value={tab}
-            onChange={(_, v) => {
-              const idx = typeof v === 'number' ? v : 0
-              const section = HOST_TAB_SECTION_KEYS[Math.min(HOST_TAB_SECTION_KEYS.length - 1, Math.max(0, idx))] ?? 'listings'
-              goToSection(section)
-            }}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            aria-label="Host dashboard sections"
-            sx={dashboardSectionTabsSx}
-          >
-            <Tab icon={<DirectionsCar fontSize="small" />} iconPosition="start" label={t('host.listings')} />
-            <Tab
-              icon={<EventAvailable fontSize="small" />}
-              iconPosition="start"
-              label={
-                <Badge
-                  badgeContent={pendingBookingsCount}
-                  color="warning"
-                  invisible={pendingBookingsCount === 0}
-                  max={99}
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      position: 'relative',
-                      transform: 'none',
-                      ml: 0.75,
-                      fontSize: 10,
-                      fontWeight: 800,
-                      minWidth: 18,
-                      height: 18,
-                    },
-                  }}
-                >
-                  {t('host.requests')}
-                </Badge>
-              }
-            />
-            <Tab icon={<MonetizationOn fontSize="small" />} iconPosition="start" label={t('host.earnings')} />
-            <Tab icon={<Settings fontSize="small" />} iconPosition="start" label={t('host.settings')} />
-          </Tabs>
-        </Box>
+        <DashboardSectionTabs
+          ariaLabel="Host dashboard sections"
+          value={HOST_TAB_SECTION_KEYS[tab] ?? 'listings'}
+          onChange={(key) => {
+            if ((HOST_TAB_SECTION_KEYS as readonly string[]).includes(key)) {
+              goToSection(key as HostTabSection)
+            }
+          }}
+          primaryKeys={['listings', 'bookings']}
+          items={[
+            { key: 'listings', label: t('host.listings'), icon: <DirectionsCar fontSize="small" /> },
+            {
+              key: 'bookings',
+              label: t('host.requests'),
+              icon: <EventAvailable fontSize="small" />,
+              badge: pendingBookingsCount,
+            },
+            { key: 'earnings', label: t('host.earnings'), icon: <MonetizationOn fontSize="small" /> },
+            { key: 'settings', label: t('host.settings'), icon: <Settings fontSize="small" /> },
+          ]}
+        />
 
       {tab === 0 && (
         <>

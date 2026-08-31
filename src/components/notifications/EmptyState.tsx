@@ -3,40 +3,44 @@ import { Box } from '@mui/material'
 import { motion } from 'framer-motion'
 
 import EmptyState from '@/components/ui/EmptyState'
+import { useT } from '@/hooks/useT'
 
 const MotionBox = motion.create(Box)
 
 export type NotificationEmptyStateProps = {
   /** e.g. when a filter has no results */
   filterHint?: string
+  title?: string
+  compact?: boolean
 }
 
-export default function NotificationEmptyState({ filterHint }: NotificationEmptyStateProps) {
+export default function NotificationEmptyState({ filterHint, title, compact }: NotificationEmptyStateProps) {
+  const t = useT()
+  const size = compact ? 56 : 80
+  const iconSize = compact ? 28 : 40
+
   return (
     <MotionBox
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
+      sx={compact ? { '& .MuiStack-root': { py: 4 } } : undefined}
     >
       <EmptyState
-        title="No notifications yet"
-        description={
-          filterHint
-            ? filterHint
-            : 'When you book, pay, or get updates from hosts, you will see them here.'
-        }
+        title={title ?? t('notify.emptyTitle')}
+        description={filterHint ?? t('notify.emptyDesc')}
         icon={
           <Box
             sx={{
-              width: 80,
-              height: 80,
+              width: size,
+              height: size,
               borderRadius: '50%',
-              bgcolor: (t) => t.palette.grey[100],
+              bgcolor: 'primary.light',
               display: 'grid',
               placeItems: 'center',
             }}
           >
-            <NotificationsNoneOutlined sx={{ fontSize: 40, color: 'grey.400' }} aria-hidden />
+            <NotificationsNoneOutlined sx={{ fontSize: iconSize, color: 'primary.main' }} aria-hidden />
           </Box>
         }
       />

@@ -25,6 +25,7 @@ import { useBookingStore } from '@/store/useBookingStore'
 import { useCarsStore } from '@/store/useCarsStore'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useSnackbarStore } from '@/store/useSnackbarStore'
+import { MOBILE_BOTTOM_NAV_SX_PB } from '@/components/layout/MobileBottomNav'
 import { containerGutters, primaryCtaShadow } from '@/theme/pageStyles'
 import type { IdentityVerificationStatus } from '@/types'
 import type { VerifyIdentityLocationState } from '@/types/authFlow'
@@ -149,7 +150,7 @@ export default function VerifyIdentityPage() {
     !instantApprove && verification?.status === 'pending_review' && !verification.documentDataUrl
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 }, pb: { xs: 10, md: 6 }, ...containerGutters }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 6 }, ...containerGutters }}>
       <PageHeader
         overline={st?.intent === 'host' ? 'Host verification' : 'Identity verification'}
         title="Upload a photo of your ID"

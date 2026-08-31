@@ -5,6 +5,7 @@ import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
 import { useT } from '@/hooks/useT'
+import { containerGutters } from '@/theme/pageStyles'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
 import { MOBILE_FOOTER_ADDITIONAL_CLEAR_PX, MOBILE_TAB_BAR_INSET_PX } from './MobileBottomNav'
@@ -238,7 +239,7 @@ export default function Footer() {
         },
       }}
     >
-      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ ...containerGutters, position: 'relative' }}>
         <MobileFooterStrip />
 
         <Box sx={{ display: { xs: 'none', md: 'block' } }}>

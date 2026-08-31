@@ -35,7 +35,7 @@ export default function PageHeader({
     <Stack
       spacing={mapSidebar ? 0 : 1}
       sx={{
-        mb: dense ? { xs: 2, md: 2.5 } : { xs: 3, md: 4 },
+        mb: dense ? { xs: 2, md: 2.5 } : { xs: 2.5, md: 4 },
         maxWidth: subtitle ? 640 : undefined,
         mx: align === 'center' ? 'auto' : undefined,
         textAlign: align,

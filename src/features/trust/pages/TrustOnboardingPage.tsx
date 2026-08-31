@@ -29,6 +29,7 @@ import { useCarsStore } from '@/store/useCarsStore'
 import { useSearchStore } from '@/store/useSearchStore'
 import { useSnackbarStore } from '@/store/useSnackbarStore'
 import type { TrustOnboardingLocationState } from '@/types/authFlow'
+import { MOBILE_BOTTOM_NAV_SX_PB } from '@/components/layout/MobileBottomNav'
 import PageHeader from '@/components/layout/PageHeader'
 import { containerGutters, primaryCtaShadow } from '@/theme/pageStyles'
 
@@ -152,7 +153,7 @@ export default function TrustOnboardingPage() {
   const needsFirebaseEmail = authProvider === 'firebase' && !emailReady
 
   return (
-    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 }, pb: { xs: 10, md: 6 }, ...containerGutters }}>
+    <Container maxWidth="sm" sx={{ py: { xs: 2, md: 4 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 6 }, ...containerGutters }}>
       <PageHeader
         overline={st?.intent === 'host' ? 'Host onboarding' : 'Safety & accountability'}
         title="RentaraH safeguards"

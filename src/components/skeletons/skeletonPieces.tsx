@@ -1,4 +1,4 @@
-import { Box, Paper, Skeleton, Stack, useTheme } from '@mui/material'
+import { Box, Paper, Skeleton, Stack, useMediaQuery, useTheme } from '@mui/material'
 
 import { dashboardTabsBarWrapSx, listRowSurface } from '@/theme/pageStyles'
 
@@ -57,6 +57,9 @@ export function NextStepStripSkeleton() {
 }
 
 export function DashboardTabsSkeleton({ count = 4 }: { count?: number }) {
+  const theme = useTheme()
+  const isSmUp = useMediaQuery(theme.breakpoints.up('sm'), { noSsr: true })
+  const shown = isSmUp ? count : 3
   return (
     <Box sx={dashboardTabsBarWrapSx}>
       <Stack
@@ -65,14 +68,14 @@ export function DashboardTabsSkeleton({ count = 4 }: { count?: number }) {
         spacing={1}
         sx={{ minHeight: 52, px: { xs: 1, sm: 1.5 } }}
       >
-        {Array.from({ length: count }).map((_, i) => (
+        {Array.from({ length: shown }).map((_, i) => (
           <Skeleton
             key={i}
             variant="rounded"
             animation="wave"
             width={i === 0 ? 88 : 76}
             height={28}
-            sx={{ borderRadius: 1, flexShrink: 0 }}
+            sx={{ borderRadius: 1, flexShrink: 0, flex: { xs: 1, sm: '0 0 auto' } }}
           />
         ))}
       </Stack>
@@ -146,18 +149,44 @@ export function ChatThreadRowSkeleton() {
   )
 }
 
-export function NotificationRowSkeleton() {
-  const theme = useTheme()
+export function NotificationRowSkeleton({ last = false }: { last?: boolean }) {
   return (
-    <Paper elevation={0} sx={{ ...listRowSurface(theme), p: 1.75 }}>
-      <Stack direction="row" spacing={1.5} alignItems="flex-start">
-        <Skeleton variant="circular" animation="wave" width={40} height={40} sx={{ flexShrink: 0 }} />
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Skeleton variant="text" animation="wave" width="70%" height={20} />
-          <Skeleton variant="text" animation="wave" width="92%" height={16} />
-          <Skeleton variant="text" animation="wave" width="28%" height={14} />
-        </Box>
-      </Stack>
+    <Stack
+      direction="row"
+      spacing={1.5}
+      alignItems="flex-start"
+      sx={{
+        px: 2,
+        py: 1.75,
+        borderBottom: last ? 0 : 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Skeleton variant="circular" animation="wave" width={40} height={40} sx={{ flexShrink: 0 }} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Skeleton variant="text" animation="wave" width="70%" height={20} />
+        <Skeleton variant="text" animation="wave" width="92%" height={16} />
+        <Skeleton variant="text" animation="wave" width="28%" height={14} />
+      </Box>
+    </Stack>
+  )
+}
+
+export function NotificationInboxSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 2,
+        border: 1,
+        borderColor: 'divider',
+        overflow: 'hidden',
+        bgcolor: 'background.default',
+      }}
+    >
+      {Array.from({ length: rows }).map((_, i) => (
+        <NotificationRowSkeleton key={i} last={i === rows - 1} />
+      ))}
     </Paper>
   )
 }

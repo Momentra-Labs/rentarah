@@ -29,6 +29,7 @@ export default function BrowseCarSearch() {
   const [draftLocation, setDraftLocation] = useState(storeLocation)
   const [draftPickup, setDraftPickup] = useState<Dayjs | null>(null)
   const [draftDropoff, setDraftDropoff] = useState<Dayjs | null>(null)
+  const minPickup = useMemo(() => dayjs(), [])
 
   const syncDraftFromStore = useCallback(() => {
     setDraftLocation(storeLocation)
@@ -122,7 +123,7 @@ export default function BrowseCarSearch() {
         dropoff={draftDropoff}
         onDropoffChange={setDraftDropoff}
         onSearch={handleSearch}
-        minPickup={dayjs()}
+        minPickup={minPickup}
       />
     </>
   )

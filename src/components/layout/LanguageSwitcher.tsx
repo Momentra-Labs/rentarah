@@ -82,7 +82,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
         sx={{
           flexShrink: 0,
           minWidth: compact ? 40 : undefined,
-          minHeight: 36,
+          minHeight: 40,
           px: compact ? 0.9 : 1.15,
           py: compact ? 0.5 : 0.35,
           borderRadius: 2,

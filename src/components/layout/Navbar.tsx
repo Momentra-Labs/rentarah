@@ -29,6 +29,8 @@ import NotificationPanelContent from '../notifications/NotificationPanelContent'
 import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { prefetchPath } from '../../lib/routePrefetch'
 import { MOBILE_APP_BAR_TOOLBAR_PX } from '../../constants/mobileShell'
+import { containerGutters } from '../../theme/pageStyles'
+import { rhElev, rhRadius } from '../../theme/tokens'
 import AppNavigationList from './AppNavigationList'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useT } from '@/hooks/useT'
@@ -188,7 +190,7 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
           sx={{
             width: '100%',
             mx: 'auto',
-            px: { xs: 2, md: 2.5 },
+            ...containerGutters,
             minHeight: { xs: MOBILE_APP_BAR_TOOLBAR_PX, md: 64 },
             height: { xs: MOBILE_APP_BAR_TOOLBAR_PX, md: 64 },
             boxSizing: 'border-box',
@@ -495,13 +497,16 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
-          elevation: 3,
+          elevation: 0,
           sx: {
             width: 400,
             maxWidth: 'calc(100vw - 32px)',
-            borderRadius: 2,
+            borderRadius: `${rhRadius.lg}px`,
             overflow: 'hidden',
             mt: 1,
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: rhElev.elev2,
           },
         }}
         disableScrollLock

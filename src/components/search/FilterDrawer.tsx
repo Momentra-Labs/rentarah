@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material'
 
+import { APP_NAV_SIDEBAR_EXPANDED_PX } from '@/components/layout/AppNavigationList'
 import { useT } from '@/hooks/useT'
 
 import type { SearchFilters } from '../../types'
@@ -22,11 +23,14 @@ interface FilterDrawerProps {
   onClear: () => void
   hasActive: boolean
   showVehicleType?: boolean
+  /** Always a bottom sheet on browse. */
+  anchor?: 'bottom' | 'right'
+  /** Keep the overlay below the sticky search bar so Edit search does not jump or get covered. */
+  insetTop?: number
 }
 
 /**
- * Bottom-sheet filters for mobile — easier to reach than a side drawer.
- * Swipe down (or tap Apply / backdrop) to close.
+ * Bottom-sheet filters on all breakpoints so the Edit search bar stays visible and unchanged.
  */
 export default function FilterDrawer({
   open,
@@ -36,35 +40,64 @@ export default function FilterDrawer({
   onClear,
   hasActive,
   showVehicleType = false,
+  anchor = 'bottom',
+  insetTop = 0,
 }: FilterDrawerProps) {
   const t = useT()
   const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
+  const topGap = Math.max(0, insetTop)
+  /** Keep the sheet in the main column so it never covers the md+ nav rail. */
+  const desktopMainColumnSx = {
+    left: { md: APP_NAV_SIDEBAR_EXPANDED_PX },
+    right: { md: 0 },
+    width: { md: `calc(100% - ${APP_NAV_SIDEBAR_EXPANDED_PX}px)` },
+  } as const
 
   return (
     <SwipeableDrawer
-      anchor="bottom"
+      id="browse-advanced-search"
+      anchor={anchor}
       open={open}
       onClose={onClose}
       onOpen={() => {}}
       disableBackdropTransition={!iOS}
       disableDiscovery={iOS}
       disableSwipeToOpen
+      sx={{
+        zIndex: (theme) => theme.zIndex.appBar - 2,
+        ...desktopMainColumnSx,
+      }}
       ModalProps={{
         keepMounted: true,
+        disableScrollLock: true,
+      }}
+      BackdropProps={{
+        sx: desktopMainColumnSx,
       }}
       PaperProps={{
         sx: {
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
-          maxHeight: 'min(92dvh, 880px)',
+          height: `calc(100dvh - ${topGap}px)`,
+          maxHeight: `calc(100dvh - ${topGap}px)`,
           pb: 'env(safe-area-inset-bottom, 0px)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          boxSizing: 'border-box',
+          left: { xs: 0, md: APP_NAV_SIDEBAR_EXPANDED_PX },
+          right: 0,
+          width: { xs: '100%', md: `calc(100% - ${APP_NAV_SIDEBAR_EXPANDED_PX}px)` },
         },
       }}
     >
-      <Stack sx={{ flex: 1, minHeight: 0, maxHeight: 'inherit' }}>
+      <Stack
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          height: '100%',
+        }}
+      >
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', pt: 1.5, pb: 0.5 }}>
           <Box
             sx={{
@@ -77,15 +110,20 @@ export default function FilterDrawer({
           />
         </Box>
 
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, pb: 0.5 }}>
-          <Badge color="primary" variant="dot" invisible={!hasActive}>
-            <Typography variant="subtitle1" component="span" fontWeight={800}>
-              {t('search.filters')}
-            </Typography>
-          </Badge>
-          <IconButton edge="end" aria-label={t('search.closeFilters')} onClick={onClose} size="small">
-            <Close />
-          </IconButton>
+        <Stack sx={{ px: 2, pb: 1 }} spacing={0.25}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Badge color="primary" variant="dot" invisible={!hasActive}>
+              <Typography variant="subtitle1" component="span" fontWeight={800}>
+                {t('search.filters')}
+              </Typography>
+            </Badge>
+            <IconButton edge="end" aria-label={t('search.closeFilters')} onClick={onClose} size="small">
+              <Close />
+            </IconButton>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            {t('search.filtersIntro')}
+          </Typography>
         </Stack>
 
         <FilterPanelScrollColumn

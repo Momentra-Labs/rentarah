@@ -23,12 +23,12 @@ import type { AuthUser } from '../../types'
  * raised Map button (see BottomNavigationAction below). 72px was too small in practice; the
  * bubble can extend well above the 68px row, so this stays conservative.
  */
-export const MOBILE_TAB_BAR_INSET_PX = 160
+export const MOBILE_TAB_BAR_INSET_PX = 112
 
 export const MOBILE_BOTTOM_NAV_SX_PB = `max(12px, calc(${MOBILE_TAB_BAR_INSET_PX}px + env(safe-area-inset-bottom, 0px)))`
 
 /** Added only to the footer’s bottom padding (in addition to {@link MOBILE_TAB_BAR_INSET_PX}). */
-export const MOBILE_FOOTER_ADDITIONAL_CLEAR_PX = 88
+export const MOBILE_FOOTER_ADDITIONAL_CLEAR_PX = 16
 
 /**
  * Fixed `bottom` for corner FABs (search filter, list map, host add, landing map) where the
@@ -138,6 +138,7 @@ export default function MobileBottomNav({ onAuthOpen }: MobileBottomNavProps) {
             '& .MuiBottomNavigationAction-root': {
               minWidth: 0,
               maxWidth: 'none',
+              minHeight: 48,
               py: 0.5,
             },
             '& .MuiBottomNavigationAction-label': {
