@@ -36,16 +36,12 @@ import HeroAmbientBackground from '@/components/landing/HeroAmbientBackground'
 import { HERO_TRUST_SPECS, HeroTrustStatCell } from '@/components/landing/HeroTrustStats'
 import { highlightPickupMatch, pickupAreaFilter } from '@/components/search/PhPickupCityAutocomplete'
 import LandingAudiencePaths from '@/features/landing/components/LandingAudiencePaths'
+import TripClockSummary from '@/features/landing/components/TripClockSummary'
 import { useSearchStore } from '@/store/useSearchStore'
-import { softShadow, softShadowHover } from '@/theme/pageStyles'
+import { landingCtaMotionSx, primaryCtaShadow, softShadow, softShadowHover } from '@/theme/pageStyles'
 import { PH_PICKUP_AREAS } from '@/data/phPickupAreas'
 import { useT } from '@/hooks/useT'
-import {
-  formatPickupReturnRentSpanHuman,
-  formatSearchDateTimeParam,
-  withDefaultDropoffTime,
-  withDefaultPickupTime,
-} from '@/utils/dateUtils'
+import { formatSearchDateTimeParam, withDefaultDropoffTime, withDefaultPickupTime } from '@/utils/dateUtils'
 
 const WHY_RENTARAH = [
   { Icon: Shield, titleKey: 'landing.insured' as const, lineKey: 'landing.insuredLine' as const },
@@ -154,10 +150,6 @@ export default function LandingPage() {
   const [pickupAreaQuery, setPickupAreaQuery] = useState('')
   const [pickup, setPickup] = useState<Dayjs | null>(() => withDefaultPickupTime(dayjs().add(1, 'day')))
   const [dropoff, setDropoff] = useState<Dayjs | null>(() => withDefaultDropoffTime(dayjs().add(4, 'day')))
-  const tripLength = useMemo(
-    () => (pickup?.isValid() && dropoff?.isValid() ? formatPickupReturnRentSpanHuman(pickup, dropoff) : null),
-    [pickup, dropoff],
-  )
 
   const tripPlannerFieldSx = useMemo(
     () => ({
@@ -377,14 +369,17 @@ export default function LandingPage() {
                       size="large"
                       startIcon={<MapOutlined />}
                       endIcon={<ArrowForward />}
-                      sx={{
-                        fontWeight: 800,
-                        borderRadius: 2,
-                        minHeight: 48,
-                        px: 2.25,
-                        flex: { sm: 1 },
-                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.28)}`,
-                      }}
+                      sx={[
+                        (th) => primaryCtaShadow(th),
+                        landingCtaMotionSx,
+                        {
+                          fontWeight: 800,
+                          borderRadius: 2,
+                          minHeight: 48,
+                          px: 2.25,
+                          flex: { sm: 1 },
+                        },
+                      ]}
                     >
                       {t('landing.exploreMap')}
                     </Button>
@@ -395,14 +390,23 @@ export default function LandingPage() {
                       color="inherit"
                       size="large"
                       startIcon={<GarageOutlined />}
-                      sx={{
-                        fontWeight: 800,
-                        borderRadius: 2,
-                        minHeight: 48,
-                        px: 2.25,
-                        flex: { sm: 1 },
-                        borderColor: alpha(theme.palette.text.primary, 0.18),
-                      }}
+                      sx={[
+                        landingCtaMotionSx,
+                        {
+                          fontWeight: 800,
+                          borderRadius: 2,
+                          minHeight: 48,
+                          px: 2.25,
+                          flex: { sm: 1 },
+                          borderColor: alpha(theme.palette.text.primary, 0.18),
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              borderColor: alpha(theme.palette.primary.main, 0.35),
+                              bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            },
+                          },
+                        },
+                      ]}
                     >
                       {t('landing.listVehicle')}
                     </Button>
@@ -754,16 +758,7 @@ export default function LandingPage() {
                           },
                         }}
                       />
-                      {tripLength ? (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          aria-live="polite"
-                          sx={{ fontWeight: 600, lineHeight: 1.45, px: 0.25 }}
-                        >
-                          {tripLength}
-                        </Typography>
-                      ) : null}
+                      <TripClockSummary pickup={pickup} dropoff={dropoff} />
                     </Stack>
 
                     <Button
@@ -772,17 +767,17 @@ export default function LandingPage() {
                       fullWidth
                       onClick={search}
                       endIcon={<ArrowForward sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-                      sx={{
-                        py: { xs: 1.1, sm: 1.2 },
-                        minHeight: { xs: 46, sm: 48 },
-                        borderRadius: 2,
-                        fontSize: { xs: '0.9375rem', sm: '1rem' },
-                        fontWeight: 800,
-                        boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.3)}`,
-                        '&:hover': {
-                          boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.38)}`,
+                      sx={[
+                        (th) => primaryCtaShadow(th),
+                        landingCtaMotionSx,
+                        {
+                          py: { xs: 1.1, sm: 1.2 },
+                          minHeight: { xs: 46, sm: 48 },
+                          borderRadius: 2,
+                          fontSize: { xs: '0.9375rem', sm: '1rem' },
+                          fontWeight: 800,
                         },
-                      }}
+                      ]}
                     >
                       {loc.trim()
                         ? t('landing.searchIn', { place: loc === 'BGC, Taguig' ? 'BGC' : loc })

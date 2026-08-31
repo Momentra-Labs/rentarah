@@ -106,6 +106,41 @@ export const primaryCtaShadow = (theme: Theme) => ({
   },
 })
 
+/** Homepage CTAs: hover lift, press scale, and start/end icon nudge (no color change). */
+export const landingCtaMotionSx: SxProps<Theme> = {
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
+  '& .MuiButton-endIcon, & .MuiButton-startIcon': {
+    transition: 'transform 0.2s ease',
+  },
+  '@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)': {
+    '&:hover': {
+      transform: 'translateY(-2px)',
+    },
+    '&:hover .MuiButton-endIcon': {
+      transform: 'translateX(4px)',
+    },
+    '&:hover .MuiButton-startIcon': {
+      transform: 'translateX(-1px) scale(1.06)',
+    },
+    '&:active': {
+      transform: 'translateY(0) scale(0.98)',
+    },
+  },
+  '@media (pointer: coarse) and (prefers-reduced-motion: no-preference)': {
+    '&:active': {
+      transform: 'scale(0.97)',
+    },
+  },
+  '@media (prefers-reduced-motion: reduce)': {
+    '&:hover, &:active': {
+      transform: 'none',
+    },
+    '&:hover .MuiButton-endIcon, &:hover .MuiButton-startIcon': {
+      transform: 'none',
+    },
+  },
+}
+
 /** Renter + host dashboard: wrap {@link dashboardSectionTabsSx} for a clear, paper-backed tab strip. */
 export const dashboardTabsBarWrapSx: SxProps<Theme> = {
   mb: 3,

@@ -113,31 +113,51 @@ export function formatTripDateHuman(d: Dayjs, now: Dayjs = dayjs()): string {
   return d.format('ddd, MMM D')
 }
 
+export type PickupReturnRentSpan = {
+  totalMins: number
+  totalHoursRounded: number
+  days: number
+  hours: number
+  minutes: number
+}
+
 /**
  * Clock-time span between pickup and dropoff (distinct from billed calendar-night count — see pricing copy).
  * Uses minute-level diff from the picker; total hours rounded to one decimal where needed.
  */
-export function formatPickupReturnRentSpanHuman(pickup: Dayjs, dropoff: Dayjs): string | null {
+export function getPickupReturnRentSpan(pickup: Dayjs, dropoff: Dayjs): PickupReturnRentSpan | null {
   if (!pickup?.isValid() || !dropoff?.isValid() || !dropoff.isAfter(pickup)) return null
   const totalMins = dropoff.diff(pickup, 'minute')
   if (totalMins <= 0) return null
 
-  const totalHoursRounded = Math.round((totalMins / 60) * 10) / 10
   const hrsFloor = Math.floor(totalMins / 60)
-  const mins = totalMins % 60
-  const days = Math.floor(hrsFloor / 24)
-  const hrs = hrsFloor % 24
+  return {
+    totalMins,
+    totalHoursRounded: Math.round((totalMins / 60) * 10) / 10,
+    days: Math.floor(hrsFloor / 24),
+    hours: hrsFloor % 24,
+    minutes: totalMins % 60,
+  }
+}
+
+export function formatClockHoursLabel(totalHoursRounded: number): string {
+  return totalHoursRounded % 1 === 0 ? String(totalHoursRounded) : totalHoursRounded.toFixed(1)
+}
+
+export function formatPickupReturnRentSpanHuman(pickup: Dayjs, dropoff: Dayjs): string | null {
+  const span = getPickupReturnRentSpan(pickup, dropoff)
+  if (!span) return null
 
   const segments: string[] = []
-  if (days > 0) segments.push(`${days} day${days !== 1 ? 's' : ''}`)
-  if (hrs > 0) segments.push(`${hrs} hr${hrs !== 1 ? 's' : ''}`)
-  if (mins > 0) segments.push(`${mins} min`)
+  if (span.days > 0) segments.push(`${span.days} day${span.days !== 1 ? 's' : ''}`)
+  if (span.hours > 0) segments.push(`${span.hours} hr${span.hours !== 1 ? 's' : ''}`)
+  if (span.minutes > 0) segments.push(`${span.minutes} min`)
 
   const breakdown = segments.join(' · ')
   const hoursLabel =
-    totalHoursRounded % 1 === 0
-      ? `${totalHoursRounded} total hour${totalHoursRounded !== 1 ? 's' : ''}`
-      : `${totalHoursRounded.toFixed(1)} total hours`
+    span.totalHoursRounded % 1 === 0
+      ? `${span.totalHoursRounded} total hour${span.totalHoursRounded !== 1 ? 's' : ''}`
+      : `${span.totalHoursRounded.toFixed(1)} total hours`
 
   return `~${hoursLabel} on the clock${breakdown ? ` (${breakdown})` : ''}`
 }
