@@ -107,7 +107,7 @@ export const primaryCtaShadow = (theme: Theme) => ({
 })
 
 /** Homepage CTAs: hover lift, press scale, and start/end icon nudge (no color change). */
-export const landingCtaMotionSx: SxProps<Theme> = {
+export const landingCtaMotionSx = {
   transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
   '& .MuiButton-endIcon, & .MuiButton-startIcon': {
     transition: 'transform 0.2s ease',
@@ -141,6 +141,15 @@ export const landingCtaMotionSx: SxProps<Theme> = {
   },
 }
 
+/** Single-object CTA styles so MUI Button `sx` stays compatible with TypeScript 6. */
+export function withLandingCtaSx(theme: Theme, extra: object = {}, elevate = false) {
+  return {
+    ...(elevate ? primaryCtaShadow(theme) : {}),
+    ...landingCtaMotionSx,
+    ...extra,
+  }
+}
+
 /** Renter + host dashboard: wrap {@link dashboardSectionTabsSx} for a clear, paper-backed tab strip. */
 export const dashboardTabsBarWrapSx: SxProps<Theme> = {
   mb: 3,
@@ -156,7 +165,7 @@ export const dashboardTabsBarWrapSx: SxProps<Theme> = {
  * MUI `Tabs` for renter + host dashboards: scrollable strip, strong selected state.
  * Pair with {@link dashboardTabsBarWrapSx}; no bottom border here (the wrap provides the chrome).
  */
-export const dashboardSectionTabsSx: SxProps<Theme> = {
+export const dashboardSectionTabsSx = {
   minHeight: 52,
   px: { xs: 0.25, sm: 0.75 },
   bgcolor: 'transparent',
@@ -201,7 +210,7 @@ export const dashboardSectionTabsSx: SxProps<Theme> = {
     '&.Mui-selected': {
       color: 'primary.main',
       fontWeight: 700,
-      bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.06 : 0.12),
+      bgcolor: (t: Theme) => alpha(t.palette.primary.main, t.palette.mode === 'light' ? 0.06 : 0.12),
     },
     '& .MuiTab-iconWrapper': {
       marginRight: { xs: '6px', sm: '8px' },

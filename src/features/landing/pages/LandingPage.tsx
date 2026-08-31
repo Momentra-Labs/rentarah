@@ -38,7 +38,7 @@ import { highlightPickupMatch, pickupAreaFilter } from '@/components/search/PhPi
 import LandingAudiencePaths from '@/features/landing/components/LandingAudiencePaths'
 import TripClockSummary from '@/features/landing/components/TripClockSummary'
 import { useSearchStore } from '@/store/useSearchStore'
-import { landingCtaMotionSx, primaryCtaShadow, softShadow, softShadowHover } from '@/theme/pageStyles'
+import { withLandingCtaSx, softShadow, softShadowHover } from '@/theme/pageStyles'
 import { PH_PICKUP_AREAS } from '@/data/phPickupAreas'
 import { useT } from '@/hooks/useT'
 import { formatSearchDateTimeParam, withDefaultDropoffTime, withDefaultPickupTime } from '@/utils/dateUtils'
@@ -369,9 +369,8 @@ export default function LandingPage() {
                       size="large"
                       startIcon={<MapOutlined />}
                       endIcon={<ArrowForward />}
-                      sx={[
-                        (th) => primaryCtaShadow(th),
-                        landingCtaMotionSx,
+                      sx={withLandingCtaSx(
+                        theme,
                         {
                           fontWeight: 800,
                           borderRadius: 2,
@@ -379,7 +378,8 @@ export default function LandingPage() {
                           px: 2.25,
                           flex: { sm: 1 },
                         },
-                      ]}
+                        true,
+                      )}
                     >
                       {t('landing.exploreMap')}
                     </Button>
@@ -390,23 +390,20 @@ export default function LandingPage() {
                       color="inherit"
                       size="large"
                       startIcon={<GarageOutlined />}
-                      sx={[
-                        landingCtaMotionSx,
-                        {
-                          fontWeight: 800,
-                          borderRadius: 2,
-                          minHeight: 48,
-                          px: 2.25,
-                          flex: { sm: 1 },
-                          borderColor: alpha(theme.palette.text.primary, 0.18),
-                          '@media (hover: hover) and (pointer: fine)': {
-                            '&:hover': {
-                              borderColor: alpha(theme.palette.primary.main, 0.35),
-                              bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            },
+                      sx={withLandingCtaSx(theme, {
+                        fontWeight: 800,
+                        borderRadius: 2,
+                        minHeight: 48,
+                        px: 2.25,
+                        flex: { sm: 1 },
+                        borderColor: alpha(theme.palette.text.primary, 0.18),
+                        '@media (hover: hover) and (pointer: fine)': {
+                          '&:hover': {
+                            borderColor: alpha(theme.palette.primary.main, 0.35),
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
                           },
                         },
-                      ]}
+                      })}
                     >
                       {t('landing.listVehicle')}
                     </Button>
@@ -767,9 +764,8 @@ export default function LandingPage() {
                       fullWidth
                       onClick={search}
                       endIcon={<ArrowForward sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-                      sx={[
-                        (th) => primaryCtaShadow(th),
-                        landingCtaMotionSx,
+                      sx={withLandingCtaSx(
+                        theme,
                         {
                           py: { xs: 1.1, sm: 1.2 },
                           minHeight: { xs: 46, sm: 48 },
@@ -777,7 +773,8 @@ export default function LandingPage() {
                           fontSize: { xs: '0.9375rem', sm: '1rem' },
                           fontWeight: 800,
                         },
-                      ]}
+                        true,
+                      )}
                     >
                       {loc.trim()
                         ? t('landing.searchIn', { place: loc === 'BGC, Taguig' ? 'BGC' : loc })

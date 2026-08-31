@@ -11,7 +11,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import { useId, useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { useId, useMemo, useState, type MouseEvent, type ReactElement } from 'react'
 
 import { useT } from '@/hooks/useT'
 import { dashboardSectionTabsSx, dashboardTabsBarWrapSx } from '@/theme/pageStyles'
@@ -33,7 +33,7 @@ const TAB_BADGE_SX = {
 export type DashboardSectionTabItem = {
   key: string
   label: string
-  icon?: ReactNode
+  icon?: ReactElement
   badge?: number
 }
 
@@ -46,7 +46,7 @@ export function resolveDashboardTabsValue(
   return primaryKeys.includes(currentKey) ? currentKey : DASHBOARD_MORE_TAB_VALUE
 }
 
-function SectionTabLabel({ label, badge = 0 }: { label: string; badge?: number }) {
+function SectionTabLabel({ label, badge = 0 }: { label: string; badge?: number }): ReactElement {
   if (badge <= 0) return <>{label}</>
   return (
     <Badge badgeContent={badge} color="warning" max={99} sx={TAB_BADGE_SX}>
@@ -113,27 +113,32 @@ export default function DashboardSectionTabs({
         scrollButtons={compact ? false : 'auto'}
         allowScrollButtonsMobile={!compact}
         aria-label={ariaLabel}
-        sx={[
-          dashboardSectionTabsSx,
+        sx={
           compact
             ? {
+                ...dashboardSectionTabsSx,
                 px: 0,
-                '& .MuiTabs-flexContainer': { gap: 0 },
+                '& .MuiTabs-flexContainer': {
+                  ...dashboardSectionTabsSx['& .MuiTabs-flexContainer'],
+                  gap: 0,
+                },
                 '& .MuiTab-root': {
+                  ...dashboardSectionTabsSx['& .MuiTab-root'],
                   flex: 1,
                   maxWidth: 'none',
                   minWidth: 0,
                   px: 0.75,
                   whiteSpace: 'nowrap',
-                  flexDirection: 'row',
+                  flexDirection: 'row' as const,
                   '& .MuiTab-iconWrapper': {
+                    ...dashboardSectionTabsSx['& .MuiTab-root']['& .MuiTab-iconWrapper'],
                     marginBottom: 0,
                     marginRight: '6px',
                   },
                 },
               }
-            : {},
-        ]}
+            : dashboardSectionTabsSx
+        }
       >
         {visibleItems.map((item) => (
           <Tab

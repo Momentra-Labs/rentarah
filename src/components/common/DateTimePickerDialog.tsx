@@ -18,7 +18,7 @@ import { PickersDay } from '@mui/x-date-pickers/PickersDay'
 import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useMemo, useRef, useState, type Key, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type Key, type MouseEvent, type ReactNode } from 'react'
 
 import { useT } from '@/hooks/useT'
 import { applyMinutesFromMidnightToDay } from '@/utils/dateUtils'
@@ -388,7 +388,7 @@ export default function DateTimePickerDialog({
       PaperProps={{
         'data-testid': 'date-time-picker-dialog',
         'data-settling': settleLock ? 'true' : undefined,
-        onMouseDown: (e) => e.stopPropagation(),
+        onMouseDown: (e: MouseEvent<HTMLDivElement>) => e.stopPropagation(),
         sx: {
           m: { xs: 0, sm: 2 },
           width: { xs: '100%', sm: 440 },

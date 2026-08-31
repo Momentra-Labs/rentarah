@@ -15,7 +15,7 @@ import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 
 import { useT } from '@/hooks/useT'
-import { landingCtaMotionSx, primaryCtaShadow, softShadow, softShadowHover } from '@/theme/pageStyles'
+import { withLandingCtaSx, softShadow, softShadowHover } from '@/theme/pageStyles'
 
 export type LandingAudiencePathsProps = {
   onFindVehicle: () => void
@@ -357,9 +357,8 @@ export default function LandingAudiencePaths({
                         fullWidth
                         onClick={path.primary.onClick}
                         endIcon={<ArrowForward className="path-arrow" />}
-                        sx={[
-                          (th) => primaryCtaShadow(th),
-                          landingCtaMotionSx,
+                        sx={withLandingCtaSx(
+                          theme,
                           {
                             py: 1.15,
                             borderRadius: 2,
@@ -367,7 +366,8 @@ export default function LandingAudiencePaths({
                             minHeight: 48,
                             fontSize: '0.9375rem',
                           },
-                        ]}
+                          true,
+                        )}
                       >
                         {path.primary.label}
                       </Button>
@@ -381,25 +381,22 @@ export default function LandingAudiencePaths({
                         fullWidth
                         color="inherit"
                         endIcon={<ArrowForward className="path-arrow" />}
-                        sx={[
-                          landingCtaMotionSx,
-                          {
-                            py: 1.15,
-                            borderRadius: 2,
-                            fontWeight: 800,
-                            minHeight: 48,
-                            fontSize: '0.9375rem',
-                            color: 'common.white',
-                            bgcolor: 'text.primary',
-                            boxShadow: `0 4px 14px ${alpha(theme.palette.common.black, 0.18)}`,
-                            '@media (hover: hover) and (pointer: fine)': {
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.text.primary, 0.88),
-                                boxShadow: `0 6px 18px ${alpha(theme.palette.common.black, 0.22)}`,
-                              },
+                        sx={withLandingCtaSx(theme, {
+                          py: 1.15,
+                          borderRadius: 2,
+                          fontWeight: 800,
+                          minHeight: 48,
+                          fontSize: '0.9375rem',
+                          color: 'common.white',
+                          bgcolor: 'text.primary',
+                          boxShadow: `0 4px 14px ${alpha(theme.palette.common.black, 0.18)}`,
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              bgcolor: alpha(theme.palette.text.primary, 0.88),
+                              boxShadow: `0 6px 18px ${alpha(theme.palette.common.black, 0.22)}`,
                             },
                           },
-                        ]}
+                        })}
                       >
                         {path.primary.label}
                       </Button>
@@ -413,18 +410,15 @@ export default function LandingAudiencePaths({
                       size="medium"
                       fullWidth
                       startIcon={<path.secondary.Icon sx={{ fontSize: 18 }} />}
-                      sx={[
-                        landingCtaMotionSx,
-                        {
-                          fontWeight: 700,
-                          minHeight: 40,
-                          color: isPrimaryAccent ? 'primary.main' : 'text.secondary',
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.06),
-                            color: 'primary.main',
-                          },
+                      sx={withLandingCtaSx(theme, {
+                        fontWeight: 700,
+                        minHeight: 40,
+                        color: isPrimaryAccent ? 'primary.main' : 'text.secondary',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                          color: 'primary.main',
                         },
-                      ]}
+                      })}
                     >
                       {path.secondary.label}
                     </Button>
