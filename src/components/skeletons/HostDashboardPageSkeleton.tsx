@@ -1,13 +1,13 @@
-import { Box, Container, Grid } from '@mui/material'
+import { Box, Container, Grid, Skeleton } from '@mui/material'
 
 import { MOBILE_BOTTOM_NAV_SX_PB } from '@/components/layout/MobileBottomNav'
 import { containerGutters } from '@/theme/pageStyles'
+import { rhRadius } from '@/theme/tokens'
 
 import {
   DashboardTabsSkeleton,
   MediaRowSkeleton,
   NextStepStripSkeleton,
-  PageHeaderSkeleton,
 } from './skeletonPieces'
 
 /** Host dashboard chrome while the route chunk or catalog is loading. */
@@ -19,7 +19,12 @@ export default function HostDashboardPageSkeleton() {
       aria-label="Loading host dashboard"
     >
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 10 }, ...containerGutters }}>
-        <PageHeaderSkeleton />
+        <Skeleton
+          variant="rounded"
+          animation="wave"
+          height={176}
+          sx={{ borderRadius: `${rhRadius.lg}px`, mb: 2.5 }}
+        />
         <NextStepStripSkeleton />
         <DashboardTabsSkeleton count={4} />
         <Grid container spacing={{ xs: 2.5, md: 3 }}>

@@ -33,8 +33,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 
 import ListingForm from '@/components/host/ListingForm'
+import DashboardHero from '@/components/layout/DashboardHero'
 import DashboardSectionTabs from '@/components/layout/DashboardSectionTabs'
-import PageHeader from '@/components/layout/PageHeader'
 import { MOBILE_BOTTOM_NAV_SX_PB, MOBILE_TAB_BAR_FAB_BOTTOM } from '@/components/layout/MobileBottomNav'
 import HostEarningsSection from '@/components/host/HostEarningsSection'
 import HostDashboardPageSkeleton from '@/components/skeletons/HostDashboardPageSkeleton'
@@ -255,48 +255,47 @@ export default function HostDashboardPage() {
 
   if (!user.isHost) {
     return (
-      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: { xs: 7, md: 9 } }}>
-        <Container maxWidth="md" sx={containerGutters}>
-          <PageHeader overline={t('host.overline')} title={t('host.becomeTitle')} dense align="center" />
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            sx={{ maxWidth: 520, mx: 'auto', mt: -0.75, mb: { xs: 2.5, md: 3 }, lineHeight: 1.65 }}
-          >
-            {t('host.becomeBody')}
-          </Typography>
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
+        <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 }, ...containerGutters }}>
+          <DashboardHero
+            avatar={user.avatar}
+            firstName={user.firstName}
+            lastName={user.lastName}
+            overline={t('host.overline')}
+            title={t('host.becomeTitle')}
+            subtitle={t('host.becomeBody')}
+          />
           <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="stretch">
             <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
               <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
-                <MonetizationOn sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Earn money
+                <MonetizationOn sx={{ fontSize: 40, color: 'primary.main', mb: 1.25 }} />
+                <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                  {t('host.becomeEarnTitle')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Set your price and earn every time someone books your vehicle.
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
-              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
-                <Speed sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Easy management
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Track bookings, payouts, and requests from one dashboard.
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.6 }}>
+                  {t('host.becomeEarnBody')}
                 </Typography>
               </Paper>
             </Grid>
             <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
               <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
-                <Shield sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                <Typography variant="h6" fontWeight={700}>
-                  Protection
+                <Speed sx={{ fontSize: 40, color: 'primary.main', mb: 1.25 }} />
+                <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                  {t('host.becomeManageTitle')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Mock coverage — real products would include verified trips and support.
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.6 }}>
+                  {t('host.becomeManageBody')}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+              <Paper elevation={0} sx={{ p: 3, width: '100%', height: '100%', borderRadius: 3, ...listRowSurface(theme) }}>
+                <Shield sx={{ fontSize: 40, color: 'primary.main', mb: 1.25 }} />
+                <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                  {t('host.becomeProtectTitle')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.6 }}>
+                  {t('host.becomeProtectBody')}
                 </Typography>
               </Paper>
             </Grid>
@@ -314,11 +313,37 @@ export default function HostDashboardPage() {
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: MOBILE_BOTTOM_NAV_SX_PB, md: 10 }, ...containerGutters }}>
-        <PageHeader
+        <DashboardHero
+          avatar={user.avatar}
+          firstName={user.firstName}
+          lastName={user.lastName}
           overline={t('host.overline')}
           title={t('host.greeting', { name: user.firstName })}
           subtitle={t('host.subtitle')}
-          dense
+          chips={[
+            { key: 'host', label: t('renter.hostBadge'), color: 'primary' },
+            ...(user.identityVerification?.status === 'approved'
+              ? [{ key: 'id', label: t('renter.idVerified'), color: 'success' as const }]
+              : []),
+          ]}
+          stats={[
+            {
+              key: 'listings',
+              label: t('host.statListings'),
+              value: String(hostCars.length),
+              hint: t('host.statLive', { count: hostCars.length - pausedListingsCount }),
+            },
+            {
+              key: 'requests',
+              label: t('host.statRequests'),
+              value: pendingBookingsCount === 0 ? '—' : String(pendingBookingsCount),
+            },
+            {
+              key: 'earnings',
+              label: t('host.statEarnings'),
+              value: formatPeso(earningsMock.total),
+            },
+          ]}
         />
 
         {nextStep ? (
@@ -483,8 +508,19 @@ export default function HostDashboardPage() {
                       '&:last-child': { pb: 2.5 },
                     }}
                   >
-                    <Typography variant="h6" component="h3" fontWeight={800} letterSpacing="-0.02em" sx={{ pr: 0.5 }}>
-                      {car.year} {car.make} {car.model}
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                      <Typography variant="h6" component="h3" fontWeight={800} letterSpacing="-0.02em" sx={{ pr: 0.5 }}>
+                        {car.year} {car.make} {car.model}
+                      </Typography>
+                      <Chip
+                        size="small"
+                        label={car.available ? t('host.liveChip') : t('host.pausedChip')}
+                        color={car.available ? 'success' : 'default'}
+                        sx={{ fontWeight: 700, height: 24 }}
+                      />
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {car.location}
                     </Typography>
                     <Typography color="primary.main" fontWeight={800} fontSize="1.1rem" sx={{ mt: 0.5 }}>
                       {formatPeso(car.pricePerDay)}
@@ -579,42 +615,44 @@ export default function HostDashboardPage() {
         <Paper elevation={0} sx={{ borderRadius: 3, overflow: 'hidden', border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2.5, pb: 2 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-              Listing preferences
+              {t('host.settingsTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
-              Host policy controls are coming soon. Preferences below are previews and are not saved yet.
+              {t('host.settingsHint')}
             </Typography>
           </Box>
           <Divider />
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 }, opacity: 0.72 }}>
-            <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
-              Instant Book
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-              Let qualified renters confirm without asking you each time — great when your calendar stays open.
-            </Typography>
-            <Chip size="small" label="Coming soon" sx={{ mt: 1, fontWeight: 700 }} />
-          </Box>
-          <Divider />
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 }, opacity: 0.72 }}>
-            <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
-              Turnover buffer
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-              Minimum window between drop-off and the next pickup for cleaning or maintenance.
-            </Typography>
-            <Chip size="small" label="Coming soon" sx={{ mt: 1, fontWeight: 700 }} />
-          </Box>
-          <Divider />
-          <Box sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 }, opacity: 0.72 }}>
-            <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
-              Guest verification
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
-              Require verified ID and contact details before confirming a reservation.
-            </Typography>
-            <Chip size="small" label="Coming soon" sx={{ mt: 1, fontWeight: 700 }} />
-          </Box>
+          {(
+            [
+              { title: t('host.settingsInstant'), body: t('host.settingsInstantBody') },
+              { title: t('host.settingsTurnover'), body: t('host.settingsTurnoverBody') },
+              { title: t('host.settingsGuest'), body: t('host.settingsGuestBody') },
+            ] as const
+          ).map((row, i) => (
+            <Box key={row.title}>
+              {i > 0 ? <Divider /> : null}
+              <Stack
+                direction="row"
+                spacing={2}
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 2.25 } }}
+              >
+                <Box sx={{ minWidth: 0, pr: 1 }}>
+                  <Typography fontWeight={700} sx={{ letterSpacing: '-0.01em' }}>
+                    {row.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>
+                    {row.body}
+                  </Typography>
+                </Box>
+                <Stack spacing={0.75} alignItems="flex-end" sx={{ flexShrink: 0 }}>
+                  <Switch disabled />
+                  <Chip size="small" label={t('host.comingSoon')} sx={{ fontWeight: 700 }} />
+                </Stack>
+              </Stack>
+            </Box>
+          ))}
         </Paper>
       )}
 
@@ -714,7 +752,7 @@ export default function HostDashboardPage() {
                         size="small"
                         variant={b.status === 'pending' ? 'contained' : 'outlined'}
                         disabled={b.status === 'cancelled' || b.status === 'confirmed'}
-                        onClick={() => showSuccess('Booking accepted (mock)')}
+                        onClick={() => showSuccess(t('host.bookingAccepted'))}
                         sx={{ borderRadius: 2, textTransform: 'none', fontWeight: b.status === 'pending' ? 700 : 600 }}
                       >
                         {b.status === 'confirmed' ? t('host.confirmed') : t('host.accept')}
@@ -773,11 +811,8 @@ export default function HostDashboardPage() {
         sx={{
           position: 'fixed',
           right: 16,
-          bottom: {
-            xs: MOBILE_TAB_BAR_FAB_BOTTOM,
-            md: `max(24px, calc(16px + env(safe-area-inset-bottom)))`,
-          },
-          display: tab === 0 ? 'inline-flex' : 'none',
+          bottom: MOBILE_TAB_BAR_FAB_BOTTOM,
+          display: { xs: tab === 0 ? 'inline-flex' : 'none', md: 'none' },
         }}
         onClick={() => {
           setEditingCarId(null)

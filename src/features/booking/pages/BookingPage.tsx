@@ -7,59 +7,60 @@ import {
   Card,
   CardContent,
   Container,
-  Divider,
   Grid,
   Paper,
   Stack,
   Step,
-  StepLabel,
+  StepButton,
   Stepper,
-  TextField,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import { alpha, type Theme } from '@mui/material/styles'
 import { Elements } from '@stripe/react-stripe-js'
-import { useEffect } from 'react'
-import { Controller, useForm } from 'react-hook-form'
-import { useNavigate, useParams } from 'react-router-dom'
-import { z } from 'zod'
+import type { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 
 import StripePaymentForm from '@/components/booking/StripePaymentForm'
-import PhilippineDriversLicenseTextField from '@/components/auth/PhilippineDriversLicenseTextField'
+import DateRangePicker from '@/components/common/DateRangePicker'
 import PriceBreakdown from '@/components/common/PriceBreakdown'
-import PhilippineNationalMobileTextField from '@/components/auth/PhilippineNationalMobileTextField'
-import { philippineDriversLicenseZod, philippineMobileZod } from '@/components/auth/authSchemas'
+import PageHeader from '@/components/layout/PageHeader'
+import { MOBILE_TAB_BAR_STACK_BOTTOM } from '@/components/layout/MobileBottomNav'
+import BookingPageSkeleton from '@/components/skeletons/BookingPageSkeleton'
+import TripClockSummary from '@/features/landing/components/TripClockSummary'
+import BookingDriverStep from '@/features/booking/components/BookingDriverStep'
+import { createDriverSchema, hasCompleteDriverProfile, type DriverFormValues } from '@/features/booking/components/driverSchema'
+import BookingTripSummary from '@/features/booking/components/BookingTripSummary'
+import { useDateValidation } from '@/hooks/useDateValidation'
+import { usePricing } from '@/hooks/usePricing'
+import { useT } from '@/hooks/useT'
+import { useVehicles } from '@/hooks/useVehicles'
 import { getStripe } from '@/lib/stripe'
+import { e164ToNationalMobileDigits, formatPhilippineDriversLicenseInput } from '@/lib/philippineContact'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useBookingStore } from '@/store/useBookingStore'
 import { useCarsStore } from '@/store/useCarsStore'
 import { useSnackbarStore } from '@/store/useSnackbarStore'
-import { formatPeso } from '@/utils/formatCurrency'
-import { useDateValidation } from '@/hooks/useDateValidation'
-import { usePricing } from '@/hooks/usePricing'
-import PageHeader from '@/components/layout/PageHeader'
-import BookingPageSkeleton from '@/components/skeletons/BookingPageSkeleton'
-import { useVehicles } from '@/hooks/useVehicles'
-import { formatTripDateTime } from '@/utils/dateUtils'
-import { e164ToNationalMobileDigits, formatPhilippineDriversLicenseInput } from '@/lib/philippineContact'
 import { containerGutters, listRowSurface, primaryCtaShadow } from '@/theme/pageStyles'
+import { rhElev, rhRadius } from '@/theme/tokens'
+import { formatPeso } from '@/utils/formatCurrency'
+import { formatTripDateTime } from '@/utils/dateUtils'
 
-const driverSchema = z.object({
-  firstName: z.string().min(2, 'Required'),
-  lastName: z.string().min(2, 'Required'),
-  email: z.string().email('Invalid email'),
-  phone: philippineMobileZod,
-  licenseNumber: philippineDriversLicenseZod,
-  licenseExpiry: z.string().min(1, 'Required'),
-})
+const STEPS = [
+  { short: 'booking.stepTrip', aria: 'booking.stepTripAria' },
+  { short: 'booking.stepYou', aria: 'booking.stepYouAria' },
+  { short: 'booking.stepPay', aria: 'booking.stepPayAria' },
+  { short: 'booking.stepDone', aria: 'booking.stepDoneAria' },
+] as const
 
-type DriverFormValues = z.input<typeof driverSchema>
-type DriverSubmitValues = z.output<typeof driverSchema>
-
-const steps = ['Review trip', 'Driver details', 'Payment', 'Confirmed']
+const DRIVER_FORM_ID = 'booking-driver-form'
 
 export default function BookingPage() {
+  const t = useT()
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'))
   const { carId } = useParams<{ carId: string }>()
@@ -75,19 +76,24 @@ export default function BookingPage() {
   const step = useBookingStore((s) => s.step)
   const bookingRef = useBookingStore((s) => s.bookingRef)
   const setStep = useBookingStore((s) => s.setStep)
+  const setTripDates = useBookingStore((s) => s.setTripDates)
   const setUserDetails = useBookingStore((s) => s.setUserDetails)
   const confirmBooking = useBookingStore((s) => s.confirmBooking)
   const resetFlow = useBookingStore((s) => s.reset)
 
   const showSuccess = useSnackbarStore((s) => s.showSuccess)
+  const dropoffRef = useRef<Dayjs | null>(dropoff)
+  dropoffRef.current = dropoff
 
   const { isRangeAvailable } = useDateValidation(car ?? null)
   const pricing = usePricing(car ?? null, pickup, dropoff)
+  const conflict = car && pickup && dropoff ? !isRangeAvailable(pickup, dropoff) : false
 
-  const conflict =
-    car && pickup && dropoff ? !isRangeAvailable(pickup, dropoff) : false
+  const [editingDriver, setEditingDriver] = useState(() => !hasCompleteDriverProfile(user))
 
-  const df = useForm<DriverFormValues, unknown, DriverSubmitValues>({
+  const driverSchema = useMemo(() => createDriverSchema(t, () => dropoffRef.current), [t])
+
+  const df = useForm<DriverFormValues>({
     resolver: zodResolver(driverSchema),
     defaultValues: {
       firstName: user?.firstName ?? '',
@@ -96,6 +102,7 @@ export default function BookingPage() {
       phone: e164ToNationalMobileDigits(user?.phone ?? ''),
       licenseNumber: formatPhilippineDriversLicenseInput(user?.licenseNumber ?? ''),
       licenseExpiry: '',
+      isDriver: false,
     },
   })
 
@@ -111,16 +118,16 @@ export default function BookingPage() {
   }, [car, carId, navigate, selectedCar, vehiclesLoading])
 
   useEffect(() => {
-    if (user) {
-      df.reset({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: e164ToNationalMobileDigits(user.phone),
-        licenseNumber: formatPhilippineDriversLicenseInput(user.licenseNumber),
-        licenseExpiry: df.getValues('licenseExpiry'),
-      })
-    }
+    if (!user) return
+    df.reset({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: e164ToNationalMobileDigits(user.phone),
+      licenseNumber: formatPhilippineDriversLicenseInput(user.licenseNumber),
+      licenseExpiry: df.getValues('licenseExpiry'),
+      isDriver: df.getValues('isDriver'),
+    })
   }, [user, df])
 
   const stripePromise = getStripe()
@@ -129,7 +136,14 @@ export default function BookingPage() {
   const back = () => setStep(Math.max(0, step - 1))
 
   const onDriverSubmit = df.handleSubmit((data) => {
-    setUserDetails(data)
+    setUserDetails({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      licenseNumber: data.licenseNumber,
+      licenseExpiry: data.licenseExpiry,
+    })
     updateProfile({
       firstName: data.firstName,
       lastName: data.lastName,
@@ -142,11 +156,28 @@ export default function BookingPage() {
   const onPaid = () => {
     try {
       const ref = confirmBooking()
-      showSuccess(`Booking confirmed! Ref: ${ref}`)
+      showSuccess(t('booking.confirmedSnackbar', { ref }))
     } catch (e) {
-      useSnackbarStore.getState().showError(e instanceof Error ? e.message : 'Failed')
+      useSnackbarStore.getState().showError(e instanceof Error ? e.message : t('booking.confirmFailed'))
     }
   }
+
+  const bookPickerFieldSx = useMemo(
+    () => ({
+      '& .MuiOutlinedInput-root': {
+        borderRadius: 2,
+        bgcolor: (th: Theme) =>
+          th.palette.mode === 'dark' ? alpha(th.palette.common.white, 0.06) : alpha(th.palette.grey[50], 0.96),
+        '&:hover': {
+          bgcolor: (th: Theme) => alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.1 : 0.045),
+        },
+        '&.Mui-focused': {
+          bgcolor: 'background.paper',
+        },
+      },
+    }),
+    [],
+  )
 
   if (vehiclesLoading && !car) {
     return <BookingPageSkeleton />
@@ -156,53 +187,36 @@ export default function BookingPage() {
     return (
       <Box sx={{ py: 8, px: 2 }} role="status" aria-live="polite">
         <Typography color="text.secondary" textAlign="center">
-          Preparing your booking…
+          {t('booking.preparing')}
         </Typography>
       </Box>
     )
   }
 
   const showAside = step < 3
-  const tripSummaryAside = (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 2.5,
-        ...listRowSurface(theme),
-        position: { md: 'sticky' },
-        top: { md: 96 },
-      }}
-    >
-      <Box
-        component="img"
-        src={car.images[0]}
-        alt=""
-        sx={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 2, mb: 2 }}
-      />
-      <Typography fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
-        {car.year} {car.make} {car.model}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        {formatTripDateTime(pickup)} → {formatTripDateTime(dropoff)}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        {car.location}
-      </Typography>
-      <Divider sx={{ my: 2 }} />
-      <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-        <Typography fontWeight={700}>Total</Typography>
-        <Typography variant="h6" color="primary.main" component="span">
-          {pricing.pricing ? formatPeso(pricing.pricing.total) : '—'}
-        </Typography>
-      </Stack>
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-        {step === 2 ? 'Due at checkout (test mode).' : 'Full breakdown in the next steps.'}
-      </Typography>
-    </Paper>
-  )
+  const showStickyCta = !isMdUp && step < 2
+  const amountLabel = pricing.pricing ? formatPeso(pricing.pricing.total) : '—'
+  const listingHref = `/cars/${car.id}`
+
+  const goToStep = (index: number) => {
+    if (step >= 3 || index >= step) return
+    setStep(index)
+  }
 
   return (
-    <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: { xs: 2, sm: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 } }}>
+    <Box
+      sx={{
+        bgcolor: 'background.default',
+        minHeight: '100vh',
+        py: { xs: 2, sm: 4 },
+        pb: {
+          xs: showStickyCta
+            ? `calc(88px + 68px + env(safe-area-inset-bottom, 0px))`
+            : `max(24px, env(safe-area-inset-bottom))`,
+          md: 4,
+        },
+      }}
+    >
       <Container maxWidth="lg" sx={containerGutters}>
         <Paper elevation={0} sx={{ p: { xs: 2, sm: 2.5 }, mb: { xs: 3, md: 4 }, ...listRowSurface(theme) }}>
           <Stepper
@@ -218,9 +232,15 @@ export default function BookingPage() {
               '& .MuiStepLabel-label.Mui-active': { fontWeight: 800 },
             }}
           >
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{isMdUp ? label : label.split(' ')[0]}</StepLabel>
+            {STEPS.map((item, i) => (
+              <Step key={item.short} completed={step > i}>
+                <StepButton
+                  disabled={step >= 3 || i >= step}
+                  onClick={() => goToStep(i)}
+                  aria-label={t(item.aria)}
+                >
+                  {t(item.short)}
+                </StepButton>
               </Step>
             ))}
           </Stepper>
@@ -230,23 +250,25 @@ export default function BookingPage() {
           <Grid item xs={12} md={showAside ? 8 : 12}>
             {step === 0 && (
               <Stack spacing={2.5}>
-                <PageHeader overline="Checkout" title="Review your trip" subtitle="Confirm dates and pricing before driver details." dense />
-                {conflict && (
-                  <Alert severity="error" action={<Button onClick={() => navigate(`/cars/${car.id}`)}>Change dates</Button>}>
-                    Selected dates have a conflict with existing bookings.
-                  </Alert>
-                )}
+                <PageHeader
+                  overline={t('booking.checkout')}
+                  title={t('booking.reviewTitle')}
+                  subtitle={t('booking.reviewSubtitle')}
+                  dense
+                />
                 {!isMdUp && (
                   <Card elevation={0} sx={listRowSurface(theme)}>
                     <CardContent>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                        <Box component="img" src={car.images[0]} sx={{ width: { xs: '100%', sm: 120 }, height: { xs: 160, sm: 80 }, objectFit: 'cover', borderRadius: 2 }} />
+                        <Box
+                          component="img"
+                          src={car.images[0]}
+                          alt=""
+                          sx={{ width: { xs: '100%', sm: 120 }, height: { xs: 160, sm: 80 }, objectFit: 'cover', borderRadius: 2 }}
+                        />
                         <Box>
                           <Typography fontWeight={700}>
                             {car.year} {car.make} {car.model}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {formatTripDateTime(pickup)} → {formatTripDateTime(dropoff)}
                           </Typography>
                           <Typography variant="body2">{car.location}</Typography>
                         </Box>
@@ -254,109 +276,103 @@ export default function BookingPage() {
                     </CardContent>
                   </Card>
                 )}
-                {pricing.pricing && <PriceBreakdown pricing={pricing.pricing} pricePerDay={car.pricePerDay} />}
-                <Alert severity="info">Free cancellation up to 24h before pickup (mock policy).</Alert>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-                  <Button onClick={() => navigate(`/cars/${car.id}`)} sx={{ order: { xs: 2, sm: 1 } }}>
-                    Back
-                  </Button>
-                  <Button
-                    variant="contained"
-                    disabled={conflict}
-                    onClick={next}
-                    sx={{ order: { xs: 1, sm: 2 }, minHeight: 48, borderRadius: 2, ...primaryCtaShadow(theme) }}
+                <DateRangePicker
+                  pickup={pickup}
+                  dropoff={dropoff}
+                  onChange={({ pickup: p, dropoff: d }) => {
+                    if (p?.isValid() && d?.isValid()) setTripDates(p, d)
+                  }}
+                  minDate={dayjs()}
+                  pickupLabel={t('picker.pickup')}
+                  dropoffLabel={t('picker.return')}
+                  stacked
+                  size="small"
+                  spacing={1.5}
+                  showHumanReadableSummary={false}
+                  showPolicyCaption={false}
+                  preferDesktopPickers
+                  slotProps={{
+                    textField: { sx: bookPickerFieldSx },
+                  }}
+                />
+                <TripClockSummary pickup={pickup} dropoff={dropoff} />
+                {conflict && (
+                  <Alert
+                    severity="error"
+                    action={
+                      <Button component={RouterLink} to={listingHref} color="inherit" size="small">
+                        {t('booking.viewListing')}
+                      </Button>
+                    }
                   >
-                    Continue
+                    {t('booking.conflict')}
+                  </Alert>
+                )}
+                {pricing.pricing && (
+                  <PriceBreakdown pricing={pricing.pricing} pricePerDay={car.pricePerDay} dense />
+                )}
+                <Alert severity="info">{t('booking.cancelPolicy')}</Alert>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={2}
+                  justifyContent="space-between"
+                >
+                  <Button component={RouterLink} to={listingHref} sx={{ order: { xs: 2, sm: 1 } }}>
+                    {t('booking.back')}
                   </Button>
+                  {isMdUp ? (
+                    <Button
+                      variant="contained"
+                      disabled={conflict}
+                      onClick={next}
+                      sx={{
+                        order: { xs: 1, sm: 2 },
+                        minHeight: 48,
+                        borderRadius: 2,
+                        fontWeight: 800,
+                        textTransform: 'none',
+                        ...primaryCtaShadow(theme),
+                      }}
+                    >
+                      {t('booking.continue')}
+                    </Button>
+                  ) : null}
                 </Stack>
               </Stack>
             )}
 
             {step === 1 && (
-              <Stack component="form" spacing={2.5} onSubmit={onDriverSubmit}>
-                <PageHeader
-                  overline="Checkout"
-                  title="Driver details"
-                  subtitle="We’ve pre-filled your account details where we could. Update anything that’s changed — we’ll use this for the rental agreement and host contact."
-                  dense
-                />
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField label="First name" fullWidth {...df.register('firstName')} error={!!df.formState.errors.firstName} helperText={df.formState.errors.firstName?.message} />
-                  <TextField label="Last name" fullWidth {...df.register('lastName')} error={!!df.formState.errors.lastName} helperText={df.formState.errors.lastName?.message} />
-                </Stack>
-                <TextField label="Email" fullWidth {...df.register('email')} error={!!df.formState.errors.email} helperText={df.formState.errors.email?.message} />
-                <Controller
-                  name="phone"
-                  control={df.control}
-                  render={({ field }) => (
-                    <PhilippineNationalMobileTextField
-                      label="Phone"
-                      fullWidth
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      inputRef={field.ref}
-                      error={!!df.formState.errors.phone}
-                      helperText={
-                        df.formState.errors.phone?.message ??
-                        '10 digits after +63 starting with 9 (you can paste 09…).'
-                      }
-                    />
-                  )}
-                />
-                <Controller
-                  name="licenseNumber"
-                  control={df.control}
-                  render={({ field }) => (
-                    <PhilippineDriversLicenseTextField
-                      label="License number"
-                      fullWidth
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      inputRef={field.ref}
-                      error={!!df.formState.errors.licenseNumber}
-                      helperText={
-                        df.formState.errors.licenseNumber?.message ??
-                        'Long LTO numbers auto-format with hyphens; compact IDs stay as typed.'
-                      }
-                    />
-                  )}
-                />
-                <TextField label="License expiry" type="date" InputLabelProps={{ shrink: true }} fullWidth {...df.register('licenseExpiry')} error={!!df.formState.errors.licenseExpiry} helperText={df.formState.errors.licenseExpiry?.message} />
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between">
-                  <Button type="button" variant="outlined" onClick={back} sx={{ order: { xs: 2, sm: 1 } }}>
-                    Back
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    sx={{ order: { xs: 1, sm: 2 }, minHeight: 48, borderRadius: 2, ...primaryCtaShadow(theme) }}
-                  >
-                    Continue
-                  </Button>
-                </Stack>
-              </Stack>
+              <BookingDriverStep
+                theme={theme}
+                user={user}
+                editing={editingDriver}
+                onEdit={() => setEditingDriver(true)}
+                dropoff={dropoff}
+                register={df.register}
+                control={df.control}
+                errors={df.formState.errors}
+                onBack={back}
+                onSubmit={onDriverSubmit}
+                showFooter={isMdUp}
+                formId={DRIVER_FORM_ID}
+              />
             )}
 
             {step === 2 && (
               <Stack spacing={2.5}>
-                <PageHeader overline="Checkout" title="Payment" subtitle="Test mode only — no real charges." dense />
-                {!isMdUp && (
-                  <Card elevation={0} sx={{ mb: 2, ...listRowSurface(theme) }}>
-                    <CardContent>
-                      <Typography fontWeight={700}>Order total</Typography>
-                      <Typography variant="h5" color="primary">
-                        {pricing.pricing ? formatPeso(pricing.pricing.total) : '—'}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                <PageHeader
+                  overline={t('booking.checkout')}
+                  title={t('booking.payTitle')}
+                  subtitle={t('booking.paySubtitle')}
+                  dense
+                />
+                {pricing.pricing && (
+                  <PriceBreakdown pricing={pricing.pricing} pricePerDay={car.pricePerDay} dense />
                 )}
                 {stripePromise ? (
                   <Elements stripe={stripePromise}>
                     <StripePaymentForm
+                      amountLabel={amountLabel}
                       onSuccess={() => {
                         onPaid()
                       }}
@@ -364,67 +380,173 @@ export default function BookingPage() {
                   </Elements>
                 ) : (
                   <Alert severity="info">
-                    Secure card checkout is unavailable in this environment.{' '}
+                    {t('booking.stripeUnavailable')}{' '}
                     {import.meta.env.DEV ? (
-                      <>
-                        Demo mode —{' '}
-                        <Button size="small" onClick={onPaid}>
-                          Confirm without card
-                        </Button>
-                      </>
+                      <Button size="small" onClick={onPaid} sx={{ ml: 0.5 }}>
+                        {t('booking.confirmWithoutCard')}
+                      </Button>
                     ) : (
-                      'Please try again later or contact support.'
+                      t('booking.contactSupport')
                     )}
                   </Alert>
                 )}
                 <Button variant="outlined" onClick={back}>
-                  Back
+                  {t('booking.back')}
                 </Button>
               </Stack>
             )}
 
             {step === 3 && bookingRef && (
-              <Stack alignItems="center" spacing={2} textAlign="center">
-                  <CheckCircleOutline sx={{ fontSize: 96, color: 'success.main' }} />
-                  <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', sm: '2.5rem' } }}>
-                    Booking Confirmed!
+              <Stack alignItems="center" spacing={2.5} sx={{ py: { xs: 1, md: 2 } }}>
+                <CheckCircleOutline sx={{ fontSize: 88, color: 'success.main' }} />
+                <Typography variant="h3" sx={{ fontSize: { xs: '1.5rem', sm: '2.25rem' }, fontWeight: 800, textAlign: 'center' }}>
+                  {t('booking.confirmedTitle')}
+                </Typography>
+                <Typography variant="h6" color="primary" fontWeight={800}>
+                  {t('booking.confirmedRef', { ref: bookingRef })}
+                </Typography>
+                <Card elevation={0} sx={{ width: '100%', maxWidth: 480, ...listRowSurface(theme) }}>
+                  <CardContent>
+                    <Typography fontWeight={800}>
+                      {car.year} {car.make} {car.model}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {formatTripDateTime(pickup)} – {formatTripDateTime(dropoff)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {car.location}
+                    </Typography>
+                    {car.plateNumber ? (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {t('booking.plate', { plate: car.plateNumber })}
+                      </Typography>
+                    ) : null}
+                    <Typography variant="h6" sx={{ mt: 1.25, fontWeight: 800 }}>
+                      {amountLabel}
+                    </Typography>
+                  </CardContent>
+                </Card>
+                <Box sx={{ width: '100%', maxWidth: 480, textAlign: 'left' }}>
+                  <Typography fontWeight={800} sx={{ mb: 1.25 }}>
+                    {t('booking.nextTitle')}
                   </Typography>
-                  <Typography variant="h5" color="primary">
-                    {bookingRef}
-                  </Typography>
-                  <Typography variant="body1">Your plate: {car.plateNumber}</Typography>
-                  <Card elevation={0} sx={{ width: '100%', maxWidth: 420, ...listRowSurface(theme) }}>
-                    <CardContent>
-                      <Typography fontWeight={700}>
-                        {car.make} {car.model}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatTripDateTime(pickup)} – {formatTripDateTime(dropoff)}
-                      </Typography>
-                      <Typography variant="h6" sx={{ mt: 1 }}>
-                        {pricing.pricing ? formatPeso(pricing.pricing.total) : ''}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                    <Button variant="contained" onClick={() => { resetFlow(); navigate('/dashboard?nav=trips') }} sx={{ borderRadius: 2, ...primaryCtaShadow(theme) }}>
-                      View My Trips
-                    </Button>
-                    <Button variant="outlined" onClick={() => { resetFlow(); navigate('/search') }}>
-                      Browse More Cars
-                    </Button>
+                  <Stack spacing={1}>
+                    <Typography variant="body2">{t('booking.next1')}</Typography>
+                    <Typography variant="body2">{t('booking.next2', { location: car.location })}</Typography>
+                    <Typography variant="body2">{t('booking.next3')}</Typography>
                   </Stack>
+                </Box>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%', maxWidth: 480 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={() => {
+                      resetFlow()
+                      navigate('/dashboard?nav=trips')
+                    }}
+                    sx={{ borderRadius: 2, fontWeight: 800, textTransform: 'none', ...primaryCtaShadow(theme) }}
+                  >
+                    {t('booking.viewTrips')}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => {
+                      resetFlow()
+                      navigate('/search')
+                    }}
+                  >
+                    {t('booking.browseMore')}
+                  </Button>
                 </Stack>
+              </Stack>
             )}
           </Grid>
 
           {showAside && (
             <Grid item md={4} sx={{ display: { xs: 'none', md: 'block' } }}>
-              {tripSummaryAside}
+              <BookingTripSummary
+                car={car}
+                pickup={pickup}
+                dropoff={dropoff}
+                pricing={pricing.pricing}
+                theme={theme}
+                caption={step === 2 ? t('booking.dueTestMode') : undefined}
+              />
             </Grid>
           )}
         </Grid>
       </Container>
+
+      {showStickyCta && (
+        <Paper
+          elevation={8}
+          sx={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: MOBILE_TAB_BAR_STACK_BOTTOM,
+            zIndex: theme.zIndex.appBar - 1,
+            borderRadius: `${rhRadius.lg}px ${rhRadius.lg}px 0 0`,
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            px: 2,
+            pt: 1.25,
+            pb: 1.25,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            bgcolor: 'background.paper',
+            boxShadow: rhElev.elev2,
+          }}
+        >
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={650} display="block">
+              {t('booking.total')}
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="text.primary" noWrap>
+              {amountLabel}
+            </Typography>
+          </Box>
+          {step === 0 ? (
+            <Button
+              variant="contained"
+              size="large"
+              disabled={conflict}
+              onClick={next}
+              sx={{
+                flexShrink: 0,
+                minWidth: 132,
+                borderRadius: 999,
+                px: 2.5,
+                fontWeight: 800,
+                textTransform: 'none',
+                ...primaryCtaShadow(theme),
+              }}
+            >
+              {t('booking.continue')}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              size="large"
+              type="submit"
+              form={DRIVER_FORM_ID}
+              sx={{
+                flexShrink: 0,
+                minWidth: 132,
+                borderRadius: 999,
+                px: 2.5,
+                fontWeight: 800,
+                textTransform: 'none',
+                ...primaryCtaShadow(theme),
+              }}
+            >
+              {t('booking.continue')}
+            </Button>
+          )}
+        </Paper>
+      )}
     </Box>
   )
 }

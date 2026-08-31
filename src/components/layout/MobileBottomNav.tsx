@@ -38,6 +38,9 @@ export const MOBILE_FOOTER_ADDITIONAL_CLEAR_PX = 16
 const MOBILE_TAB_BAR_ROW_CLEAR_PX = 72
 export const MOBILE_TAB_BAR_FAB_BOTTOM = `max(20px, calc(${MOBILE_TAB_BAR_ROW_CLEAR_PX}px + env(safe-area-inset-bottom, 0px) + 10px))`
 
+/** Sit a full-width sheet flush on top of the tab bar (no gap for page content to show through). */
+export const MOBILE_TAB_BAR_STACK_BOTTOM = `calc(68px + env(safe-area-inset-bottom, 0px))`
+
 /**
  * `/map` hides the tab bar on mobile; floating hints only need safe-area + a small margin
  * (not {@link MOBILE_TAB_BAR_FAB_BOTTOM}, which reserves space for the nav / FAB bubble).

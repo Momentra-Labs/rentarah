@@ -150,6 +150,14 @@ export function withLandingCtaSx(theme: Theme, extra: object = {}, elevate = fal
   }
 }
 
+/** Shared h2 on vehicle detail: About, included, calendar, pickup, reviews. */
+export const detailSectionHeadingSx = {
+  fontSize: { xs: '1.125rem', md: '1.25rem' },
+  fontWeight: 800,
+  letterSpacing: '-0.02em',
+  lineHeight: 1.3,
+}
+
 /** Renter + host dashboard: wrap {@link dashboardSectionTabsSx} for a clear, paper-backed tab strip. */
 export const dashboardTabsBarWrapSx: SxProps<Theme> = {
   mb: 3,

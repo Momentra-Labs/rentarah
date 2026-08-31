@@ -17,6 +17,7 @@ import type { ReactNode } from 'react'
 
 import { softInteractiveSurface } from '@/theme/pageStyles'
 import { formatPeso } from '@/utils/formatCurrency'
+import { useT } from '@/hooks/useT'
 
 export interface HostEarningsSectionProps {
   totalEarned: number
@@ -190,6 +191,7 @@ export default function HostEarningsSection({
   activeBookings,
   avgRatingLabel = '4.9 ★',
 }: HostEarningsSectionProps) {
+  const t = useT()
   const theme = useTheme()
   const hasBookings = totalEarned > 0 || activeBookings > 0
 
@@ -213,11 +215,11 @@ export default function HostEarningsSection({
             <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
               <AccountBalanceWallet sx={{ fontSize: 22, color: 'primary.main', opacity: 0.9 }} />
               <Typography variant="overline" sx={{ fontWeight: 800, letterSpacing: '0.12em', color: 'text.secondary', lineHeight: 1 }}>
-                HOST EARNINGS
+                {t('host.earningsOverline')}
               </Typography>
             </Stack>
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mt: 2, fontSize: { xs: '1.65rem', sm: '2rem' } }}>
-              Lifetime total
+              {t('host.earningsLifetime')}
             </Typography>
             <Typography
               component="p"
@@ -235,9 +237,7 @@ export default function HostEarningsSection({
               {formatPeso(totalEarned)}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.75, lineHeight: 1.65, maxWidth: 440 }}>
-              {hasBookings
-                ? 'Gross amounts from bookings in this demo catalog. Taxes, platform fees, and payout timing would mirror your live provider.'
-                : 'When renters book your vehicles, running totals accumulate here — try accepting a reservation to populate this dashboard.'}
+              {hasBookings ? t('host.earningsHeroBody') : t('host.earningsHeroEmpty')}
             </Typography>
           </Grid>
           <Grid
@@ -253,22 +253,22 @@ export default function HostEarningsSection({
             }}
           >
             <Typography variant="overline" sx={{ fontWeight: 700, letterSpacing: '0.08em', color: 'text.secondary', display: 'block', mb: 1.5 }}>
-              At a glance
+              {t('host.earningsGlance')}
             </Typography>
             <Grid container spacing={1.5}>
               <Grid item xs={6}>
-                <MiniMetric label="THIS MONTH · MOCK" primary={formatPeso(monthEarned)} secondary="Illustrative cut of lifetime" accent="info" />
+                <MiniMetric label={t('host.earningsThisMonth')} primary={formatPeso(monthEarned)} secondary={t('host.earningsThisMonthHint')} accent="info" />
               </Grid>
               <Grid item xs={6}>
                 <MiniMetric
-                  label="ACTIVE TRIPS"
+                  label={t('host.earningsActiveTrips')}
                   primary={activeBookings === 0 ? '—' : String(activeBookings)}
-                  secondary="Non-cancelled bookings"
+                  secondary={t('host.earningsActiveHint')}
                   accent="neutral"
                 />
               </Grid>
               <Grid item xs={12}>
-                <MiniMetric label="RENTER SENTIMENT" primary={avgRatingLabel} secondary="Across your listings · demo aggregate" accent="warning" />
+                <MiniMetric label={t('host.earningsSentiment')} primary={avgRatingLabel} secondary={t('host.earningsSentimentHint')} accent="warning" />
               </Grid>
             </Grid>
           </Grid>
@@ -279,16 +279,16 @@ export default function HostEarningsSection({
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2, sm: 0 }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }}>
           <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
             <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.02em', fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
-              Estimated weekly payout cadence
+              {t('host.earningsChartTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, lineHeight: 1.6, maxWidth: 560 }}>
-              Illustrative pattern only — heights are not tied to PHP amounts. Production would chart net payouts vs. bookings.
+              {t('host.earningsChartHint')}
             </Typography>
           </Box>
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0, color: 'text.secondary', py: { sm: 0.25 } }}>
             <CalendarMonth sx={{ fontSize: 22, opacity: 0.8 }} aria-hidden />
             <Typography variant="caption" sx={{ fontWeight: 700, letterSpacing: '0.04em' }}>
-              Last 7 days
+              {t('host.earningsLast7')}
             </Typography>
           </Stack>
         </Stack>
@@ -323,10 +323,10 @@ export default function HostEarningsSection({
             </Box>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="subtitle2" fontWeight={800} sx={{ letterSpacing: '-0.01em' }}>
-                Coming next: payouts & statements
+                {t('host.earningsNextTitle')}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, lineHeight: 1.55 }}>
-                Wire your payments rail to expose scheduled payouts, downloadable CSV summaries, and per-trip fee breakdown.
+                {t('host.earningsNextBody')}
               </Typography>
             </Box>
           </Stack>
@@ -334,11 +334,11 @@ export default function HostEarningsSection({
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: -0.5 }}>
             <InsightRow
               icon={<StarRounded sx={{ fontSize: 18, color: 'warning.main' }} />}
-              text="Trip ratings accumulate here — future host tiers could reward consistent five-star hospitality."
+              text={t('host.earningsInsightRatings')}
             />
             <InsightRow
               icon={<AccountBalanceWallet sx={{ fontSize: 18, color: 'primary.main' }} />}
-              text="Connect bank transfer or e-wallet rails so net payouts can run on a fixed weekly rhythm."
+              text={t('host.earningsInsightPayouts')}
             />
           </Stack>
         </Stack>

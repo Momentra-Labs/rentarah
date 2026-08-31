@@ -1,6 +1,9 @@
-import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material'
+import { Alert, Box, Button, CircularProgress, Stack, Typography, useTheme } from '@mui/material'
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useState } from 'react'
+
+import { useT } from '@/hooks/useT'
+import { primaryCtaShadow } from '@/theme/pageStyles'
 
 const cardStyle = {
   style: {
@@ -20,9 +23,12 @@ const cardStyle = {
 
 interface StripePaymentFormProps {
   onSuccess: () => void
+  amountLabel: string
 }
 
-export default function StripePaymentForm({ onSuccess }: StripePaymentFormProps) {
+export default function StripePaymentForm({ onSuccess, amountLabel }: StripePaymentFormProps) {
+  const t = useT()
+  const theme = useTheme()
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
@@ -40,14 +46,14 @@ export default function StripePaymentForm({ onSuccess }: StripePaymentFormProps)
         card,
       })
       if (pmError || !paymentMethod) {
-        setError(pmError?.message ?? 'Payment failed')
+        setError(pmError?.message ?? t('booking.payFailed'))
         setLoading(false)
         return
       }
       await new Promise((r) => setTimeout(r, 1500))
       onSuccess()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Payment error')
+      setError(e instanceof Error ? e.message : t('booking.payError'))
     } finally {
       setLoading(false)
     }
@@ -56,7 +62,7 @@ export default function StripePaymentForm({ onSuccess }: StripePaymentFormProps)
   return (
     <Stack spacing={2}>
       <Typography variant="body2" color="text.secondary">
-        Test card: <strong>4242 4242 4242 4242</strong> · any future expiry · any CVC
+        {t('booking.testCard', { number: '4242 4242 4242 4242' })}
       </Typography>
       <Box
         sx={{
@@ -70,8 +76,21 @@ export default function StripePaymentForm({ onSuccess }: StripePaymentFormProps)
         <CardElement options={cardStyle} />
       </Box>
       {error && <Alert severity="error">{error}</Alert>}
-      <Button variant="contained" size="large" disabled={!stripe || loading} onClick={handlePay}>
-        {loading ? <CircularProgress size={24} color="inherit" /> : 'Confirm & Pay'}
+      <Button
+        variant="contained"
+        size="large"
+        disabled={!stripe || loading}
+        onClick={() => void handlePay()}
+        sx={{ minHeight: 48, borderRadius: 2, fontWeight: 800, textTransform: 'none', ...primaryCtaShadow(theme) }}
+      >
+        {loading ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <CircularProgress size={20} color="inherit" />
+            <span>{t('booking.confirming')}</span>
+          </Stack>
+        ) : (
+          t('booking.payAmount', { amount: amountLabel })
+        )}
       </Button>
     </Stack>
   )

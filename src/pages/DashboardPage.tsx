@@ -13,6 +13,7 @@ import {
   Container,
   Divider,
   Grid,
+  IconButton,
   Paper,
   Stack,
   TextField,
@@ -31,8 +32,8 @@ import EmptyState from '../components/ui/EmptyState'
 import UserAvatar from '../components/common/UserAvatar'
 import PhilippineDriversLicenseTextField from '../components/auth/PhilippineDriversLicenseTextField'
 import PhilippineNationalMobileTextField from '../components/auth/PhilippineNationalMobileTextField'
+import DashboardHero from '../components/layout/DashboardHero'
 import DashboardSectionTabs from '../components/layout/DashboardSectionTabs'
-import PageHeader from '../components/layout/PageHeader'
 import { formatBookingStoredDate } from '../utils/dateUtils'
 import { useAuthStore } from '../store/useAuthStore'
 import { compressAvatarImageFileToJpegDataUrl } from '../lib/compressIdentityImage'
@@ -52,6 +53,7 @@ import { useCarsStore } from '../store/useCarsStore'
 import { useSnackbarStore } from '../store/useSnackbarStore'
 import { formatPeso } from '../utils/formatCurrency'
 import { containerGutters, listRowSurface, primaryCtaShadow } from '../theme/pageStyles'
+import { rhElev } from '../theme/tokens'
 import CarGridSkeleton from '../components/skeletons/CarGridSkeleton'
 import DashboardPageSkeleton from '../components/skeletons/DashboardPageSkeleton'
 import { useT } from '../hooks/useT'
@@ -233,9 +235,10 @@ export default function DashboardPage() {
     () => upcoming.filter((b) => b.status === 'pending').length,
     [upcoming],
   )
+  const identity = renterIdentityGate(user?.identityVerification?.status)
   const nextStep = useMemo(
-    () => getRenterNextStep(pendingBookingsCount, upcoming.length, renterIdentityGate(user?.identityVerification?.status)),
-    [pendingBookingsCount, upcoming.length, user?.identityVerification?.status],
+    () => getRenterNextStep(pendingBookingsCount, upcoming.length, identity),
+    [identity, pendingBookingsCount, upcoming.length],
   )
 
   const onNextStepAction = useCallback(() => {
@@ -265,21 +268,21 @@ export default function DashboardPage() {
       try {
         const jpeg = await compressAvatarImageFileToJpegDataUrl(file)
         updateProfile({ avatar: jpeg })
-        showSuccess('Profile photo updated')
+        showSuccess(t('renter.photoUpdated'))
       } catch (err) {
-        showError(err instanceof Error ? err.message : 'Could not use that photo. Try JPG or PNG.')
+        showError(err instanceof Error ? err.message : t('renter.photoFailed'))
       } finally {
         setAvatarBusy(false)
       }
     },
-    [showError, showSuccess, updateProfile, user],
+    [showError, showSuccess, t, updateProfile, user],
   )
 
   const removeAvatarPhoto = useCallback(() => {
     if (!user) return
     updateProfile({ avatar: resolveAvatarAfterRemovePhoto(user) })
-    showSuccess('Photo removed')
-  }, [showSuccess, updateProfile, user])
+    showSuccess(t('renter.photoRemoved'))
+  }, [showSuccess, t, updateProfile, user])
 
   if (vehiclesLoading && cars.length === 0 && mine.length === 0) {
     return <DashboardPageSkeleton />
@@ -288,11 +291,31 @@ export default function DashboardPage() {
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, pb: { xs: `max(24px, env(safe-area-inset-bottom))`, sm: 4 }, ...containerGutters }}>
-        <PageHeader
+        <DashboardHero
+          avatar={user?.avatar}
+          firstName={user?.firstName}
+          lastName={user?.lastName}
           overline={t('renter.overline')}
           title={t('renter.greeting', { name: user?.firstName ?? t('renter.greetingFallback') })}
-          subtitle={t('renter.subtitle')}
-          dense
+          subtitle={
+            user?.createdAt
+              ? `${t('renter.subtitle')} · ${t('renter.memberSince', { year: dayjs(user.createdAt).year() })}`
+              : t('renter.subtitle')
+          }
+          chips={[
+            ...(identity === 'approved'
+              ? [{ key: 'id', label: t('renter.idVerified'), color: 'success' as const }]
+              : identity === 'pending_review'
+                ? [{ key: 'id', label: t('renter.idPending'), color: 'warning' as const }]
+                : [{ key: 'id', label: t('renter.idUnverified'), color: 'primary' as const, onClick: () => navigate('/verify-identity') }]),
+            ...(user?.emailVerified ? [{ key: 'email', label: t('renter.emailVerified'), color: 'success' as const }] : []),
+            ...(user?.isHost ? [{ key: 'host', label: t('renter.hostBadge'), color: 'primary' as const }] : []),
+          ]}
+          stats={[
+            { key: 'trips', label: t('renter.trips'), value: String(upcoming.length) },
+            { key: 'past', label: t('renter.past'), value: String(past.length) },
+            { key: 'saved', label: t('renter.saved'), value: String(savedIds.length) },
+          ]}
         />
 
         {nextStep ? (
@@ -374,33 +397,34 @@ export default function DashboardPage() {
           elevation={0}
           sx={{
             ...listRowSurface(theme),
-            maxWidth: 560,
+            maxWidth: 720,
             width: '100%',
             mx: 'auto',
             borderRadius: 3,
+            overflow: 'hidden',
           }}
         >
           <CardContent
             sx={{
               px: { xs: 2, sm: 3.5 },
-              py: { xs: 2, sm: 3.5 },
-              '&:last-child': { pb: { xs: 2, sm: 3.5 } },
+              py: { xs: 2.5, sm: 3.5 },
+              '&:last-child': { pb: { xs: 2.5, sm: 3.5 } },
             }}
           >
-            <Box sx={{ mb: 2.5 }}>
-              <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.02em" sx={{ color: 'text.primary' }}>
-                {t('renter.profileTitle')}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.02em">
+                {t('renter.personalDetails')}
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>
                 {t('renter.profileHint')}
               </Typography>
             </Box>
             <Stack spacing={2.5} alignItems="stretch" sx={{ width: '100%' }}>
               <Box>
-                <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: '-0.02em', color: 'text.primary' }}>
+                <Typography variant="subtitle2" fontWeight={700} sx={{ letterSpacing: '-0.02em' }}>
                   {t('renter.photo')}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.25, lineHeight: 1.5 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5, lineHeight: 1.5 }}>
                   {t('renter.photoHint')}
                 </Typography>
                 <input
@@ -408,36 +432,71 @@ export default function DashboardPage() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   hidden
-                  aria-label="Upload profile photo"
+                  aria-label={t('renter.photoAria')}
                   onChange={onAvatarFileChange}
                 />
-                <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap sx={{ gap: 1.5 }}>
-                  <UserAvatar avatar={user?.avatar} firstName={user?.firstName} lastName={user?.lastName} size={56} />
-                  <Stack direction="row" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
-                    <Button
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ xs: 'flex-start', sm: 'center' }}>
+                  <Box sx={{ position: 'relative', width: 104, height: 104, flexShrink: 0 }}>
+                    <UserAvatar
+                      avatar={user?.avatar}
+                      firstName={user?.firstName}
+                      lastName={user?.lastName}
+                      size={104}
+                      sx={{
+                        boxShadow: `0 0 0 4px ${theme.palette.background.paper}, 0 0 0 6px ${alpha(theme.palette.primary.main, 0.28)}`,
+                      }}
+                    />
+                    <IconButton
                       type="button"
-                      variant="outlined"
                       size="small"
-                      startIcon={<PhotoCameraOutlined />}
+                      aria-label={t('renter.photoAria')}
                       disabled={avatarBusy || !user}
                       onClick={pickAvatarPhoto}
-                      sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                      sx={{
+                        position: 'absolute',
+                        right: 0,
+                        bottom: 0,
+                        width: 36,
+                        height: 36,
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        boxShadow: rhElev.elev1,
+                        border: '2px solid',
+                        borderColor: 'background.paper',
+                        '&:hover': { bgcolor: 'primary.dark' },
+                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+                      }}
                     >
-                      {avatarBusy ? t('renter.processing') : t('renter.changePhoto')}
-                    </Button>
-                    {user && isProfilePhotoAvatar(user.avatar) ? (
+                      <PhotoCameraOutlined sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
+                  <Stack spacing={1} sx={{ minWidth: 0 }}>
+                    <Stack direction="row" flexWrap="wrap" useFlexGap sx={{ gap: 1 }}>
                       <Button
                         type="button"
-                        variant="text"
+                        variant="outlined"
                         size="small"
-                        color="inherit"
-                        disabled={avatarBusy}
-                        onClick={removeAvatarPhoto}
-                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                        startIcon={<PhotoCameraOutlined />}
+                        disabled={avatarBusy || !user}
+                        onClick={pickAvatarPhoto}
+                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
                       >
-                        {t('renter.removePhoto')}
+                        {avatarBusy ? t('renter.processing') : t('renter.changePhoto')}
                       </Button>
-                    ) : null}
+                      {user && isProfilePhotoAvatar(user.avatar) ? (
+                        <Button
+                          type="button"
+                          variant="text"
+                          size="small"
+                          color="inherit"
+                          disabled={avatarBusy}
+                          onClick={removeAvatarPhoto}
+                          sx={{ textTransform: 'none', fontWeight: 600 }}
+                        >
+                          {t('renter.removePhoto')}
+                        </Button>
+                      ) : null}
+                    </Stack>
                   </Stack>
                 </Stack>
               </Box>
@@ -465,7 +524,7 @@ export default function DashboardPage() {
                 disabled
                 fullWidth
                 size="small"
-                helperText="Sign-in address — contact support to change"
+                helperText={t('renter.emailLocked')}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
@@ -475,7 +534,7 @@ export default function DashboardPage() {
                   onChange={(digits) => setPf({ ...pf, phone: digits })}
                   fullWidth
                   size="small"
-                  helperText="10 digits starting with 9 (you can paste 09…)."
+                  helperText={t('renter.phoneHint')}
                   sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
                 <PhilippineDriversLicenseTextField
@@ -484,7 +543,7 @@ export default function DashboardPage() {
                   onChange={(v) => setPf({ ...pf, licenseNumber: v })}
                   fullWidth
                   size="small"
-                  helperText="Long LTO numbers format with hyphens (e.g. N12-34-567890)."
+                  helperText={t('renter.licenseHint')}
                   sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                 />
               </Stack>
@@ -495,11 +554,11 @@ export default function DashboardPage() {
                   const phone = nationalMobileDigitsToE164(pf.phone)
                   const licenseNumber = normalizePhilippineDriversLicense(pf.licenseNumber)
                   if (!phone) {
-                    showError('Enter 10 digits after +63 starting with 9.')
+                    showError(t('renter.errPhone'))
                     return
                   }
                   if (!isValidPhilippineDriversLicense(licenseNumber)) {
-                    showError('License must match your LTO card (e.g. N12-34-567890 or N12345678).')
+                    showError(t('renter.errLicense'))
                     return
                   }
                   updateProfile({
@@ -513,12 +572,13 @@ export default function DashboardPage() {
                     phone: e164ToNationalMobileDigits(phone),
                     licenseNumber: formatPhilippineDriversLicenseInput(licenseNumber),
                   }))
-                  showSuccess('Profile updated')
+                  showSuccess(t('renter.profileUpdated'))
                 }}
                 sx={{
                   py: 1.25,
                   borderRadius: 2,
                   fontWeight: 700,
+                  textTransform: 'none',
                   ...primaryCtaShadow(theme),
                   alignSelf: { xs: 'stretch', sm: 'flex-start' },
                   width: { xs: '100%', sm: 'auto' },
@@ -567,16 +627,25 @@ export default function DashboardPage() {
           )}
           {upcoming.map((b) => (
             <Card key={b.id} elevation={0} sx={listRowSurface(theme)}>
-              <CardContent>
+              <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2}>
-                  <Stack direction="row" spacing={2}>
-                    <Box component="img" src={b.carImage} sx={{ width: 120, height: 72, objectFit: 'cover', borderRadius: 2 }} />
-                    <Box>
-                      <Typography fontWeight={700}>{b.carName}</Typography>
-                      <Typography variant="body2" color="text.secondary">
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Box
+                      component="img"
+                      src={b.carImage}
+                      alt=""
+                      sx={{ width: 140, height: 88, objectFit: 'cover', borderRadius: 2, bgcolor: 'grey.200', flexShrink: 0 }}
+                    />
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                        {b.carName}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>
                         {formatBookingStoredDate(b.pickup)} → {formatBookingStoredDate(b.dropoff)}
                       </Typography>
-                      <Typography>{formatPeso(b.total)}</Typography>
+                      <Typography color="primary.main" fontWeight={800} sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatPeso(b.total)}
+                      </Typography>
                     </Box>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -609,7 +678,7 @@ export default function DashboardPage() {
                       size="small"
                       onClick={() => {
                         cancelBooking(b.id)
-                        showInfo('Booking cancelled')
+                        showInfo(t('renter.bookingCancelled'))
                       }}
                     >
                       {t('renter.cancel')}
@@ -631,12 +700,14 @@ export default function DashboardPage() {
             />
           )}
           {past.map((b) => (
-            <Card key={b.id} elevation={0} sx={{ opacity: 0.92, ...listRowSurface(theme) }}>
-              <CardContent>
-                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1} alignItems={{ sm: 'center' }}>
-                  <Box>
-                    <Typography fontWeight={700}>{b.carName}</Typography>
-                    <Typography variant="body2">
+            <Card key={b.id} elevation={0} sx={listRowSurface(theme)}>
+              <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ sm: 'center' }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography fontWeight={800} sx={{ letterSpacing: '-0.02em' }}>
+                      {b.carName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>
                       {formatBookingStoredDate(b.pickup)} – {formatBookingStoredDate(b.dropoff)}
                     </Typography>
                   </Box>

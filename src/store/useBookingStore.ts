@@ -22,6 +22,7 @@ export interface BookingStoreState {
   bookingRef: string | null
   bookings: BookingRecord[]
   initBooking: (car: Car, pickup: Dayjs, dropoff: Dayjs) => void
+  setTripDates: (pickup: Dayjs, dropoff: Dayjs) => void
   setStep: (step: number) => void
   setUserDetails: (
     partialOrUpdater:
@@ -56,6 +57,8 @@ export const useBookingStore = create<BookingStoreState>()(
           paymentMethod: null,
           bookingRef: null,
         }),
+
+      setTripDates: (pickup, dropoff) => set({ pickup, dropoff }),
 
       setStep: (step) => set({ step }),
 

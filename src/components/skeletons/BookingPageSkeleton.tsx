@@ -1,6 +1,7 @@
 import { Box, Container, Grid, Paper, Skeleton, Stack, useTheme } from '@mui/material'
 
 import { containerGutters, listRowSurface } from '@/theme/pageStyles'
+import { rhRadius } from '@/theme/tokens'
 
 import { PageHeaderSkeleton } from './skeletonPieces'
 
@@ -25,7 +26,7 @@ export default function BookingPageSkeleton() {
             {[0, 1, 2, 3].map((i) => (
               <Stack key={i} alignItems="center" spacing={0.75} sx={{ flex: 1 }}>
                 <Skeleton variant="circular" animation="wave" width={28} height={28} />
-                <Skeleton variant="text" animation="wave" width={64} height={16} />
+                <Skeleton variant="text" animation="wave" width={48} height={16} />
               </Stack>
             ))}
           </Stack>
@@ -34,14 +35,15 @@ export default function BookingPageSkeleton() {
         <Grid container spacing={{ xs: 2, md: 3 }} alignItems="flex-start">
           <Grid item xs={12} md={8}>
             <PageHeaderSkeleton />
-            <Stack spacing={2}>
+            <Stack spacing={1.5}>
               <Skeleton variant="rounded" animation="wave" height={56} sx={{ borderRadius: 2 }} />
               <Skeleton variant="rounded" animation="wave" height={56} sx={{ borderRadius: 2 }} />
-              <Skeleton variant="rounded" animation="wave" height={56} sx={{ borderRadius: 2 }} />
-              <Skeleton variant="rounded" animation="wave" width={160} height={44} sx={{ borderRadius: 2 }} />
+              <Skeleton variant="rounded" animation="wave" height={48} sx={{ borderRadius: 2 }} />
+              <Skeleton variant="rounded" animation="wave" height={120} sx={{ borderRadius: 2 }} />
+              <Skeleton variant="rounded" animation="wave" width={160} height={44} sx={{ borderRadius: `${rhRadius.md}px` }} />
             </Stack>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item md={4} sx={{ display: { xs: 'none', md: 'block' } }}>
             <Paper
               elevation={0}
               sx={{ p: 2.5, ...listRowSurface(theme), position: { md: 'sticky' }, top: { md: 96 } }}
@@ -50,6 +52,8 @@ export default function BookingPageSkeleton() {
               <Skeleton variant="text" animation="wave" width="70%" height={24} />
               <Skeleton variant="text" animation="wave" width="88%" height={18} />
               <Skeleton variant="text" animation="wave" width="54%" height={18} />
+              <Skeleton variant="text" animation="wave" width="92%" height={16} sx={{ mt: 1 }} />
+              <Skeleton variant="text" animation="wave" width="80%" height={16} />
               <Skeleton variant="text" animation="wave" width="40%" height={28} sx={{ mt: 2 }} />
             </Paper>
           </Grid>

@@ -8,6 +8,8 @@ import {
   Typography,
 } from '@mui/material'
 
+import { useT } from '@/hooks/useT'
+import { detailSectionHeadingSx } from '@/theme/pageStyles'
 import type { Car } from '@/types'
 
 type MockReview = {
@@ -96,6 +98,7 @@ export interface ReviewsListProps {
 }
 
 export default function ReviewsList({ car }: ReviewsListProps) {
+  const t = useT()
   const { reviews, breakdownFiveToOne } = buildMockData(car)
   const maxBar = Math.max(...breakdownFiveToOne, 1)
   const starLabels = [5, 4, 3, 2, 1]
@@ -103,13 +106,13 @@ export default function ReviewsList({ car }: ReviewsListProps) {
 
   return (
     <Box sx={{ mt: 5 }}>
-      <Typography variant="h4" sx={{ mb: 2 }}>
-        Reviews
+      <Typography variant="h6" component="h2" sx={{ ...detailSectionHeadingSx, mb: 2 }}>
+        {t('detail.reviews')}
       </Typography>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={4} alignItems="flex-start">
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, minWidth: { md: 200 } }}>
-          <Typography variant="h2" fontWeight={800} color="primary.main">
+          <Typography sx={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'text.primary', lineHeight: 1.1 }}>
             {car.rating.toFixed(1)}
           </Typography>
           <Stack direction="row" alignItems="center" spacing={0.25}>
@@ -124,7 +127,7 @@ export default function ReviewsList({ car }: ReviewsListProps) {
             ))}
           </Stack>
           <Typography variant="body2" color="text.secondary">
-            Based on {car.reviewCount} reviews
+            {t('detail.reviewsBased', { count: car.reviewCount })}
           </Typography>
         </Paper>
 

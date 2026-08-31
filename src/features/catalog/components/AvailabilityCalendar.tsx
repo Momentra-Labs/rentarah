@@ -1,4 +1,4 @@
-import { Box, Chip, Paper, Stack, Typography } from '@mui/material'
+import { Box, Button, Paper, Stack, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { Key } from 'react'
 import { CalendarPicker } from '@mui/x-date-pickers/CalendarPicker'
@@ -7,8 +7,11 @@ import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 
-import type { Car } from '@/types'
+import TripClockSummary from '@/features/landing/components/TripClockSummary'
+import { useT } from '@/hooks/useT'
 import { useDateValidation } from '@/hooks/useDateValidation'
+import { detailSectionHeadingSx } from '@/theme/pageStyles'
+import type { Car } from '@/types'
 import { formatTripDateTimeHuman, generateRentalOccupancyDates } from '@/utils/dateUtils'
 
 /** Compact day button — fixed size so every weekday column stays aligned. */
@@ -31,17 +34,17 @@ export interface AvailabilityCalendarProps {
   car: Car
   pickup: Dayjs | null
   dropoff: Dayjs | null
+  onEditDates?: () => void
 }
 
-export default function AvailabilityCalendar({ car, pickup, dropoff }: AvailabilityCalendarProps) {
+export default function AvailabilityCalendar({ car, pickup, dropoff, onEditDates }: AvailabilityCalendarProps) {
+  const t = useT()
   const { shouldDisableDate } = useDateValidation(car)
 
   const rangeSet = new Set<string>()
   if (pickup?.isValid() && dropoff?.isValid()) {
     generateRentalOccupancyDates(pickup, dropoff).forEach((d) => rangeSet.add(d))
   }
-
-  const tripDays = rangeSet.size
 
   const renderDay = (
     day: Dayjs,
@@ -223,27 +226,24 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
 
   return (
     <Box sx={{ mt: 4, width: '100%', maxWidth: '100%', minWidth: 0 }}>
-      <Typography variant="h6" component="h2" sx={{ mb: 0.75, fontWeight: 800, letterSpacing: '-0.02em' }}>
-        When is it free?
-      </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: 0.75 }}>
+        <Typography variant="h6" component="h2" sx={detailSectionHeadingSx}>
+          {t('detail.calendarTitle')}
+        </Typography>
+        {onEditDates ? (
+          <Button size="small" onClick={onEditDates} sx={{ fontWeight: 700, textTransform: 'none', flexShrink: 0 }}>
+            {t('detail.editDates')}
+          </Button>
+        ) : null}
+      </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.55, fontWeight: 500, maxWidth: 560 }}>
-        Red days are already taken. Blue days are the nights you selected above. Past days are greyed out.
+        {t('detail.calendarHint')}
       </Typography>
 
       {pickup?.isValid() && dropoff?.isValid() && (
-        <Stack
-          spacing={0.75}
-          sx={{
-            mb: 2,
-            p: 1.5,
-            borderRadius: 2,
-            bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
-            border: '1px solid',
-            borderColor: (t) => alpha(t.palette.primary.main, 0.14),
-          }}
-        >
-          <Typography variant="body2" fontWeight={800} color="primary.main">
-            Your trip
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          <Typography variant="body2" fontWeight={800} color="text.primary">
+            {t('detail.yourTrip')}
           </Typography>
           <Typography variant="body2" fontWeight={650} color="text.primary" sx={{ lineHeight: 1.45 }}>
             {formatTripDateTimeHuman(pickup)}
@@ -252,15 +252,7 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
             </Box>
             {formatTripDateTimeHuman(dropoff)}
           </Typography>
-          {tripDays > 0 && (
-            <Chip
-              size="small"
-              color="primary"
-              variant="outlined"
-              label={`${tripDays} billed ${tripDays === 1 ? 'day' : 'days'} (return day not charged)`}
-              sx={{ alignSelf: 'flex-start', fontWeight: 700 }}
-            />
-          )}
+          <TripClockSummary pickup={pickup} dropoff={dropoff} />
         </Stack>
       )}
 
@@ -298,7 +290,7 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
             }}
           >
             <Typography variant="subtitle2" fontWeight={800}>
-              Color guide
+              {t('detail.colorGuide')}
             </Typography>
             <Stack spacing={1.25}>
               <Stack direction="row" alignItems="center" spacing={1.25}>
@@ -307,18 +299,18 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
                     width: 24,
                     height: 24,
                     borderRadius: '6px',
-                    bgcolor: (t) => alpha(t.palette.error.main, 0.16),
+                    bgcolor: (th) => alpha(th.palette.error.main, 0.16),
                     border: '1px solid',
-                    borderColor: (t) => alpha(t.palette.error.main, 0.35),
+                    borderColor: (th) => alpha(th.palette.error.main, 0.35),
                     flexShrink: 0,
                   }}
                 />
                 <Box>
                   <Typography variant="body2" fontWeight={750} color="text.primary">
-                    Booked
+                    {t('detail.booked')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" fontWeight={550}>
-                    Someone else already reserved this day
+                    {t('detail.bookedHint')}
                   </Typography>
                 </Box>
               </Stack>
@@ -328,18 +320,18 @@ export default function AvailabilityCalendar({ car, pickup, dropoff }: Availabil
                     width: 24,
                     height: 24,
                     borderRadius: '6px',
-                    bgcolor: (t) => alpha(t.palette.primary.main, 0.18),
+                    bgcolor: (th) => alpha(th.palette.primary.main, 0.18),
                     border: '2px solid',
-                    borderColor: (t) => alpha(t.palette.primary.main, 0.45),
+                    borderColor: (th) => alpha(th.palette.primary.main, 0.45),
                     flexShrink: 0,
                   }}
                 />
                 <Box>
                   <Typography variant="body2" fontWeight={750} color="text.primary">
-                    Your selection
+                    {t('detail.yourSelection')}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" fontWeight={550}>
-                    Nights you&apos;ll have the vehicle
+                    {t('detail.yourSelectionHint')}
                   </Typography>
                 </Box>
               </Stack>
