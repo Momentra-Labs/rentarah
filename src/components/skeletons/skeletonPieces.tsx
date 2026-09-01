@@ -136,8 +136,8 @@ export function MediaRowSkeleton({
 
 export function ChatThreadRowSkeleton() {
   return (
-    <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ px: 2, py: 1.25 }}>
-      <Skeleton variant="circular" animation="wave" width={44} height={44} sx={{ flexShrink: 0 }} />
+    <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ px: 2, py: 1.5 }}>
+      <Skeleton variant="circular" animation="wave" width={56} height={56} sx={{ flexShrink: 0 }} />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction="row" justifyContent="space-between" spacing={1}>
           <Skeleton variant="text" animation="wave" width="42%" height={20} />

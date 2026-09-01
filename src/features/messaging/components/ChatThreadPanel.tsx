@@ -1,11 +1,16 @@
 import Send from '@mui/icons-material/Send'
-import { Avatar, Box, IconButton, Stack, TextField, Typography } from '@mui/material'
-import { alpha } from '@mui/material/styles'
+import { Box, Chip, IconButton, Stack, TextField, Typography } from '@mui/material'
+import { alpha, useTheme } from '@mui/material/styles'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
+import UserAvatar from '@/components/common/UserAvatar'
+import { otherPartyName, splitDisplayName } from '@/features/messaging/chatDisplay'
+import { groupMessagesByDay } from '@/features/messaging/groupMessagesByDay'
 import { useT } from '@/hooks/useT'
 import type { ChatMessage, ChatThread } from '@/types'
+import { rhElev, rhRadius } from '@/theme/tokens'
 
 export type ChatThreadPanelProps = {
   thread: ChatThread
@@ -16,10 +21,6 @@ export type ChatThreadPanelProps = {
   hideThreadHeader?: boolean
 }
 
-function otherName(t: ChatThread, me: string) {
-  return t.hostId === me ? t.renterName : t.hostName
-}
-
 export default function ChatThreadPanel({
   thread,
   messages,
@@ -28,12 +29,13 @@ export default function ChatThreadPanel({
   hideThreadHeader = false,
 }: ChatThreadPanelProps) {
   const t = useT()
+  const theme = useTheme()
+  const navigate = useNavigate()
   const [draft, setDraft] = useState('')
   const scrollElRef = useRef<HTMLDivElement | null>(null)
 
-  const sorted = useMemo(() => [...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)), [messages])
+  const groups = useMemo(() => groupMessagesByDay(messages), [messages])
 
-  /** Only scroll the message list box — not the window (scrollIntoView was scrolling the page / other panels). */
   useEffect(() => {
     const el = scrollElRef.current
     if (!el) return
@@ -41,17 +43,25 @@ export default function ChatThreadPanel({
       el.scrollTop = el.scrollHeight
     }
     run()
-    const t = window.requestAnimationFrame(run)
-    return () => window.cancelAnimationFrame(t)
-  }, [sorted.length, thread.id])
+    const frame = window.requestAnimationFrame(run)
+    return () => window.cancelAnimationFrame(frame)
+  }, [messages.length, thread.id])
 
-  const title = otherName(thread, currentUserId)
+  const title = otherPartyName(thread, currentUserId)
+  const names = splitDisplayName(title)
 
   const handleSend = () => {
-    const t = draft.trim()
-    if (!t) return
-    onSend(t)
+    const next = draft.trim()
+    if (!next) return
+    onSend(next)
     setDraft('')
+  }
+
+  const dayLabel = (kind: 'today' | 'yesterday' | 'date', sampleIso: string) => {
+    if (kind === 'today') return t('chat.today')
+    if (kind === 'yesterday') return t('chat.yesterday')
+    const parsed = dayjs(sampleIso)
+    return parsed.isValid() ? parsed.format('MMM D, YYYY') : ''
   }
 
   return (
@@ -64,21 +74,36 @@ export default function ChatThreadPanel({
             borderBottom: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper',
-            boxShadow: (theme) =>
-              theme.palette.mode === 'light' ? '0 1px 0 rgba(0, 0, 0, 0.06)' : '0 1px 0 rgba(255,255,255,0.06)',
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <Avatar sx={{ bgcolor: 'primary.main', width: 44, height: 44, fontSize: '0.9rem', fontWeight: 700 }}>
-              {title.slice(0, 2).toUpperCase()}
-            </Avatar>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography fontWeight={800} fontSize="1rem" noWrap>
+            <UserAvatar
+              avatar={null}
+              firstName={names.firstName}
+              lastName={names.lastName}
+              size={44}
+              sx={{
+                flexShrink: 0,
+                boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.28)}`,
+              }}
+            />
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography fontWeight={800} fontSize="1rem" noWrap sx={{ letterSpacing: '-0.02em' }}>
                 {title}
               </Typography>
-              <Typography variant="body2" color="text.secondary" noWrap sx={{ fontSize: '0.8125rem' }}>
-                {thread.carName} · ref {thread.bookingId.slice(0, 8)}…
-              </Typography>
+              <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                <Chip
+                  size="small"
+                  label={thread.carName}
+                  clickable={Boolean(thread.carId)}
+                  onClick={thread.carId ? () => navigate(`/cars/${thread.carId}`) : undefined}
+                  aria-label={thread.carId ? t('chat.viewListing') : undefined}
+                  sx={{ fontWeight: 700, height: 24, borderRadius: 999, maxWidth: '100%' }}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.03em' }}>
+                  {t('chat.ref', { id: thread.bookingId.slice(0, 8) })}
+                </Typography>
+              </Stack>
             </Box>
           </Stack>
         </Box>
@@ -91,69 +116,85 @@ export default function ChatThreadPanel({
           overflow: 'auto',
           px: 2,
           py: 2,
-          bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'background.default'),
+          bgcolor: (th) => alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.06 : 0.04),
         }}
       >
-        {sorted.map((m) => {
-          const mine = m.senderId === currentUserId
-          return (
-            <Box
-              key={m.id}
-              sx={{
-                display: 'flex',
-                justifyContent: mine ? 'flex-end' : 'flex-start',
-                mb: 1.25,
-              }}
-            >
-              <Box
+        {groups.map((group) => (
+          <Box key={group.dayKey}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1.5 }}>
+              <Typography
+                variant="caption"
                 sx={{
-                  maxWidth: 'min(100%, 75%)',
-                  px: 1.75,
-                  py: 1,
-                  borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  bgcolor: mine ? 'primary.main' : 'background.paper',
-                  color: mine ? 'primary.contrastText' : 'text.primary',
-                  boxShadow: mine
-                    ? '0 1px 0.5px rgba(0, 0, 0, 0.1)'
-                    : (theme) =>
-                        theme.palette.mode === 'light' ? '0 1px 0.5px rgba(0, 0, 0, 0.13)' : '0 1px 2px rgba(0,0,0,0.25)',
+                  px: 1.25,
+                  py: 0.35,
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  color: 'text.secondary',
+                  bgcolor: (th) => alpha(th.palette.background.paper, th.palette.mode === 'dark' ? 0.7 : 0.9),
+                  border: '1px solid',
+                  borderColor: 'divider',
                 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    lineHeight: 1.45,
-                    fontSize: '0.9375rem',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    ...(mine ? { color: 'common.white' } : {}),
-                  }}
-                >
-                  {m.body}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: 'block',
-                    mt: 0.5,
-                    textAlign: 'right',
-                    fontSize: '0.68rem',
-                    ...(mine
-                      ? {
-                          color: (theme) => alpha(theme.palette.common.white, 0.88),
-                        }
-                      : {
-                          color: 'text.secondary',
-                          opacity: 0.9,
-                        }),
-                  }}
-                >
-                  {dayjs(m.createdAt).format('MMM D, h:mm a')}
-                </Typography>
-              </Box>
+                {dayLabel(group.kind, group.sampleIso)}
+              </Typography>
             </Box>
-          )
-        })}
+            {group.messages.map((m, i) => {
+              const mine = m.senderId === currentUserId
+              const prev = group.messages[i - 1]
+              const tight = Boolean(prev && prev.senderId === m.senderId)
+              const radius = `${rhRadius.lg}px`
+              return (
+                <Box
+                  key={m.id}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: mine ? 'flex-end' : 'flex-start',
+                    mb: tight ? 0.5 : 1.25,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      maxWidth: 'min(100%, 75%)',
+                      px: 1.75,
+                      py: 1,
+                      borderRadius: mine ? `${radius} ${radius} 4px ${radius}` : `${radius} ${radius} ${radius} 4px`,
+                      bgcolor: mine ? 'primary.main' : 'background.paper',
+                      color: mine ? 'primary.contrastText' : 'text.primary',
+                      boxShadow: mine ? 'none' : rhElev.elev1,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        lineHeight: 1.45,
+                        fontSize: '0.9375rem',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        color: mine ? 'common.white' : 'text.primary',
+                      }}
+                    >
+                      {m.body}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        display: 'block',
+                        mt: 0.5,
+                        textAlign: 'right',
+                        fontSize: '0.68rem',
+                        fontWeight: 600,
+                        color: mine ? alpha(theme.palette.common.white, 0.88) : 'text.secondary',
+                      }}
+                    >
+                      {dayjs(m.createdAt).format('h:mm a')}
+                    </Typography>
+                  </Box>
+                </Box>
+              )
+            })}
+          </Box>
+        ))}
       </Box>
 
       <Box
@@ -182,11 +223,11 @@ export default function ChatThreadPanel({
             size="small"
             sx={{
               '& .MuiOutlinedInput-root': {
-                borderRadius: '24px',
+                borderRadius: `${rhRadius.pill}px`,
                 pl: 2,
                 pr: 1,
                 py: 0.75,
-                bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'action.hover'),
+                bgcolor: (th) => alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.12 : 0.06),
                 '& fieldset': { borderColor: 'transparent' },
                 '&:hover fieldset': { borderColor: 'transparent' },
                 '&.Mui-focused fieldset': { borderColor: 'primary.main', borderWidth: '1px' },
@@ -204,8 +245,9 @@ export default function ChatThreadPanel({
               mb: 0.25,
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
+              boxShadow: rhElev.elev1,
               '&:hover': { bgcolor: 'primary.dark' },
-              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
+              '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled', boxShadow: 'none' },
             }}
           >
             <Send sx={{ fontSize: 20 }} />

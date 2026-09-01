@@ -3,13 +3,14 @@ import {
   Badge,
   Box,
   Button,
+  Drawer,
   IconButton,
   Stack,
-  SwipeableDrawer,
   Typography,
 } from '@mui/material'
 
 import { APP_NAV_SIDEBAR_EXPANDED_PX } from '@/components/layout/AppNavigationList'
+import { MOBILE_TAB_BAR_STACK_BOTTOM } from '@/components/layout/MobileBottomNav'
 import { useT } from '@/hooks/useT'
 
 import type { SearchFilters } from '../../types'
@@ -44,7 +45,6 @@ export default function FilterDrawer({
   insetTop = 0,
 }: FilterDrawerProps) {
   const t = useT()
-  const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
   const topGap = Math.max(0, insetTop)
   /** Keep the sheet in the main column so it never covers the md+ nav rail. */
   const desktopMainColumnSx = {
@@ -52,17 +52,15 @@ export default function FilterDrawer({
     right: { md: 0 },
     width: { md: `calc(100% - ${APP_NAV_SIDEBAR_EXPANDED_PX}px)` },
   } as const
+  const sheetHeightXs = `calc(100dvh - ${topGap}px - 68px - env(safe-area-inset-bottom, 0px))`
+  const sheetHeightMd = `calc(100dvh - ${topGap}px)`
 
   return (
-    <SwipeableDrawer
+    <Drawer
       id="browse-advanced-search"
       anchor={anchor}
       open={open}
       onClose={onClose}
-      onOpen={() => {}}
-      disableBackdropTransition={!iOS}
-      disableDiscovery={iOS}
-      disableSwipeToOpen
       sx={{
         zIndex: (theme) => theme.zIndex.appBar - 2,
         ...desktopMainColumnSx,
@@ -78,12 +76,14 @@ export default function FilterDrawer({
         sx: {
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
-          height: `calc(100dvh - ${topGap}px)`,
-          maxHeight: `calc(100dvh - ${topGap}px)`,
-          pb: 'env(safe-area-inset-bottom, 0px)',
+          bottom: { xs: MOBILE_TAB_BAR_STACK_BOTTOM, md: 0 },
+          height: { xs: sheetHeightXs, md: sheetHeightMd },
+          maxHeight: { xs: sheetHeightXs, md: sheetHeightMd },
+          pb: { xs: 0, md: 'env(safe-area-inset-bottom, 0px)' },
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          minHeight: 0,
           boxSizing: 'border-box',
           left: { xs: 0, md: APP_NAV_SIDEBAR_EXPANDED_PX },
           right: 0,
@@ -95,7 +95,9 @@ export default function FilterDrawer({
         sx={{
           flex: 1,
           minHeight: 0,
+          minWidth: 0,
           height: '100%',
+          overflow: 'hidden',
         }}
       >
         <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', pt: 1.5, pb: 0.5 }}>
@@ -153,6 +155,6 @@ export default function FilterDrawer({
           </Button>
         </Box>
       </Stack>
-    </SwipeableDrawer>
+    </Drawer>
   )
 }

@@ -1,11 +1,18 @@
-import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
-import { Avatar, Box, List, ListItemButton, Typography } from '@mui/material'
+import { Box, List, ListItemButton, Typography } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { useNavigate } from 'react-router-dom'
 
+import UserAvatar from '@/components/common/UserAvatar'
+import EmptyState from '@/components/ui/EmptyState'
+import { otherPartyName, splitDisplayName } from '@/features/messaging/chatDisplay'
+import ChatEmptyGlyph from '@/features/messaging/components/ChatEmptyGlyph'
 import { useT } from '@/hooks/useT'
+import { useCarsStore } from '@/store/useCarsStore'
 import type { ChatThread } from '@/types'
+
+import { rhRadius } from '@/theme/tokens'
 
 dayjs.extend(relativeTime)
 
@@ -14,10 +21,7 @@ export type ChatConversationListProps = {
   currentUserId: string
   selectedId: string | null
   onSelect: (threadId: string) => void
-}
-
-function otherName(t: ChatThread, me: string) {
-  return t.hostId === me ? t.renterName : t.hostName
+  unreadByThread?: Record<string, number>
 }
 
 export default function ChatConversationList({
@@ -25,59 +29,56 @@ export default function ChatConversationList({
   currentUserId,
   selectedId,
   onSelect,
+  unreadByThread = {},
 }: ChatConversationListProps) {
   const t = useT()
+  const navigate = useNavigate()
+  const cars = useCarsStore((s) => s.cars)
+
   if (threads.length === 0) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 6,
-          px: 2,
-          textAlign: 'center',
-          bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'action.hover'),
-        }}
-      >
-        <ChatBubbleOutline sx={{ fontSize: 48, color: 'text.disabled', mb: 1.5 }} />
-        <Typography variant="body1" color="text.secondary" fontWeight={600}>
-          {t('chat.none')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 320 }}>
-          {t('chat.noneDesc')}
-        </Typography>
+      <Box sx={{ px: 1, py: 2 }}>
+        <EmptyState
+          title={t('chat.none')}
+          description={t('chat.noneDesc')}
+          actionLabel={t('chat.viewTrips')}
+          onAction={() => navigate('/dashboard')}
+          icon={<ChatEmptyGlyph size={72} />}
+        />
       </Box>
     )
   }
 
   return (
-    <List
-      disablePadding
-      sx={{
-        py: 0,
-        bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'action.hover'),
-      }}
-    >
-      {threads.map((t) => {
-        const other = otherName(t, currentUserId)
-        const time = t.lastMessageAt ? dayjs(t.lastMessageAt).fromNow() : ''
+    <List disablePadding sx={{ py: 0, bgcolor: 'background.paper' }}>
+      {threads.map((thread) => {
+        const other = otherPartyName(thread, currentUserId)
+        const names = splitDisplayName(other)
+        const time = thread.lastMessageAt ? dayjs(thread.lastMessageAt).fromNow() : ''
+        const unread = unreadByThread[thread.id] ?? 0
+        const hasUnread = unread > 0
+        const selected = selectedId === thread.id
+        const car = cars.find((c) => c.id === thread.carId)
+        const thumb = car?.images[0]
+
         return (
           <ListItemButton
-            key={t.id}
-            selected={selectedId === t.id}
-            onClick={() => onSelect(t.id)}
+            key={thread.id}
+            selected={selected}
+            onClick={() => onSelect(thread.id)}
             alignItems="flex-start"
             sx={{
-              py: 1.25,
+              py: 1.5,
               px: 2,
               gap: 1.5,
               borderBottom: 1,
-              borderColor: (theme) => alpha(theme.palette.divider, 0.6),
+              borderColor: 'divider',
               borderRadius: 0,
+              borderLeft: '3px solid',
+              borderLeftColor: selected ? 'primary.main' : 'transparent',
+              bgcolor: selected ? undefined : 'background.paper',
               '&:hover': {
-                bgcolor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === 'light' ? 0.8 : 1),
+                bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.05 : 0.12),
               },
               '&.Mui-selected': {
                 bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.1 : 0.2),
@@ -87,36 +88,78 @@ export default function ChatConversationList({
               },
             }}
           >
-            <Avatar
-              sx={{
-                bgcolor: 'primary.main',
-                width: 56,
-                height: 56,
-                fontSize: '1rem',
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {other.slice(0, 2).toUpperCase()}
-            </Avatar>
+            <Box sx={{ position: 'relative', flexShrink: 0, width: 56, height: 56 }}>
+              <UserAvatar avatar={null} firstName={names.firstName} lastName={names.lastName} size={56} />
+              {thumb ? (
+                <Box
+                  component="img"
+                  src={thumb}
+                  alt=""
+                  sx={{
+                    position: 'absolute',
+                    right: -4,
+                    bottom: -4,
+                    width: 28,
+                    height: 28,
+                    objectFit: 'cover',
+                    borderRadius: `${rhRadius.sm}px`,
+                    border: '2px solid',
+                    borderColor: 'background.paper',
+                    bgcolor: 'grey.200',
+                  }}
+                />
+              ) : null}
+            </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1 }}>
-                <Typography fontWeight={700} fontSize="0.95rem" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  fontWeight={hasUnread ? 800 : 700}
+                  fontSize="0.95rem"
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0, letterSpacing: '-0.02em' }}
+                >
                   {other}
                 </Typography>
                 {time ? (
-                  <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0, fontSize: '0.72rem' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      flexShrink: 0,
+                      fontSize: '0.72rem',
+                      fontWeight: hasUnread ? 700 : 500,
+                      color: hasUnread ? 'primary.main' : 'text.secondary',
+                    }}
+                  >
                     {time}
                   </Typography>
                 ) : null}
               </Box>
-              <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.35, fontSize: '0.8125rem' }}>
-                <Box component="span" fontWeight={600} color="text.primary" sx={{ opacity: 0.85 }}>
-                  {t.carName}
-                </Box>
-                {' · '}
-                {t.lastPreview}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.4 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0, fontSize: '0.8125rem', fontWeight: hasUnread ? 700 : 400 }}
+                >
+                  <Box component="span" fontWeight={700} color="text.primary" sx={{ opacity: 0.9 }}>
+                    {thread.carName}
+                  </Box>
+                  {' · '}
+                  {thread.lastPreview}
+                </Typography>
+                {hasUnread ? (
+                  <Box
+                    aria-label={t('chat.unreadDotAria')}
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      bgcolor: 'primary.main',
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : null}
+              </Box>
             </Box>
           </ListItemButton>
         )

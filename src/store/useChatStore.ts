@@ -11,6 +11,28 @@ function readKey(userId: string, threadId: string) {
   return `${userId}::${threadId}`
 }
 
+export function countUnreadInThread(
+  messages: ChatMessage[],
+  userId: string,
+  lastReadIso: string | undefined,
+): number {
+  let n = 0
+  for (const m of messages) {
+    if (m.senderId === userId) continue
+    if (!lastReadIso || m.createdAt > lastReadIso) n += 1
+  }
+  return n
+}
+
+export function unreadForThread(
+  userId: string,
+  threadId: string,
+  messages: ChatMessage[],
+  lastReadAt: Record<string, string>,
+): number {
+  return countUnreadInThread(messages, userId, lastReadAt[readKey(userId, threadId)])
+}
+
 export interface ChatStoreState {
   threadById: Record<string, ChatThread>
   messagesByThread: Record<string, ChatMessage[]>
@@ -164,10 +186,7 @@ export const useChatStore = create<ChatStoreState>()(
           if (th.hostId !== userId && th.renterId !== userId) continue
           const read = lastReadAt[readKey(userId, th.id)]
           const msgs = messagesByThread[th.id] ?? []
-          for (const m of msgs) {
-            if (m.senderId === userId) continue
-            if (!read || m.createdAt > read) n += 1
-          }
+          n += countUnreadInThread(msgs, userId, read)
         }
         return n
       },
@@ -215,12 +234,7 @@ export function useChatUnreadForCurrentUser() {
   let n = 0
   for (const th of Object.values(threadById)) {
     if (th.hostId !== user.id && th.renterId !== user.id) continue
-    const read = lastReadAt[readKey(user.id, th.id)]
-    const msgs = messagesByThread[th.id] ?? []
-    for (const m of msgs) {
-      if (m.senderId === user.id) continue
-      if (!read || m.createdAt > read) n += 1
-    }
+    n += unreadForThread(user.id, th.id, messagesByThread[th.id] ?? [], lastReadAt)
   }
   return n
 }

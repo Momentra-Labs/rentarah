@@ -53,6 +53,7 @@ describe('CarDetailPage', () => {
     expect(screen.getByRole('heading', { name: 'About this car' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'What’s included' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Sign in to reserve' }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: 'Share this listing' }).length).toBeGreaterThan(0)
     expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument()
   })
 

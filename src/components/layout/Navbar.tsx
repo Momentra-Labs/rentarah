@@ -166,23 +166,37 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
         sx={{
           color: 'text.primary',
           border: 'none',
-          backgroundColor: theme.palette.background.default,
-          backgroundImage: elevated
-            ? 'linear-gradient(180deg, #D6E6FF 0%, #FFFFFF 100%)'
-            : 'linear-gradient(180deg, #8FB6F5 0%, #C5DAFB 42%, #F4F8FF 78%, #FFFFFF 100%)',
+          overflow: 'visible',
+          backgroundColor: theme.palette.background.paper,
+          backgroundImage:
+            theme.palette.mode === 'dark'
+              ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, elevated ? 0.16 : 0.26)} 0%, ${theme.palette.background.paper} 100%)`
+              : elevated
+                ? `linear-gradient(180deg, #D6E6FF 0%, ${theme.palette.background.paper} 100%)`
+                : `linear-gradient(180deg, #8FB6F5 0%, #C5DAFB 42%, #F4F8FF 78%, ${theme.palette.background.paper} 100%)`,
           boxShadow: elevated
-            ? `0 10px 24px ${alpha(theme.palette.common.black, 0.07)}`
-            : 'none',
+            ? `0 12px 28px ${alpha(theme.palette.common.black, theme.palette.mode === 'dark' ? 0.28 : 0.08)}, 0 1px 0 ${alpha(theme.palette.primary.main, 0.12)}`
+            : `inset 0 1px 0 ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.06 : 0.55)}`,
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 1,
+            pointerEvents: 'none',
+            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.14 : 0.7)} 22%, ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.22 : 0.9)} 50%, ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.14 : 0.7)} 78%, transparent 100%)`,
+          },
           '&::after': {
             content: '""',
             position: 'absolute',
             left: 0,
             right: 0,
-            bottom: 0,
-            height: 2,
+            bottom: elevated ? -16 : -12,
+            height: elevated ? 17 : 13,
             pointerEvents: 'none',
-            background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${theme.palette.primary.main} 16%, ${alpha('#60A5FA', 1)} 50%, ${theme.palette.primary.main} 84%, ${alpha(theme.palette.primary.main, 0.2)} 100%)`,
+            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.28)} 12%, ${alpha(theme.palette.primary.light, theme.palette.mode === 'dark' ? 0.55 : 0.85)} 50%, ${alpha(theme.palette.primary.main, 0.28)} 88%, transparent 100%) 0 0 / 100% 1px no-repeat, linear-gradient(180deg, ${alpha(theme.palette.primary.main, elevated ? 0.2 : 0.12)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 38%, transparent 100%)`,
           },
         }}
       >

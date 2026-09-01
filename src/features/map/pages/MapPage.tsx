@@ -43,6 +43,8 @@ import MapPageSkeleton, { MapSurfaceSkeleton } from '@/components/skeletons/MapP
 import { useVehicles } from '@/hooks/useVehicles'
 import { useCarsStore } from '@/store/useCarsStore'
 import { useGeolocationStore } from '@/store/useGeolocationStore'
+import { useT } from '@/hooks/useT'
+import { rhElev, rhRadius } from '@/theme/tokens'
 
 
 import {
@@ -64,11 +66,30 @@ function formatPesoShort(n: number): string {
 /** Space above bottom peek so OSM/CARTO attribution stays readable (matches peek card height). */
 const MOBILE_LISTING_PEEK_RESERVE_PX = 102
 
+const mapSheetHandleSx = {
+  width: 40,
+  height: 4,
+  borderRadius: `${rhRadius.pill}px`,
+  bgcolor: 'grey.300',
+  mx: 'auto',
+  flexShrink: 0,
+} as const
+
+const mapIconBtnSx = {
+  flexShrink: 0,
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: `${rhRadius.md}px`,
+  bgcolor: 'background.paper',
+  boxShadow: rhElev.elev1,
+} as const
+
 /**
  * Full-screen map experience: type/price/location filters, lazy map, listing strip.
  * Swap `useCarsStore` for an API hook when backend is ready.
  */
 export default function MapPage() {
+  const t = useT()
   const theme = useTheme()
   const isCompactLayout = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   /** Thumb-scale map toolbar: chip text hidden; icons keep 44px hit targets inside toggles */
@@ -297,7 +318,7 @@ export default function MapPage() {
       size="small"
       value={filterMode}
       onChange={handleFilter}
-      aria-label="Filter map by vehicle type"
+      aria-label={t('map.filterByType')}
       sx={{
         flexWrap: 'nowrap',
         width: '100%',
@@ -318,11 +339,11 @@ export default function MapPage() {
                 minWidth: 0,
                 typography: 'caption',
                 border: '1px solid !important',
-                borderColor: `${alpha('#0f172a', 0.08)} !important`,
-                borderRadius: '999px !important',
+                borderColor: 'divider !important',
+                borderRadius: `${rhRadius.pill}px !important`,
                 mx: 0,
-                bgcolor: 'common.white',
-                boxShadow: '0 2px 10px rgba(15,23,42,0.08)',
+                bgcolor: 'background.paper',
+                boxShadow: 'none',
                 ...(filtersIconOnly
                   ? { minWidth: 44, minHeight: 40, px: 1, py: 0.75 }
                   : { px: 1.75, py: 0.85 }),
@@ -334,7 +355,7 @@ export default function MapPage() {
                   bgcolor: 'primary.main',
                   color: 'common.white',
                   borderColor: 'primary.main !important',
-                  boxShadow: (th) => `0 4px 14px ${alpha(th.palette.primary.main, 0.35)}`,
+                  boxShadow: 'none',
                   '&:hover': {
                     bgcolor: 'primary.dark',
                   },
@@ -346,11 +367,11 @@ export default function MapPage() {
             }
           : {
               flexWrap: 'wrap',
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.04),
-              borderRadius: '12px',
+              bgcolor: (th) => alpha(th.palette.primary.main, 0.04),
+              borderRadius: `${rhRadius.md}px`,
               p: 0.5,
               border: '1px solid',
-              borderColor: (t) => alpha(t.palette.primary.main, 0.12),
+              borderColor: 'divider',
               gap: 0.5,
               '& .MuiToggleButtonGroup-grouped': {
                 flex: '0 1 auto',
@@ -358,7 +379,7 @@ export default function MapPage() {
                 px: { xs: 0.75, sm: 1.25 },
                 typography: 'caption',
                 border: 'none',
-                borderRadius: '10px',
+                borderRadius: `${rhRadius.sm}px`,
                 textTransform: 'none',
                 fontWeight: 700,
                 fontSize: '0.8125rem',
@@ -369,59 +390,53 @@ export default function MapPage() {
                   fontWeight: 800,
                   border: '1px solid',
                   borderColor: 'primary.main',
-                  boxShadow: (th) => `0 1px 4px ${alpha(th.palette.primary.main, 0.22)}`,
+                  boxShadow: 'none',
                 },
               },
             }),
       }}
     >
-      <ToggleButton value="all" aria-label="All vehicles">
+      <ToggleButton value="all" aria-label={t('map.allAria')}>
         {filtersIconOnly ? (
           <AllInclusiveOutlined sx={{ fontSize: 22 }} aria-hidden />
         ) : (
-          'All'
+          t('map.all')
         )}
       </ToggleButton>
-      <ToggleButton value="cars" aria-label="Cars">
+      <ToggleButton value="cars" aria-label={t('map.carsAria')}>
         {filtersIconOnly ? (
           <DirectionsCar sx={{ fontSize: 22 }} aria-hidden />
         ) : (
           <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
             <DirectionsCar sx={{ fontSize: 18 }} />
             <Box component="span" sx={{ display: 'inline' }}>
-              Car
+              {t('map.car')}
             </Box>
           </Stack>
         )}
       </ToggleButton>
-      <ToggleButton value="motorcycles" aria-label="Motorcycles">
+      <ToggleButton value="motorcycles" aria-label={t('map.motorcyclesAria')}>
         {filtersIconOnly ? (
           <TwoWheeler sx={{ fontSize: 22 }} aria-hidden />
         ) : (
           <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
             <TwoWheeler sx={{ fontSize: 18 }} />
             <Box component="span" sx={{ display: 'inline' }}>
-              Moto
+              {t('map.moto')}
             </Box>
           </Stack>
         )}
       </ToggleButton>
-      <Tooltip
-        title={
-          nearbyDisabled
-            ? 'Share your location from the app bar (location icon) to filter by distance'
-            : 'Within about 12 km of your position'
-        }
-      >
+      <Tooltip title={nearbyDisabled ? t('map.nearbyNeedLocation') : t('map.nearbyHint')}>
         <span>
-          <ToggleButton value="nearby" disabled={nearbyDisabled} aria-label="Nearby">
+          <ToggleButton value="nearby" disabled={nearbyDisabled} aria-label={t('map.nearbyAria')}>
             {filtersIconOnly ? (
               <Explore sx={{ fontSize: 22 }} aria-hidden />
             ) : (
               <Stack direction="row" alignItems="center" spacing={0.5} justifyContent="center">
                 <Explore sx={{ fontSize: 18 }} />
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                  Nearby
+                  {t('map.nearby')}
                 </Box>
               </Stack>
             )}
@@ -435,9 +450,7 @@ export default function MapPage() {
     <TextField
       size="small"
       fullWidth
-      placeholder={
-        isCompactLayout ? 'Search city, area, or landmark' : 'Area (Cebu, Davao, Makati…)'
-      }
+      placeholder={isCompactLayout ? t('map.searchPlaceholderMobile') : t('map.searchPlaceholderDesktop')}
       value={locationQuery}
       onChange={(e) => setLocationQuery(e.target.value)}
       InputProps={{
@@ -445,24 +458,22 @@ export default function MapPage() {
           <InputAdornment position="start">
             <SearchOutlined
               fontSize="small"
-              sx={(t) => ({
-                color: isCompactLayout ? t.palette.primary.main : t.palette.action.active,
+              sx={(th) => ({
+                color: isCompactLayout ? th.palette.primary.main : th.palette.action.active,
               })}
             />
           </InputAdornment>
         ),
       }}
-      inputProps={{ 'aria-label': 'Filter listings by location name' }}
+      inputProps={{ 'aria-label': t('map.searchAria') }}
       sx={
         isCompactLayout
           ? {
               '& .MuiOutlinedInput-root': {
-                borderRadius: '999px',
-                bgcolor: 'common.white',
+                borderRadius: 0,
+                bgcolor: 'transparent',
                 minHeight: 48,
-                transition: (t) =>
-                  t.transitions.create(['border-color', 'box-shadow'], { duration: 200 }),
-                boxShadow: '0 4px 18px rgba(15,23,42,0.12)',
+                boxShadow: 'none',
                 '& fieldset': {
                   borderColor: 'transparent',
                   borderWidth: 0,
@@ -475,8 +486,7 @@ export default function MapPage() {
                   borderWidth: 0,
                 },
                 '&.Mui-focused': {
-                  boxShadow: (t) =>
-                    `0 6px 22px rgba(15,23,42,0.14), 0 0 0 3px ${alpha(t.palette.primary.main, 0.18)}`,
+                  boxShadow: 'none',
                 },
               },
               '& .MuiOutlinedInput-input': {
@@ -552,26 +562,20 @@ export default function MapPage() {
             fontWeight={700}
             sx={{ letterSpacing: '0.08em', lineHeight: 1.2 }}
           >
-            Price per day
+            {t('map.pricePerDay')}
           </Typography>
           <Typography variant="h6" fontWeight={800} sx={{ mt: 0.75, letterSpacing: '-0.02em' }}>
             {formatPesoShort(priceRange[0])} – {formatPesoShort(priceRange[1])}
           </Typography>
         </Box>
-        <Tooltip title="Reset price range">
+        <Tooltip title={t('map.resetPrice')}>
           <span>
             <IconButton
               size="small"
-              aria-label="Reset price range"
+              aria-label={t('map.resetPrice')}
               onClick={() => setPriceRange([priceExtent[0], priceExtent[1]])}
               disabled={!priceFilterActive}
-              sx={{
-                flexShrink: 0,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
-                bgcolor: 'background.paper',
-              }}
+              sx={mapIconBtnSx}
             >
               <RestartAlt fontSize="small" />
             </IconButton>
@@ -580,16 +584,16 @@ export default function MapPage() {
       </Stack>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Typography variant="caption" color="text.secondary" fontWeight={600}>
-          Min · {formatPesoShort(priceExtent[0])}
+          {t('map.minExtent', { value: formatPesoShort(priceExtent[0]) })}
         </Typography>
         <Typography variant="caption" color="text.secondary" fontWeight={600}>
-          Max · {formatPesoShort(priceExtent[1])}
+          {t('map.maxExtent', { value: formatPesoShort(priceExtent[1]) })}
         </Typography>
       </Stack>
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start', width: '100%' }}>
         <TextField
           size="small"
-          label="Minimum"
+          label={t('map.min')}
           type="number"
           key={`pf-min-${priceRange[0]}-${priceRange[1]}-${priceExtent[1]}`}
           defaultValue={String(priceRange[0])}
@@ -607,7 +611,7 @@ export default function MapPage() {
         />
         <TextField
           size="small"
-          label="Maximum"
+          label={t('map.max')}
           type="number"
           key={`pf-max-${priceRange[0]}-${priceRange[1]}-${priceExtent[0]}`}
           defaultValue={String(priceRange[1])}
@@ -678,9 +682,9 @@ export default function MapPage() {
       <MapSurfaceSkeleton />
     ) : filtered.length === 0 ? (
       <EmptyState
-        title="No listings match these filters"
-        description="Try widening the map area, adjusting price, or clearing vehicle filters."
-        actionLabel="Clear filters"
+        title={t('map.emptyTitle')}
+        description={t('map.emptyDescription')}
+        actionLabel={t('map.clearFilters')}
         onAction={() => {
           setFilterMode('all')
           setLocationQuery('')
@@ -739,9 +743,9 @@ export default function MapPage() {
     /** Clip tiles/markers to the chrome; desktop uses square corners so hidden overflow does not blank raster tiles. */
     overflow: 'hidden',
     border: { xs: 'none', md: '1px solid' },
-    borderColor: { xs: 'transparent', md: alpha(theme.palette.primary.main, 0.12) },
-    boxShadow: { xs: 'none', md: `0 16px 48px ${alpha('#1A56DB', 0.08)}` },
-    bgcolor: { xs: 'transparent', md: 'var(--rh-primary-light, #eff6ff)' },
+    borderColor: { xs: 'transparent', md: 'divider' },
+    boxShadow: { xs: 'none', md: rhElev.elev1 },
+    bgcolor: { xs: 'transparent', md: 'background.default' },
     scrollMarginTop: { xs: 72, md: 88 },
     borderRadius: 0,
   }
@@ -767,7 +771,7 @@ export default function MapPage() {
         sidebar={
           <Stack
             component="aside"
-            aria-label="Map filters and listings"
+            aria-label={t('map.filtersAndListings')}
             sx={{
               display: { xs: 'none', md: 'flex' },
               flexDirection: 'column',
@@ -793,7 +797,7 @@ export default function MapPage() {
                   easing: theme.transitions.easing.easeOut,
                 }),
               borderRadius: 0,
-              boxShadow: 'none',
+              boxShadow: rhElev.elev1,
               zIndex: 1,
             }}
           >
@@ -837,46 +841,34 @@ export default function MapPage() {
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <PageHeader
-                    overline="Explore"
-                    title="Rental map"
-                    subtitle="Filter by vehicle type, price, and area. Your location (when shared) powers Nearby and centers the map."
+                    overline={t('map.explore')}
+                    title={t('map.title')}
+                    subtitle={t('map.subtitle')}
                     dense
                     variant="mapSidebar"
                   />
                 </Box>
                 <Stack direction="row" spacing={0.5} alignItems="flex-start" sx={{ flexShrink: 0, mt: 0.25 }}>
-                <Tooltip title="Fit map to filtered results">
+                <Tooltip title={t('map.fitResults')}>
                   <span>
                     <IconButton
                       size="small"
-                      aria-label="Fit map to filtered results"
+                      aria-label={t('map.fitResults')}
                       onClick={() => setFitBoundsNonce((n) => n + 1)}
                       disabled={filtered.length === 0}
-                      sx={{
-                        flexShrink: 0,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        bgcolor: 'background.paper',
-                      }}
+                      sx={mapIconBtnSx}
                     >
                       <FitScreen fontSize="small" />
                     </IconButton>
                   </span>
                 </Tooltip>
-                <Tooltip title="Collapse sidebar">
+                <Tooltip title={t('map.collapseSidebar')}>
                   <span>
                     <IconButton
                       size="small"
-                      aria-label="Collapse sidebar — maximize map"
+                      aria-label={t('map.collapseSidebarAria')}
                       onClick={() => setDesktopMapSidebarCollapsed(true)}
-                      sx={{
-                        flexShrink: 0,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        bgcolor: 'background.paper',
-                      }}
+                      sx={mapIconBtnSx}
                     >
                       <ChevronLeft fontSize="small" />
                     </IconButton>
@@ -894,7 +886,7 @@ export default function MapPage() {
                   onViewOnMap={handleViewOnMap}
                   autoScrollToSelected={selectionFromListingStrip}
                   listingScrollRequest={listingScrollRequest}
-                  title="Listings on this map"
+                  title={t('map.listingsOnMap')}
                   orientation="vertical"
                   listScrollMode="outer"
                   onListingHover={setHoveredListingId}
@@ -904,7 +896,9 @@ export default function MapPage() {
                       size="small"
                       color="primary"
                       variant="outlined"
-                      label={`${filtered.length} ${filtered.length === 1 ? 'vehicle' : 'vehicles'} on map`}
+                      label={t(filtered.length === 1 ? 'map.vehicleOnMapOne' : 'map.vehicleOnMapOther', {
+                        count: filtered.length,
+                      })}
                       sx={{ fontWeight: 700 }}
                     />
                   }
@@ -926,9 +920,9 @@ export default function MapPage() {
             }}
           >
             {!isCompactLayout && desktopMapSidebarCollapsed && (
-              <Tooltip title="Show filters and listings">
+              <Tooltip title={t('map.expandSidebar')}>
                 <IconButton
-                  aria-label="Show filters and listings"
+                  aria-label={t('map.expandSidebar')}
                   size="small"
                   onClick={() => setDesktopMapSidebarCollapsed(false)}
                   sx={{
@@ -936,19 +930,19 @@ export default function MapPage() {
                     left: 0,
                     top: 'calc(50% + 40px)',
                     transform: 'translateY(-50%)',
-                    zIndex: (t) => t.zIndex.appBar + 2,
+                    zIndex: (th) => th.zIndex.appBar + 2,
                     width: 40,
                     height: 48,
-                    bgcolor: (t) => alpha(t.palette.background.paper, 0.96),
+                    bgcolor: 'background.paper',
                     border: '1px solid',
-                    borderColor: (t) => alpha(t.palette.primary.main, 0.2),
-                    borderRadius: '0 999px 999px 0',
+                    borderColor: 'divider',
+                    borderRadius: `0 ${rhRadius.pill}px ${rhRadius.pill}px 0`,
                     borderLeft: 'none',
                     color: 'primary.main',
-                    boxShadow: (t) => `6px 0 24px ${alpha(t.palette.primary.main, 0.12)}`,
+                    boxShadow: rhElev.elev1,
                     '&:hover': {
                       bgcolor: 'background.paper',
-                      borderColor: (t) => alpha(t.palette.primary.main, 0.4),
+                      borderColor: 'primary.main',
                     },
                   }}
                 >
@@ -968,21 +962,29 @@ export default function MapPage() {
                 }}
               >
                 <Stack spacing={1.25}>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      borderRadius: `${rhRadius.lg}px`,
+                      boxShadow: rhElev.elev1,
+                      bgcolor: 'background.paper',
+                      overflow: 'hidden',
+                      pr: 0.5,
+                    }}
+                  >
                     <Box sx={{ flex: 1, minWidth: 0 }}>{locationSearchField}</Box>
                     <IconButton
-                      aria-label="Open filters"
+                      aria-label={t('map.openFilters')}
                       onClick={() => setFilterDrawerOpen(true)}
                       sx={{
                         position: 'relative',
                         flexShrink: 0,
-                        width: 48,
-                        height: 48,
-                        bgcolor: 'common.white',
+                        width: 44,
+                        height: 44,
                         color: 'text.primary',
-                        boxShadow: '0 4px 18px rgba(15,23,42,0.12)',
-                        border: 'none',
-                        '&:hover': { bgcolor: 'grey.50' },
+                        '&:hover': { bgcolor: 'action.hover' },
                       }}
                     >
                       <TuneRounded />
@@ -998,12 +1000,12 @@ export default function MapPage() {
                             borderRadius: '50%',
                             bgcolor: 'primary.main',
                             border: '2px solid',
-                            borderColor: 'common.white',
+                            borderColor: 'background.paper',
                           }}
                         />
                       ) : null}
                     </IconButton>
-                  </Stack>
+                  </Paper>
                   <Box sx={{ mx: -0.25, overflow: 'hidden' }}>{typeToggle}</Box>
                 </Stack>
               </Box>
@@ -1029,7 +1031,7 @@ export default function MapPage() {
               <Fade in>
                 <Chip
                   size="small"
-                  label={`${filtered.length} nearby`}
+                  label={t('map.nearbyCount', { count: filtered.length })}
                   sx={{
                     position: 'absolute',
                     top: 16,
@@ -1037,10 +1039,10 @@ export default function MapPage() {
                     zIndex: zMap.hint,
                     pointerEvents: 'none',
                     fontWeight: 800,
-                    bgcolor: 'common.white',
-                    boxShadow: '0 4px 16px rgba(15,23,42,0.12)',
+                    bgcolor: 'background.paper',
+                    boxShadow: rhElev.elev1,
                     border: 'none',
-                    transition: (t) => t.transitions.create('left', { duration: 280 }),
+                    transition: (th) => th.transitions.create('left', { duration: 280 }),
                   }}
                 />
               </Fade>
@@ -1048,56 +1050,60 @@ export default function MapPage() {
 
             {isCompactLayout && !filterDrawerOpen && !listingsDrawerOpen ? (
               <Fade in>
-                <Stack
-                  spacing={1}
+                <Paper
+                  elevation={0}
                   sx={{
                     position: 'absolute',
                     right: 12,
                     bottom: `calc(${MAP_PAGE_FLOAT_CLEAR_BOTTOM} + ${MOBILE_LISTING_PEEK_RESERVE_PX}px + 16px)`,
                     zIndex: zMap.toolbar,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    borderRadius: `${rhRadius.lg}px`,
+                    boxShadow: rhElev.elev2,
+                    bgcolor: 'background.paper',
                   }}
                 >
-                  <Tooltip title="Fit to results">
+                  <Tooltip title={t('map.fitToResults')}>
                     <span>
                       <IconButton
-                        aria-label="Fit map to filtered results"
+                        aria-label={t('map.fitResults')}
                         disabled={filtered.length === 0}
                         onClick={() => setFitBoundsNonce((n) => n + 1)}
                         sx={{
                           width: 48,
                           height: 48,
-                          bgcolor: 'common.white',
+                          borderRadius: 0,
                           color: 'text.primary',
-                          boxShadow: '0 4px 16px rgba(15,23,42,0.14)',
-                          '&:hover': { bgcolor: 'grey.50' },
-                          '&.Mui-disabled': { bgcolor: 'common.white', opacity: 0.45 },
+                          '&:hover': { bgcolor: 'action.hover' },
+                          '&.Mui-disabled': { bgcolor: 'transparent', opacity: 0.45 },
                         }}
                       >
                         <FitScreen />
                       </IconButton>
                     </span>
                   </Tooltip>
-                  <Tooltip title={geoStatus === 'ready' ? 'Recenter on you' : 'Share your location'}>
+                  <Box sx={{ height: '1px', bgcolor: 'divider', mx: 1 }} />
+                  <Tooltip title={geoStatus === 'ready' ? t('map.recenter') : t('map.shareLocation')}>
                     <IconButton
-                      aria-label="Use my location"
+                      aria-label={t('map.useMyLocation')}
                       onClick={() => requestLocation()}
                       sx={{
                         width: 48,
                         height: 48,
-                        bgcolor: userLocation ? 'primary.main' : 'common.white',
+                        borderRadius: 0,
+                        bgcolor: userLocation ? 'primary.main' : 'transparent',
                         color: userLocation ? 'common.white' : 'text.primary',
-                        boxShadow: userLocation
-                          ? (t) => `0 6px 18px ${alpha(t.palette.primary.main, 0.4)}`
-                          : '0 4px 16px rgba(15,23,42,0.14)',
                         '&:hover': {
-                          bgcolor: userLocation ? 'primary.dark' : 'grey.50',
+                          bgcolor: userLocation ? 'primary.dark' : 'action.hover',
                         },
                       }}
                     >
                       <MyLocation />
                     </IconButton>
                   </Tooltip>
-                </Stack>
+                </Paper>
               </Fade>
             ) : null}
 
@@ -1128,10 +1134,10 @@ export default function MapPage() {
 
             {isCompactLayout && !listingsDrawerOpen && !filterDrawerOpen && filtered.length > 0 ? (
               <Paper
-                elevation={8}
+                elevation={0}
                 role="button"
                 tabIndex={0}
-                aria-label="Open listings"
+                aria-label={t('map.openListings')}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
@@ -1145,41 +1151,33 @@ export default function MapPage() {
                   left: 0,
                   right: 0,
                   zIndex: zMap.peek,
-                  borderRadius: '24px 24px 0 0',
+                  borderRadius: `${rhRadius.lg}px ${rhRadius.lg}px 0 0`,
                   pt: 1,
                   px: 2.25,
                   pb: 'max(16px, calc(12px + env(safe-area-inset-bottom, 0px)))',
                   cursor: 'pointer',
-                  bgcolor: 'common.white',
+                  bgcolor: 'background.paper',
                   color: 'text.primary',
                   border: 'none',
-                  boxShadow: '0 -8px 40px rgba(15,23,42,0.16)',
-                  transition: (t) => t.transitions.create(['transform'], { duration: 160 }),
+                  boxShadow: rhElev.elev2,
+                  transition: (th) => th.transitions.create(['transform'], { duration: 160 }),
                   '&:active': { transform: 'translateY(2px)' },
                 }}
               >
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 4,
-                    borderRadius: 999,
-                    bgcolor: (t) => alpha(t.palette.grey[500], 0.55),
-                    mx: 'auto',
-                    mb: 1.5,
-                    flexShrink: 0,
-                  }}
-                />
+                <Box sx={{ ...mapSheetHandleSx, mb: 1.5 }} />
                 <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
                   <Box sx={{ minWidth: 0 }}>
                     <Typography
                       variant="subtitle1"
                       fontWeight={800}
-                      sx={{ letterSpacing: '-0.03em', lineHeight: 1.2 }}
+                      sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}
                     >
-                      {filtered.length} {filtered.length === 1 ? 'vehicle' : 'vehicles'} nearby
+                      {t(filtered.length === 1 ? 'map.vehicleNearbyOne' : 'map.vehicleNearbyOther', {
+                        count: filtered.length,
+                      })}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                      Tap to see prices &amp; details
+                      {t('map.peekHint')}
                     </Typography>
                   </Box>
                   <Button
@@ -1189,7 +1187,7 @@ export default function MapPage() {
                     tabIndex={-1}
                     sx={{
                       flexShrink: 0,
-                      borderRadius: 999,
+                      borderRadius: `${rhRadius.pill}px`,
                       px: 2.25,
                       py: 1,
                       textTransform: 'none',
@@ -1197,7 +1195,7 @@ export default function MapPage() {
                       minWidth: 96,
                     }}
                   >
-                    View
+                    {t('map.view')}
                   </Button>
                 </Stack>
               </Paper>
@@ -1215,17 +1213,16 @@ export default function MapPage() {
               ModalProps={{ keepMounted: true }}
               PaperProps={{
                 sx: {
-                  borderTopLeftRadius: 20,
-                  borderTopRightRadius: 20,
+                  borderTopLeftRadius: `${rhRadius.lg}px`,
+                  borderTopRightRadius: `${rhRadius.lg}px`,
                   maxHeight: 'min(78dvh, 560px)',
-                  /** Avoid tiny overflow from slider thumbs / fractional layout that forces a scrollbar. */
                   pb: 'max(16px, env(safe-area-inset-bottom, 0px))',
                   px: 2,
                   pt: 1,
                   border: '1px solid',
                   borderColor: 'divider',
                   borderBottom: 'none',
-                  boxShadow: (t) => `0 -16px 48px ${alpha(t.palette.common.black, 0.16)}`,
+                  boxShadow: rhElev.elev2,
                   overflowX: 'hidden',
                   overflowY: 'auto',
                   WebkitOverflowScrolling: 'touch',
@@ -1239,33 +1236,29 @@ export default function MapPage() {
                 },
               }}
             >
-              <Box
-                sx={{
-                  width: 44,
-                  height: 5,
-                  borderRadius: 3,
-                  bgcolor: 'divider',
-                  mx: 'auto',
-                  mb: 1,
-                }}
-              />
+              <Box sx={{ ...mapSheetHandleSx, mb: 1 }} />
               <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                 <Typography variant="h6" fontWeight={800} letterSpacing="-0.02em">
-                  Filters
+                  {t('map.filters')}
                 </Typography>
-                <IconButton aria-label="Close filters" onClick={() => setFilterDrawerOpen(false)} size="small">
+                <IconButton aria-label={t('map.closeFilters')} onClick={() => setFilterDrawerOpen(false)} size="small">
                   <CloseRounded />
                 </IconButton>
               </Stack>
               {priceFilterCore}
               <Button
                 fullWidth
-                variant="outlined"
-                color="inherit"
+                variant="contained"
                 onClick={() => setFilterDrawerOpen(false)}
-                sx={{ mt: 3, py: 1.25, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                sx={{
+                  mt: 3,
+                  py: 1.25,
+                  borderRadius: `${rhRadius.md}px`,
+                  textTransform: 'none',
+                  fontWeight: 800,
+                }}
               >
-                Done
+                {t('map.done')}
               </Button>
             </SwipeableDrawer>
           ) : null}
@@ -1305,11 +1298,9 @@ export default function MapPage() {
                   listingsDrawerFullSnapHapticGatedRef.current = false
                 },
                 sx: {
-                  borderTopLeftRadius: 22,
-                  borderTopRightRadius: 22,
-                  /** Re-enable hits on sheet chrome + listing strip only */
+                  borderTopLeftRadius: `${rhRadius.lg}px`,
+                  borderTopRightRadius: `${rhRadius.lg}px`,
                   pointerEvents: 'auto',
-                  /** Caps sheet height; content is authored to shrink-wrap so excess map stays visible. */
                   height: 'auto',
                   maxHeight: 'min(38dvh, 320px)',
                   mx: 0.5,
@@ -1322,13 +1313,13 @@ export default function MapPage() {
                   border: '1px solid',
                   borderColor: 'divider',
                   borderBottom: 'none',
-                  boxShadow: (t) => `0 -12px 48px ${alpha(t.palette.common.black, 0.14)}`,
+                  boxShadow: rhElev.elev2,
                 },
               }}
             >
               <Box
                 role="presentation"
-                aria-label="Drag handle for listings sheet"
+                aria-label={t('map.dragListings')}
                 sx={{
                   display: 'flex',
                   justifyContent: 'center',
@@ -1338,15 +1329,7 @@ export default function MapPage() {
                   pb: 0.25,
                 }}
               >
-                <Box
-                  sx={{
-                  width: 52,
-                  height: 6,
-                    borderRadius: 999,
-                    bgcolor: (t) => alpha(t.palette.grey[800], 0.42),
-                    boxShadow: (t) => `inset 0 0 0 2px ${alpha(t.palette.common.white, 0.85)}`,
-                  }}
-                />
+                <Box sx={mapSheetHandleSx} />
               </Box>
               <Stack
                 direction="row"
@@ -1354,14 +1337,18 @@ export default function MapPage() {
                 justifyContent="space-between"
                 sx={{ px: 1.5, pb: 0.35, pt: 0, flexShrink: 0 }}
               >
-                <Typography variant="subtitle2" fontWeight={800} sx={{ fontSize: '0.8125rem', lineHeight: 1.2 }}>
-                  Listings
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={800}
+                  sx={{ fontSize: '0.8125rem', lineHeight: 1.2, letterSpacing: '-0.02em' }}
+                >
+                  {t('map.listings')}
                 </Typography>
                 <Chip
                   size="small"
                   color="primary"
                   variant="outlined"
-                  label={`${filtered.length} ${filtered.length === 1 ? 'vehicle' : 'vehicles'}`}
+                  label={t(filtered.length === 1 ? 'map.vehicleOne' : 'map.vehicleOther', { count: filtered.length })}
                   sx={{ fontWeight: 700, height: 24, '& .MuiChip-label': { px: 0.85, py: 0, fontSize: '0.7rem' } }}
                 />
               </Stack>

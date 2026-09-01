@@ -1,6 +1,6 @@
 import { Box, Stack } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
-import type { ComponentPropsWithoutRef } from 'react'
+import type { ComponentPropsWithoutRef, TouchEvent } from 'react'
 
 import FilterPanel from './FilterPanel'
 import { useFilterPaneScrollHint } from './useFilterPaneScrollHint'
@@ -14,6 +14,11 @@ type Props = FilterPanelProps & {
   resetScrollTopOnReveal?: boolean
   /** Appended to the scroll area (defaults cover flex + overscroll clipping). */
   scrollBoxSx?: SxProps<Theme>
+}
+
+/** Swipeable/bottom drawers listen on Paper; keep pan-y on the list itself. */
+function stopDrawerSwipe(event: TouchEvent<HTMLDivElement>) {
+  event.stopPropagation()
 }
 
 /** Scroll column — shared desktop sidebar + drawer body. */
@@ -32,17 +37,20 @@ export default function FilterPanelScrollColumn({
   })
 
   return (
-    <Stack sx={{ flex: 1, minHeight: 0, minWidth: 0 }} spacing={0}>
+    <Stack sx={{ flex: '1 1 0%', minHeight: 0, minWidth: 0, overflow: 'hidden' }} spacing={0}>
       <Box
         ref={scrollRef}
         onScroll={refreshScrollHintOnScroll}
+        onTouchStart={stopDrawerSwipe}
+        onTouchMove={stopDrawerSwipe}
         sx={{
-          flex: 1,
+          flex: '1 1 0%',
           minHeight: 0,
           minWidth: 0,
           overflowX: 'hidden',
           overflowY: 'auto',
-          overscrollBehaviorX: 'none',
+          overscrollBehavior: 'contain',
+          touchAction: 'pan-y',
           WebkitOverflowScrolling: 'touch',
           scrollbarGutter: 'stable',
           ...scrollBoxSx,

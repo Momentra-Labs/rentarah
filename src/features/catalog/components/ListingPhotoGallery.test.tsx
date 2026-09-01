@@ -64,6 +64,26 @@ describe('ListingPhotoGallery', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('opens a share sheet with a copyable listing link', async () => {
+    const user = userEvent.setup()
+    renderGallery({
+      variant: 'mobile',
+      share: {
+        carId: 'car_001',
+        title: '2023 Toyota Fortuner',
+        location: 'Makati',
+        priceLabel: '₱3,500',
+      },
+    })
+    await user.click(screen.getByRole('button', { name: 'Share this listing' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('heading', { name: 'Share this listing' })).toBeInTheDocument()
+    expect(within(dialog).getByDisplayValue(/\/cars\/car_001$/)).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'WhatsApp' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Facebook' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /photos/i })).not.toBeInTheDocument()
+  })
+
   it('renders dots instead of a thumbnail strip on mobile', () => {
     renderGallery({ variant: 'mobile' })
     expect(screen.getByRole('tablist', { name: 'Photo gallery' })).toBeInTheDocument()

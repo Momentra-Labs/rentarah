@@ -57,7 +57,7 @@ export default function PageHeader({
       <Typography
         variant="h4"
         sx={{
-          fontWeight: 700,
+          fontWeight: mapSidebar ? 800 : 700,
           letterSpacing: '-0.02em',
           fontSize: mobileAccent ? '1.3125rem' : undefined,
           lineHeight: mobileAccent ? 1.3 : undefined,

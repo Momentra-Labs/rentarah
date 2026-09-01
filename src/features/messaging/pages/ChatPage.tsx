@@ -1,20 +1,34 @@
 import ArrowBack from '@mui/icons-material/ArrowBack'
-import { Box, Button, Container, IconButton, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { Box, Container, IconButton, Paper, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import ChatConversationList from '@/components/chat/ChatConversationList'
 import ChatThreadPanel from '@/components/chat/ChatThreadPanel'
+import UserAvatar from '@/components/common/UserAvatar'
 import PageHeader from '@/components/layout/PageHeader'
 import { MOBILE_BOTTOM_NAV_SX_PB } from '@/components/layout/MobileBottomNav'
+import EmptyState from '@/components/ui/EmptyState'
+import { otherPartyName, splitDisplayName } from '@/features/messaging/chatDisplay'
+import ChatEmptyGlyph from '@/features/messaging/components/ChatEmptyGlyph'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useBookingStore } from '@/store/useBookingStore'
-import { useChatStore } from '@/store/useChatStore'
+import { unreadForThread, useChatStore } from '@/store/useChatStore'
 import { useT } from '@/hooks/useT'
 import { containerGutters } from '@/theme/pageStyles'
+import { rhElev, rhRadius } from '@/theme/tokens'
 
-const mobileListHeaderShadow = (mode: 'light' | 'dark') =>
-  mode === 'light' ? '0 1px 0 rgba(0, 0, 0, 0.06)' : '0 1px 0 rgba(255,255,255,0.06)'
+const paneSx = {
+  border: 1,
+  borderColor: 'divider',
+  borderRadius: `${rhRadius.lg}px`,
+  boxShadow: rhElev.elev1,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  bgcolor: 'background.paper',
+} as const
 
 export default function ChatPage() {
   const t = useT()
@@ -29,6 +43,8 @@ export default function ChatPage() {
   const sendMessage = useChatStore((s) => s.sendMessage)
   const threadById = useChatStore((s) => s.threadById)
   const messagesByThread = useChatStore((s) => s.messagesByThread)
+  const lastReadAt = useChatStore((s) => s.lastReadAt)
+
   useEffect(() => {
     syncThreadsFromBookings(bookings)
   }, [bookings, syncThreadsFromBookings])
@@ -39,6 +55,15 @@ export default function ChatPage() {
       .filter((x) => x.hostId === user.id || x.renterId === user.id)
       .sort((a, b) => (a.lastMessageAt < b.lastMessageAt ? 1 : -1))
   }, [user, threadById])
+
+  const unreadByThread = useMemo(() => {
+    if (!user) return {}
+    const map: Record<string, number> = {}
+    for (const th of threads) {
+      map[th.id] = unreadForThread(user.id, th.id, messagesByThread[th.id] ?? [], lastReadAt)
+    }
+    return map
+  }, [user, threads, messagesByThread, lastReadAt])
 
   const activeThread = threadId ? threadById[threadId] : undefined
   const activeMessages = threadId ? (messagesByThread[threadId] ?? []) : []
@@ -62,14 +87,27 @@ export default function ChatPage() {
 
   if (!user) return null
 
-  const otherName = activeThread
-    ? activeThread.hostId === user.id
-      ? activeThread.renterName
-      : activeThread.hostName
-    : ''
+  const otherName = activeThread ? otherPartyName(activeThread, user.id) : ''
+  const otherNames = splitDisplayName(otherName)
   const invalidThread = Boolean(threadId && !activeThread)
 
-  /** Mobile list uses normal layout chrome (navbar + bottom nav); open thread is full-screen in MainLayout. */
+  const selectEmpty = (
+    <EmptyState
+      title={t('chat.selectTitle')}
+      description={t('chat.select')}
+      icon={<ChatEmptyGlyph />}
+    />
+  )
+
+  const notFoundEmpty = (
+    <EmptyState
+      title={t('chat.notFound')}
+      actionLabel={t('chat.backToMessages')}
+      onAction={onBack}
+      icon={<ChatEmptyGlyph size={64} />}
+    />
+  )
+
   if (!isMdUp) {
     return (
       <Box
@@ -84,20 +122,38 @@ export default function ChatPage() {
         }}
       >
         {!threadId ? (
-          <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-            <ChatConversationList
-              threads={threads}
-              currentUserId={user.id}
-              selectedId={null}
-              onSelect={onSelect}
-            />
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <Box
+              sx={{
+                px: 2,
+                pt: 1.5,
+                pb: 1.25,
+                borderBottom: 1,
+                borderColor: 'divider',
+                bgcolor: 'background.paper',
+                flexShrink: 0,
+              }}
+            >
+              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '1.35rem' }}>
+                {t('chat.title')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.35, lineHeight: 1.5 }}>
+                {t('chat.subtitle')}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+              <ChatConversationList
+                threads={threads}
+                currentUserId={user.id}
+                selectedId={null}
+                onSelect={onSelect}
+                unreadByThread={unreadByThread}
+              />
+            </Box>
           </Box>
         ) : invalidThread ? (
-          <Stack spacing={2} sx={{ p: 2, flex: 1 }}>
-            <Button startIcon={<ArrowBack />} onClick={onBack}>
-              {t('chat.back')}
-            </Button>
-            <Typography color="text.secondary">{t('chat.notFound')}</Typography>
+          <Stack spacing={1} sx={{ p: 2, flex: 1 }}>
+            {notFoundEmpty}
           </Stack>
         ) : activeThread && threadId ? (
           <Paper
@@ -116,21 +172,27 @@ export default function ChatPage() {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 0.5,
-                px: 0.5,
-                py: 0.75,
+                gap: 1,
+                px: 0.75,
+                py: 1,
                 borderBottom: 1,
                 borderColor: 'divider',
                 bgcolor: 'background.paper',
-                boxShadow: mobileListHeaderShadow(theme.palette.mode),
                 flexShrink: 0,
               }}
             >
-              <IconButton onClick={onBack} edge="start" aria-label="Back to conversations" size="small">
+              <IconButton onClick={onBack} edge="start" aria-label={t('chat.backAria')} size="small">
                 <ArrowBack />
               </IconButton>
+              <UserAvatar
+                avatar={null}
+                firstName={otherNames.firstName}
+                lastName={otherNames.lastName}
+                size={36}
+                sx={{ flexShrink: 0 }}
+              />
               <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography variant="subtitle1" fontWeight={800} noWrap>
+                <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ letterSpacing: '-0.02em' }}>
                   {otherName}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap display="block">
@@ -163,24 +225,15 @@ export default function ChatPage() {
           ...containerGutters,
         }}
       >
-        <PageHeader
-          title={t('chat.title')}
-          subtitle={t('chat.subtitle')}
-          dense
-        />
+        <PageHeader title={t('chat.title')} subtitle={t('chat.subtitle')} dense />
 
         <Stack direction="row" spacing={2} alignItems="stretch" sx={{ mt: 1, minHeight: { md: 560 } }}>
           <Paper
             elevation={0}
             sx={{
+              ...paneSx,
               width: { md: 360, lg: 380 },
               flexShrink: 0,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
             }}
           >
             <Box
@@ -192,7 +245,7 @@ export default function ChatPage() {
                 bgcolor: 'background.paper',
               }}
             >
-              <Typography variant="h6" fontWeight={800} fontSize="1.1rem" letterSpacing="-0.01em">
+              <Typography variant="h6" fontWeight={800} fontSize="1.1rem" letterSpacing="-0.02em">
                 {t('chat.chats')}
               </Typography>
             </Box>
@@ -202,20 +255,16 @@ export default function ChatPage() {
                 currentUserId={user.id}
                 selectedId={threadId ?? null}
                 onSelect={onSelect}
+                unreadByThread={unreadByThread}
               />
             </Box>
           </Paper>
           <Paper
             elevation={0}
             sx={{
+              ...paneSx,
               flex: 1,
               minWidth: 0,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
             }}
           >
             {threadId && activeThread && !invalidThread ? (
@@ -226,13 +275,8 @@ export default function ChatPage() {
                 onSend={(body) => sendMessage(threadId, body)}
               />
             ) : invalidThread ? (
-              <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
-                <Stack spacing={2} alignItems="center">
-                  <Typography color="text.secondary">{t('chat.notFound')}</Typography>
-                  <Button variant="contained" onClick={onBack}>
-                    {t('chat.backToMessages')}
-                  </Button>
-                </Stack>
+              <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+                {notFoundEmpty}
               </Box>
             ) : (
               <Box
@@ -241,14 +285,11 @@ export default function ChatPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  p: 4,
-                  color: 'text.secondary',
-                  bgcolor: (theme) => (theme.palette.mode === 'light' ? '#f0f2f5' : 'background.default'),
+                  p: 2,
+                  bgcolor: (th) => alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.06 : 0.04),
                 }}
               >
-                <Typography variant="body2" textAlign="center" fontWeight={500}>
-                  {t('chat.select')}
-                </Typography>
+                {selectEmpty}
               </Box>
             )}
           </Paper>

@@ -1,7 +1,7 @@
 import { Box, Paper, Skeleton, Stack, useMediaQuery, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 
-import { MAP_PAGE_FLOAT_CLEAR_BOTTOM } from '@/components/layout/MobileBottomNav'
+import { rhElev, rhRadius } from '@/theme/tokens'
 
 const PEEK_RESERVE_PX = 102
 
@@ -29,7 +29,7 @@ export function MapSurfaceSkeleton() {
         height: '100%',
         minHeight: { xs: 280, md: 320 },
         overflow: 'hidden',
-        background: `linear-gradient(165deg, ${alpha(theme.palette.primary.main, 0.07)} 0%, ${theme.palette.grey[100]} 42%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+        bgcolor: 'grey.100',
       }}
       aria-busy="true"
       aria-label="Loading map"
@@ -55,7 +55,7 @@ export function MapSurfaceSkeleton() {
             position: 'absolute',
             top: pos.top,
             left: pos.left,
-            bgcolor: alpha(theme.palette.primary.main, 0.22),
+            bgcolor: alpha(theme.palette.grey[500], 0.28),
           }}
         />
       ))}
@@ -85,14 +85,13 @@ export default function MapPageSkeleton() {
       >
         <Box sx={{ flex: 1, minHeight: 'min(70dvh, 560px)', position: 'relative' }}>
           <MapSurfaceSkeleton />
-          <Stack
-            spacing={1.25}
-            sx={{ position: 'absolute', top: 12, left: 12, right: 12, zIndex: 2 }}
-          >
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Skeleton variant="rounded" animation="wave" height={48} sx={{ flex: 1, borderRadius: 2 }} />
-              <Skeleton variant="circular" animation="wave" width={48} height={48} />
-            </Stack>
+          <Stack spacing={1.25} sx={{ position: 'absolute', top: 12, left: 12, right: 12, zIndex: 2 }}>
+            <Skeleton
+              variant="rounded"
+              animation="wave"
+              height={48}
+              sx={{ borderRadius: `${rhRadius.lg}px`, boxShadow: rhElev.elev1 }}
+            />
             <Stack direction="row" spacing={1}>
               {[0, 1, 2].map((i) => (
                 <Skeleton
@@ -101,22 +100,24 @@ export default function MapPageSkeleton() {
                   animation="wave"
                   width={i === 0 ? 56 : 88}
                   height={36}
-                  sx={{ borderRadius: 999 }}
+                  sx={{ borderRadius: `${rhRadius.pill}px` }}
                 />
               ))}
             </Stack>
           </Stack>
           <Paper
-            elevation={8}
+            elevation={0}
             sx={{
               position: 'absolute',
-              left: 12,
-              right: 12,
-              bottom: `calc(${MAP_PAGE_FLOAT_CLEAR_BOTTOM} + 8px)`,
+              left: 0,
+              right: 0,
+              bottom: 0,
               zIndex: 2,
               p: 1.25,
-              borderRadius: 3,
+              px: 2.25,
+              borderRadius: `${rhRadius.lg}px ${rhRadius.lg}px 0 0`,
               minHeight: PEEK_RESERVE_PX - 16,
+              boxShadow: rhElev.elev2,
             }}
           >
             <ListingRowSkeleton />
@@ -137,7 +138,7 @@ export default function MapPageSkeleton() {
         display: 'flex',
         flexDirection: 'row',
         overflow: 'hidden',
-        bgcolor: 'var(--rh-primary-light, #eff6ff)',
+        bgcolor: 'background.default',
       }}
       aria-busy="true"
       aria-label="Loading map"
@@ -152,6 +153,7 @@ export default function MapPageSkeleton() {
           borderRight: '1px solid',
           borderColor: 'divider',
           bgcolor: 'background.paper',
+          boxShadow: rhElev.elev1,
           px: 3,
           pt: 2,
           pb: 2.5,

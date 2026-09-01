@@ -38,6 +38,7 @@ import AvailabilityCalendar from '@/components/detail/AvailabilityCalendar'
 import ReviewsList from '@/components/detail/ReviewsList'
 import CarDetailSkeleton from '@/components/skeletons/CarDetailSkeleton'
 import ListingPhotoGallery from '@/features/catalog/components/ListingPhotoGallery'
+import ListingShareControl from '@/features/catalog/components/ListingShareControl'
 import VehicleFacts from '@/features/catalog/components/VehicleFacts'
 import TripClockSummary from '@/features/landing/components/TripClockSummary'
 import { useDateValidation } from '@/hooks/useDateValidation'
@@ -299,18 +300,37 @@ export default function CarDetailPage() {
       saved={saved}
       onToggleSaved={() => toggleSaved(car.id)}
       variant={isMdUp ? 'desktop' : 'mobile'}
+      share={{
+        carId: car.id,
+        title: `${car.year} ${car.make} ${car.model}`,
+        location: car.location,
+        priceLabel: formatPeso(car.pricePerDay),
+      }}
+    />
+  )
+
+  const shareControl = (
+    <ListingShareControl
+      carId={car.id}
+      title={`${car.year} ${car.make} ${car.model}`}
+      location={car.location}
+      priceLabel={formatPeso(car.pricePerDay)}
+      variant="button"
     />
   )
 
   const titleBlock = (
     <Box sx={{ mt: { xs: 0.5, md: 2.5 } }}>
-      <Typography
-        variant="h2"
-        component="h1"
-        sx={{ mb: 0.75, fontWeight: 800, letterSpacing: '-0.03em', fontSize: { xs: '1.45rem', sm: '1.75rem', md: '2rem' } }}
-      >
-        {car.year} {car.make} {car.model}
-      </Typography>
+      <Stack direction="row" spacing={1.5} alignItems="flex-start" justifyContent="space-between">
+        <Typography
+          variant="h2"
+          component="h1"
+          sx={{ mb: 0.75, fontWeight: 800, letterSpacing: '-0.03em', fontSize: { xs: '1.45rem', sm: '1.75rem', md: '2rem' }, minWidth: 0 }}
+        >
+          {car.year} {car.make} {car.model}
+        </Typography>
+        {shareControl}
+      </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
         {specLine}
       </Typography>

@@ -59,7 +59,7 @@ export function DesktopMapLayout({ sidebar, children }: { sidebar: ReactNode; ch
         alignItems: 'stretch',
         alignSelf: 'stretch',
         overflow: 'hidden',
-        bgcolor: 'var(--rh-primary-light, #eff6ff)',
+        bgcolor: 'background.default',
       }}
     >
       <MapLayoutResizePulse />

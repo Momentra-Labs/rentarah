@@ -12,6 +12,8 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent, type TouchEv
 import { useT } from '@/hooks/useT'
 import { rhElev, rhRadius } from '@/theme/tokens'
 
+import ListingShareControl from './ListingShareControl'
+
 export type ListingPhotoGalleryProps = {
   images: string[]
   alt: string
@@ -20,6 +22,12 @@ export type ListingPhotoGalleryProps = {
   saved: boolean
   onToggleSaved: () => void
   variant: 'mobile' | 'desktop'
+  share?: {
+    carId: string
+    title: string
+    location: string
+    priceLabel: string
+  }
 }
 
 const SAVE_BTN_SX = {
@@ -96,6 +104,7 @@ export default function ListingPhotoGallery({
   saved,
   onToggleSaved,
   variant,
+  share,
 }: ListingPhotoGalleryProps) {
   const t = useT()
   const [index, setIndex] = useState(0)
@@ -180,10 +189,31 @@ export default function ListingPhotoGallery({
       aria-label={saved ? t('detail.unsaveListing') : t('detail.saveListing')}
       onClick={stopSave}
       onMouseDown={(e) => e.stopPropagation()}
-      sx={{ ...SAVE_BTN_SX, position: 'absolute', top: 10, right: 10, zIndex: 2 }}
+      sx={SAVE_BTN_SX}
     >
       {saved ? <Favorite color="error" fontSize="small" /> : <FavoriteBorder fontSize="small" />}
     </IconButton>
+  )
+
+  const overlayActions = (
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {share ? (
+        <ListingShareControl
+          carId={share.carId}
+          title={share.title}
+          location={share.location}
+          priceLabel={share.priceLabel}
+          variant="overlay"
+        />
+      ) : null}
+      {saveButton}
+    </Stack>
   )
 
   const unavailableChip = unavailable ? (
@@ -506,7 +536,7 @@ export default function ListingPhotoGallery({
             />
           </Box>
           {unavailableChip}
-          {saveButton}
+          {overlayActions}
           {multi ? (
             <Box
               sx={{
@@ -647,7 +677,7 @@ export default function ListingPhotoGallery({
       >
         {mosaic}
         {unavailableChip}
-        {saveButton}
+        {overlayActions}
         {showAllButton}
       </Box>
       {desktopThumbs}
