@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>RentaraH carousel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #1a56db;
+    --sky: #0ea5e9;
+    --ink: #0f2347;
+    --slate: #4a5d7e;
+    --gold: #f2b544;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; font-family: Urbanist, system-ui, sans-serif; color: var(--ink); }
+  .slide {
+    position: relative; width: 1080px; height: 1350px; overflow: hidden;
+    background:
+      radial-gradient(900px 600px at 95% -5%, rgba(255, 244, 205, 0.95), rgba(255, 244, 205, 0) 70%),
+      radial-gradient(700px 500px at -10% 105%, rgba(26, 86, 219, 0.14), rgba(26, 86, 219, 0) 70%),
+      linear-gradient(180deg, #d9edff 0%, #eef7ff 45%, #ffffff 100%);
+  }
+  .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: 0.85; filter: drop-shadow(0 6px 0 rgba(160, 195, 230, 0.35)); }
+  .cloud::before, .cloud::after { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 55%; height: 170%; left: 12%; bottom: 20%; }
+  .cloud::after { width: 42%; height: 140%; right: 12%; bottom: 25%; }
+  .top { position: absolute; left: 72px; right: 72px; top: 60px; display: flex; align-items: center; justify-content: space-between; }
+  .top img { height: 46px; }
+  .num { font-weight: 700; font-size: 22px; letter-spacing: 2px; color: var(--slate); }
+  .copy { position: absolute; left: 72px; right: 72px; top: 150px; }
+  .kicker { font-weight: 800; font-size: 22px; letter-spacing: 4px; color: var(--blue); text-transform: uppercase; margin-bottom: 14px; }
+  h1 { font-weight: 900; font-size: 74px; line-height: 1.02; letter-spacing: -1.5px; max-width: 920px; }
+  h1 .hl { color: var(--blue); }
+  .note { margin-top: 12px; font-size: 18px; font-weight: 600; color: rgba(40, 60, 95, 0.7); letter-spacing: 0.5px; }
+  .support { margin-top: 18px; font-size: 31px; line-height: 1.32; font-weight: 500; color: var(--slate); max-width: 900px; }
+  .pill { display: inline-flex; align-items: center; gap: 12px; margin-top: 26px; padding: 14px 28px; border-radius: 999px; background: var(--blue); color: #fff; font-weight: 800; font-size: 28px; letter-spacing: 3px; box-shadow: 0 14px 30px rgba(26, 86, 219, 0.3); }
+  .pill .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); }
+  .label { position: absolute; font-size: 18px; font-weight: 600; color: rgba(40, 60, 95, 0.7); letter-spacing: 0.5px; }
+  .swipe { position: absolute; right: 72px; bottom: 56px; padding: 12px 22px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 8px 24px rgba(15, 35, 71, 0.15); font-weight: 800; font-size: 22px; color: var(--ink); z-index: 20; }
+
+  /* phone */
+  .phone { position: absolute; background: #0b0f19; border-radius: 66px; padding: 14px; box-shadow: 0 40px 80px rgba(15, 35, 71, 0.28), 0 0 0 3px #8fa3c6 inset; }
+  .screen { position: relative; border-radius: 52px; overflow: hidden; background: #fff; }
+  .status { position: relative; background: #eef3fd; display: flex; align-items: center; justify-content: space-between; font-weight: 700; color: #0f172a; }
+  .status .bars { display: flex; gap: 3px; align-items: flex-end; }
+  .status .bars i { display: block; width: 4px; background: #0f172a; border-radius: 1px; }
+  .island { position: absolute; left: 50%; transform: translateX(-50%); background: #05070c; border-radius: 999px; z-index: 2; }
+  .screen img { display: block; width: 100%; }
+
+  /* callouts */
+  svg.leaders { position: absolute; inset: 0; width: 1080px; height: 1350px; z-index: 10; pointer-events: none; }
+  .callout { position: absolute; z-index: 11; display: flex; align-items: center; gap: 14px; padding: 14px 24px 14px 14px; background: #fff; border-radius: 999px; box-shadow: 0 14px 34px rgba(15, 35, 71, 0.22); font-weight: 800; font-size: 26px; white-space: nowrap; }
+  .callout .ic { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-size: 22px; font-weight: 900; flex: none; }
+  .marker { position: absolute; z-index: 11; width: 46px; height: 46px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 900; font-size: 24px; display: grid; place-items: center; box-shadow: 0 0 0 6px rgba(26, 86, 219, 0.22), 0 10px 20px rgba(15, 35, 71, 0.25); transform: translate(-50%, -50%); }
+  .legend { margin-top: 22px; display: grid; gap: 12px; }
+  .legend div { display: flex; align-items: center; gap: 14px; font-size: 28px; font-weight: 700; }
+  .legend b { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-size: 21px; flex: none; }
+  .center { text-align: center; left: 72px; right: 72px; }
+  .center h1, .center .support { margin-left: auto; margin-right: auto; }
+  .follow { display: inline-flex; align-items: center; gap: 14px; margin-top: 22px; padding: 16px 30px; border-radius: 999px; background: #fff; border: 3px solid var(--blue); color: var(--blue); font-weight: 900; font-size: 28px; }
+</style>
+</head>
+<body>
+<div class="slide" id="slide"></div>
+<script>
+const LOGO = '../../src/assets/rentara.png'
+const SPOTS = {}
+const TOTAL = 6
+
+// CSS-px points inside each captured screen (390-wide viewport), from screens/spots.json
+// and the captures themselves.
+const P = {
+  home: { search: [195, 492], pickup: [180, 240] },
+  browse: { filters: [112, 177], car: [148, 226], loc: [90, 584], price: [333, 638] },
+  filters: { vehicle: [162, 297], price: [190, 367], avail: [100, 400], trans: [120, 592] },
+  map: { moto: [188, 149], pin: [250, 502], cluster: [168, 395] },
+  'detail-price': { pickup: [70, 357], total: [60, 653], trip: [140, 476] },
+  'detail-specs': { seats: [88, 184], incl: [80, 333], host: [90, 607] },
+}
+
+function phoneHTML(id, screen, x, y, width, rot = 0, z = 1) {
+  const k = (width - 28) / 390
+  return `<div class="phone" id="${id}" style="left:${x}px;top:${y}px;width:${width}px;transform:rotate(${rot}deg);z-index:${z}">
+    <div class="screen">
+      <div class="island" style="top:${10 * k}px;width:${112 * k}px;height:${30 * k}px"></div>
+      <div class="status" style="height:${44 * k}px;padding:0 ${30 * k}px;font-size:${15 * k}px">
+        <span>9:41</span>
+        <span class="bars">${[4, 7, 10, 13].map((h) => `<i style="height:${h * k}px"></i>`).join('')}</span>
+      </div>
+      <img src="screens/${screen}.png" alt="">
+    </div>
+  </div>`
+}
+
+/** Frame point of a CSS point inside an (unrotated) phone. */
+function at(x, y, width, [cx, cy]) {
+  const k = (width - 28) / 390
+  return [x + 14 + cx * k, y + 14 + 44 * k + cy * k]
+}
+
+/** Callout pill level with its target; side = which side of the phone it sits on. */
+function callout(text, x, target, side = 'right') {
+  return { text, x, y: target[1], target, side }
+}
+
+function render(n) {
+  const s = document.getElementById('slide')
+  const clouds = `<div class="cloud" style="left:640px;top:96px;width:200px;height:52px"></div>
+    <div class="cloud" style="left:860px;top:230px;width:150px;height:40px;opacity:.7"></div>`
+  const top = (logo = true) => `<div class="top">${logo ? `<img src="${LOGO}" alt="RentaraH">` : '<span></span>'}<span class="num">0${n} / 0${TOTAL}</span></div>`
+  // footer: demo label + swipe cue on the side free of phones
+  const foot = (side, labelText = 'App preview · demo data') => {
+    const pos = side === 'left' ? 'left:72px' : 'right:72px'
+    const align = side === 'left' ? 'left' : 'right'
+    return (n < TOTAL ? `<div class="swipe" style="${side === 'left' ? 'left:72px;right:auto' : ''}">Swipe →</div>` : '')
+  }
+  let body = ''
+  const calls = []
+  const markers = []
+
+  if (n === 1) {
+    const X = 500, Y = 460, Wd = 540
+    body = top() + `<div class="copy">
+        <div class="kicker">Rent cars &amp; motorcycles</div>
+        <h1>Your next ride<br><span class="hl">starts here.</span></h1>
+        <div class="support" style="max-width:520px">Book a car or motorcycle from local hosts across the Philippines.</div>
+        <div class="pill"><span class="dot"></span>COMING SOON</div>
+        <div class="note">App preview · demo data</div>
+      </div>
+      ${phoneHTML('p1', 'home', X, Y, Wd)}` + foot('left')
+    calls.push(callout('Choose a pickup city', 72, at(X, Y, Wd, [40, 240]), 'left'))
+    calls.push(callout('Set pick-up & return', 72, at(X, Y, Wd, [40, 367]), 'left'))
+  }
+
+  if (n === 2) {
+    const X = 40, Y = 360, Wd = 500
+    body = top() + `<div class="copy">
+        <div class="kicker">Discover rentals</div>
+        <h1>Browse rides, <span class="hl">side by side.</span></h1>
+        <div class="support" style="max-width:940px">Location, specs and the daily ₱ rate on every card.</div>
+        <div class="note">App preview · demo data</div>
+      </div>
+      ${phoneHTML('p2', 'browse', X, Y, Wd)}` + foot('right')
+    calls.push(callout('Filters: price, type & more', 570, at(X, Y, Wd, [190, 158])))
+    calls.push(callout('Location & specs', 570, at(X, Y, Wd, [300, 584])))
+    calls.push(callout('Daily rate, kita agad', 570, at(X, Y, Wd, [372, 652])))
+  }
+
+  if (n === 3) {
+    const X = 500, Y = 400, Wd = 540
+    body = top() + `<div class="copy">
+        <div class="kicker">Find what fits</div>
+        <h1>Filter it down <span class="hl">in a few taps.</span></h1>
+        <div class="support">Car, motorcycle, scooter or big bike, plus your daily budget and available dates. Swak sa trip mo.</div>
+        <div class="note">App preview · demo data</div>
+      </div>
+      ${phoneHTML('p3', 'filters', X, Y, Wd)}` + foot('left')
+    calls.push(callout('Vehicle type', 72, at(X, Y, Wd, [26, 297]), 'left'))
+    calls.push(callout('Price per day', 72, at(X, Y, Wd, [22, 367]), 'left'))
+    calls.push(callout('Body type', 72, at(X, Y, Wd, [24, 471]), 'left'))
+  }
+
+  if (n === 4) {
+    const X = 50, Y = 150, Wd = 470
+    body = top(false) + `<div class="copy" style="left:580px;top:150px">
+        <div class="kicker">Explore the map</div>
+        <h1 style="font-size:66px">See rentals <span class="hl">on the map.</span></h1>
+        <div class="support" style="font-size:29px">Switch between All, Car and Moto, and spot daily rates right on the map.</div>
+        <div class="note">App preview · demo data · Map tiles © Esri</div>
+      </div>
+      ${phoneHTML('p4', 'map', X, Y, Wd)}` + foot('right')
+    calls.push(callout('Rental clusters', 580, at(X, Y, Wd, [198, 395])))
+    calls.push(callout('Daily rates pinned', 580, at(X, Y, Wd, [296, 502])))
+    calls.push(callout('Vehicles nearby → View', 580, at(X, Y, Wd, [380, 806])))
+  }
+
+  if (n === 5) {
+    const L = { x: 70, y: 520, w: 460 }
+    const R = { x: 550, y: 590, w: 460 }
+    body = top() + `<div class="copy">
+        <div class="kicker">Explore the details</div>
+        <h1>Know it <span class="hl">before you book.</span></h1>
+        <div class="legend">
+          <div><b>1</b>Trip total, broken down, before you reserve</div>
+          <div><b>2</b>Pick-up &amp; return, with trip length</div>
+          <div><b>3</b>Specs &amp; what’s included</div>
+        </div>
+        <div class="note">App preview · demo data</div>
+      </div>
+      ${phoneHTML('p5a', 'detail-price', L.x, L.y, L.w, 0, 1)}
+      ${phoneHTML('p5b', 'detail-specs', R.x, R.y, R.w, 0, 2)}` + foot('right')
+    markers.push([1, L.x - 4, at(L.x, L.y, L.w, [0, 653])[1]])
+    markers.push([2, L.x - 4, at(L.x, L.y, L.w, [0, 357])[1]])
+    markers.push([3, R.x + R.w + 4, at(R.x, R.y, R.w, [0, 333])[1]])
+  }
+
+  if (n === 6) {
+    body = top(false) + `<div class="copy center" style="top:130px">
+        <img src="${LOGO}" alt="RentaraH" style="height:124px;display:block;margin:0 auto">
+        <div class="pill" style="margin-top:28px"><span class="dot"></span>COMING SOON BY MOMENTRA LABS</div>
+        <div class="support" style="margin-top:22px;font-size:36px;color:var(--ink);font-weight:800">Follow us for launch updates. Abangan!</div>
+        <div class="label" style="position:static;margin-top:14px">App preview · demo data</div>
+      </div>
+      ${phoneHTML('p6a', 'browse', 60, 720, 420, -9, 1)}
+      ${phoneHTML('p6c', 'detail', 600, 720, 420, 9, 1)}
+      ${phoneHTML('p6b', 'home', 300, 610, 480, 0, 2)}`
+  }
+
+  s.innerHTML = clouds + body
+  for (const c of calls) {
+    s.insertAdjacentHTML('beforeend', `<div class="callout" data-side="${c.side}" style="left:${c.x}px;top:${c.y - 34}px"><span class="ic">✓</span>${c.text}</div>`)
+  }
+  // leader lines from the callout edge facing the phone to the real UI element
+  if (calls.length) {
+    const els = [...s.querySelectorAll('.callout')]
+    let svg = '<svg class="leaders" viewBox="0 0 1080 1350">'
+    calls.forEach((c, i) => {
+      const r = els[i].getBoundingClientRect()
+      const x1 = c.side === 'left' ? r.right - 6 : r.left + 6
+      const [tx, ty] = c.target
+      svg += `<line x1="${x1}" y1="${c.y}" x2="${tx}" y2="${ty}" stroke="#1a56db" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"/>
+        <circle cx="${tx}" cy="${ty}" r="12" fill="#1a56db" opacity=".22"/><circle cx="${tx}" cy="${ty}" r="6" fill="#1a56db"/>`
+    })
+    s.insertAdjacentHTML('afterbegin', svg + '</svg>')
+    s.querySelector('svg.leaders').style.zIndex = 9
+  }
+  for (const [num, x, y] of markers) s.insertAdjacentHTML('beforeend', `<div class="marker" style="left:${x}px;top:${y}px">${num}</div>`)
+}
+
+render(Number(new URLSearchParams(location.search).get('slide') || 1))
+</script>
+</body>
+</html>

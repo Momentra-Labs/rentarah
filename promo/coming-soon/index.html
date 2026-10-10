@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RentaraH — Coming Soon promo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #04070f;
+      --panel: #0b1325;
+      --line: rgba(140, 200, 255, 0.16);
+      --text: #e8f0ff;
+      --muted: #8ea3c4;
+      --cyan: #2fe6ff;
+      --gold: #f2c46d;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: Urbanist, "Segoe UI", system-ui, sans-serif; }
+    body { display: flex; flex-direction: column; }
+    .stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 16px; }
+    canvas#stage { width: min(100%, calc((100vh - 150px) * 16 / 9)); aspect-ratio: 16 / 9; border-radius: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px var(--line); background: #000; cursor: pointer; }
+    .bar { background: var(--panel); border-top: 1px solid var(--line); padding: 12px 16px 14px; }
+    .scrub { position: relative; height: 26px; margin-bottom: 10px; }
+    .scrub input { position: absolute; inset: 0; width: 100%; margin: 0; accent-color: var(--cyan); }
+    .marks { position: absolute; left: 0; right: 0; top: 18px; height: 8px; pointer-events: none; }
+    .marks span { position: absolute; top: 0; width: 1px; height: 8px; background: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    button { font: inherit; font-weight: 700; color: var(--text); background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+    button:hover { border-color: var(--cyan); }
+    button.primary { background: var(--cyan); color: #021018; border-color: transparent; }
+    button:disabled { opacity: .45; cursor: default; }
+    .time { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 110px; }
+    .scene { color: var(--cyan); font-weight: 700; }
+    label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+    .spacer { flex: 1; }
+    .status { color: var(--gold); font-weight: 600; }
+    @media (max-width: 640px) { .stage { padding: 8px; } .time { min-width: 0; } }
+  </style>
+</head>
+<body>
+  <div class="stage"><canvas id="stage" width="1920" height="1080" aria-label="RentaraH coming soon promo"></canvas></div>
+  <div class="bar">
+    <div class="scrub">
+      <input id="scrub" type="range" min="0" max="45" step="0.0333" value="0" aria-label="Timeline" />
+      <div class="marks" id="marks"></div>
+    </div>
+    <div class="row">
+      <button id="play" class="primary">Play</button>
+      <button id="replay">Replay</button>
+      <span class="time" id="time">0.00 / 45.00</span>
+      <span class="scene" id="scene"></span>
+      <span class="spacer"></span>
+      <label><input type="checkbox" id="vo" checked /> Voice-over</label>
+      <button id="exp1080">Export MP4 · 1080p</button>
+      <button id="exp4k">Export MP4 · 4K</button>
+      <span class="status" id="status">Loading…</span>
+    </div>
+  </div>
+
+  <script type="module">
+    import { DURATION, SCENES, createRenderer, loadAssets } from './src/video.js'
+    import { renderSoundtrack } from './src/audio.js'
+    import { exportMp4 } from './src/export.js'
+
+    const $ = (id) => document.getElementById(id)
+    const canvas = $('stage')
+    const status = (s) => ($('status').textContent = s)
+
+    const assets = await loadAssets('./assets/')
+    const renderer = createRenderer(canvas, assets)
+    const soundtracks = {}
+    const getSoundtrack = async (vo) => (soundtracks[vo] ??= renderSoundtrack({ voiceOver: vo }))
+
+    let t = 0
+    let playing = false
+    let actx = null
+    let source = null
+    let startedAt = 0
+
+    for (const s of SCENES.slice(1)) {
+      const m = document.createElement('span')
+      m.style.left = `${(s.start / DURATION) * 100}%`
+      m.title = s.name
+      $('marks').appendChild(m)
+    }
+
+    function draw() {
+      renderer.render(t)
+      $('scrub').value = t
+      $('time').textContent = `${t.toFixed(2)} / ${DURATION.toFixed(2)}`
+      const sc = SCENES.find((s) => t >= s.start && t < s.end) || SCENES.at(-1)
+      $('scene').textContent = `Scene ${sc.id} — ${sc.name}`
+    }
+
+    function stopAudio() {
+      if (source) {
+        try { source.stop() } catch {}
+        source = null
+      }
+    }
+
+    async function play() {
+      if (t >= DURATION - 0.05) t = 0
+      actx ??= new AudioContext({ sampleRate: 48000 })
+      await actx.resume()
+      const buffer = await getSoundtrack($('vo').checked)
+      stopAudio()
+      source = actx.createBufferSource()
+      source.buffer = buffer
+      source.connect(actx.destination)
+      startedAt = actx.currentTime - t
+      source.start(0, t)
+      playing = true
+      $('play').textContent = 'Pause'
+      requestAnimationFrame(tick)
+    }
+
+    function pause() {
+      playing = false
+      stopAudio()
+      $('play').textContent = 'Play'
+    }
+
+    function tick() {
+      if (!playing) return
+      t = actx.currentTime - startedAt
+      if (t >= DURATION) {
+        t = DURATION
+        draw()
+        pause()
+        return
+      }
+      draw()
+      requestAnimationFrame(tick)
+    }
+
+    $('play').onclick = () => (playing ? pause() : play())
+    canvas.onclick = () => (playing ? pause() : play())
+    $('replay').onclick = () => { pause(); t = 0; play() }
+    $('scrub').oninput = (e) => {
+      const was = playing
+      pause()
+      t = Number(e.target.value)
+      draw()
+      if (was) play()
+    }
+    $('vo').onchange = () => { if (playing) { pause(); play() } }
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play() }
+    })
+
+    async function doExport(preset) {
+      pause()
+      $('exp1080').disabled = $('exp4k').disabled = true
+      try {
+        status('Rendering soundtrack…')
+        const audio = await getSoundtrack($('vo').checked)
+        const buf = await exportMp4({ preset, assets, audio, onProgress: (p, label) => status(`${label} · ${Math.round(p * 100)}%`) })
+        const name = `rentarah-coming-soon-${preset}${$('vo').checked ? '' : '-music-only'}.mp4`
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(new Blob([buf], { type: 'video/mp4' }))
+        a.download = name
+        a.click()
+        status(`Saved ${name} (${(buf.byteLength / 1e6).toFixed(1)} MB)`)
+      } catch (err) {
+        console.error(err)
+        status(`Export failed: ${err.message}`)
+      } finally {
+        $('exp1080').disabled = $('exp4k').disabled = false
+      }
+    }
+    $('exp1080').onclick = () => doExport('1080p')
+    $('exp4k').onclick = () => doExport('4k')
+
+    // Hooks for the headless tools (tools/snap.mjs, tools/render-mp4.mjs).
+    let lastExport = null
+    window.__promo = {
+      async snap(time, width = 1280) {
+        const c = new OffscreenCanvas(width, Math.round((width * 9) / 16))
+        createRenderer(c, assets).render(time)
+        const blob = await c.convertToBlob({ type: 'image/jpeg', quality: 0.9 })
+        return new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob) })
+      },
+      async export(preset, voiceOver) {
+        const audio = await renderSoundtrack({ voiceOver })
+        window.__promo.progress = 0
+        lastExport = new Uint8Array(await exportMp4({ preset, assets, audio, onProgress: (p) => (window.__promo.progress = p) }))
+        return { bytes: lastExport.byteLength, voiceOverLines: audio.voiceOverLines }
+      },
+      chunk(i, size) {
+        const part = lastExport.subarray(i * size, (i + 1) * size)
+        let s = ''
+        for (let k = 0; k < part.length; k += 0x8000) s += String.fromCharCode.apply(null, part.subarray(k, k + 0x8000))
+        return btoa(s)
+      },
+      progress: 0,
+    }
+
+    draw()
+    status('Ready')
+    window.__promo.ready = true
+  </script>
+</body>
+</html>

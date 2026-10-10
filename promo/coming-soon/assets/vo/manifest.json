@@ -1,0 +1,30 @@
+{
+  "note": "ElevenLabs voice-over — TX3LPaxmHKxFdv7VOQHJ (TX3LPaxmHKxFdv7VOQHJ), eleven_multilingual_v2.",
+  "lines": [
+    {
+      "file": "line1.mp3",
+      "start": 0.8,
+      "text": "Finding the perfect ride shouldn't be complicated."
+    },
+    {
+      "file": "line2.mp3",
+      "start": 8.3,
+      "text": "Introducing Rentarah. A new way to discover your next ride."
+    },
+    {
+      "file": "line3.mp3",
+      "start": 15.4,
+      "text": "For everyday drives, weekend escapes, and every adventure in between."
+    },
+    {
+      "file": "line4.mp3",
+      "start": 25.8,
+      "text": "Because every destination holds a story. And every journey begins with a choice."
+    },
+    {
+      "file": "line5.mp3",
+      "start": 38.15,
+      "text": "Rentarah. Your journey. Your choice. Coming soon. By Momentra Labs."
+    }
+  ]
+}

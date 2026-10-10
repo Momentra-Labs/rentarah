@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>RentaraH Facebook grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  :root { --blue: #1a56db; --sky: #0ea5e9; --ink: #0f2347; --slate: #4a5d7e; --gold: #f2b544; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1080px; overflow: hidden; font-family: Urbanist, system-ui, sans-serif; color: var(--ink); }
+  .tile {
+    position: relative; width: 1080px; height: 1080px; overflow: hidden;
+    background:
+      radial-gradient(800px 560px at 100% -10%, rgba(255, 244, 205, 0.95), rgba(255, 244, 205, 0) 70%),
+      radial-gradient(700px 500px at -10% 110%, rgba(26, 86, 219, 0.14), rgba(26, 86, 219, 0) 70%),
+      linear-gradient(180deg, #d9edff 0%, #eef7ff 50%, #ffffff 100%);
+  }
+  .tile.dark { background: radial-gradient(900px 700px at 80% 0%, #2a6cf0 0%, #1a56db 45%, #123c9c 100%); color: #fff; }
+  .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: 0.85; filter: drop-shadow(0 6px 0 rgba(160, 195, 230, 0.35)); }
+  .cloud::before, .cloud::after { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+  .cloud::before { width: 55%; height: 170%; left: 12%; bottom: 20%; }
+  .cloud::after { width: 42%; height: 140%; right: 12%; bottom: 25%; }
+  .dark .cloud { opacity: 0.12; filter: none; }
+  .copy { position: absolute; left: 72px; top: 72px; }
+  .logo { height: 50px; display: block; margin-bottom: 40px; }
+  .kicker { font-weight: 800; font-size: 24px; letter-spacing: 4px; color: var(--blue); text-transform: uppercase; margin-bottom: 14px; }
+  .dark .kicker { color: #bfe0ff; }
+  h1 { font-weight: 900; font-size: 84px; line-height: 1; letter-spacing: -1.5px; }
+  h1 .hl { color: var(--blue); }
+  .dark h1 .hl { color: #ffd479; }
+  .support { margin-top: 20px; font-size: 32px; line-height: 1.3; font-weight: 600; color: var(--slate); }
+  .dark .support { color: #dbe9ff; }
+  .pill { display: inline-flex; align-items: center; gap: 12px; margin-top: 30px; padding: 16px 30px; border-radius: 999px; background: var(--blue); color: #fff; font-weight: 900; font-size: 30px; letter-spacing: 3px; box-shadow: 0 14px 30px rgba(26, 86, 219, 0.3); }
+  .pill .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--gold); }
+  .dark .pill { background: #fff; color: var(--blue); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25); }
+  .note { position: absolute; font-size: 19px; font-weight: 600; color: rgba(40, 60, 95, 0.7); letter-spacing: 0.5px; }
+  .dark .note { color: rgba(220, 233, 255, 0.8); }
+  .phone { position: absolute; background: #0b0f19; border-radius: 66px; padding: 14px; box-shadow: 0 40px 80px rgba(15, 35, 71, 0.3), 0 0 0 3px #8fa3c6 inset; }
+  .screen { position: relative; border-radius: 52px; overflow: hidden; background: #fff; }
+  .status { background: #eef3fd; display: flex; align-items: center; justify-content: space-between; font-weight: 700; color: #0f172a; }
+  .status .bars { display: flex; gap: 3px; align-items: flex-end; }
+  .status .bars i { display: block; width: 4px; background: #0f172a; border-radius: 1px; }
+  .island { position: absolute; left: 50%; transform: translateX(-50%); background: #05070c; border-radius: 999px; z-index: 2; }
+  .screen img { display: block; width: 100%; }
+  .callout { position: absolute; z-index: 11; display: flex; align-items: center; gap: 14px; padding: 14px 26px 14px 14px; background: #fff; border-radius: 999px; box-shadow: 0 14px 34px rgba(15, 35, 71, 0.25); font-weight: 800; font-size: 30px; white-space: nowrap; color: var(--ink); }
+  .callout .ic { width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-size: 24px; font-weight: 900; }
+  svg.leaders { position: absolute; inset: 0; width: 1080px; height: 1080px; z-index: 10; pointer-events: none; }
+  .follow { display: inline-flex; margin-top: 26px; padding: 16px 30px; border-radius: 999px; border: 3px solid #fff; color: #fff; font-weight: 900; font-size: 30px; }
+</style>
+</head>
+<body>
+<div class="tile" id="tile"></div>
+<script>
+const LOGO = '../../src/assets/rentara.png'
+const SHOT = (n) => `../instagram-carousel/screens/${n}.png`
+
+function phoneHTML(screen, x, y, width, rot = 0, z = 1) {
+  const k = (width - 28) / 390
+  return `<div class="phone" style="left:${x}px;top:${y}px;width:${width}px;transform:rotate(${rot}deg);z-index:${z}">
+    <div class="screen">
+      <div class="island" style="top:${10 * k}px;width:${112 * k}px;height:${30 * k}px"></div>
+      <div class="status" style="height:${44 * k}px;padding:0 ${30 * k}px;font-size:${15 * k}px">
+        <span>9:41</span><span class="bars">${[4, 7, 10, 13].map((h) => `<i style="height:${h * k}px"></i>`).join('')}</span>
+      </div>
+      <img src="${SHOT(screen)}" alt="">
+    </div>
+  </div>`
+}
+const at = (x, y, width, [cx, cy]) => {
+  const k = (width - 28) / 390
+  return [x + 14 + cx * k, y + 14 + 44 * k + cy * k]
+}
+
+function render(n) {
+  const t = document.getElementById('tile')
+  const clouds = `<div class="cloud" style="left:700px;top:70px;width:210px;height:54px"></div>
+    <div class="cloud" style="left:880px;top:200px;width:140px;height:38px;opacity:.7"></div>`
+  let html = ''
+  const calls = []
+
+  if (n === 1) {
+    // brand: the grid's anchor tile
+    html = `<div class="copy">
+        <img class="logo" src="${LOGO}" alt="RentaraH" style="height:64px">
+        <div class="kicker">Cars &amp; motorcycles</div>
+        <h1>Your next ride<br><span class="hl">starts here.</span></h1>
+        <div class="pill"><span class="dot"></span>COMING SOON</div>
+      </div>
+      ${phoneHTML('home', 590, 470, 470, -4)}
+      <div class="note" style="left:72px;bottom:56px">App preview · demo data</div>`
+  }
+
+  if (n === 2) {
+    const X = 70, Y = 160, Wd = 480
+    html = `<div class="copy" style="left:590px;top:110px">
+        <div class="kicker">Browse</div>
+        <h1 style="font-size:76px">Rides,<br><span class="hl">side by side.</span></h1>
+        <div class="support" style="max-width:420px">Location, specs and the daily ₱ rate on every card.</div>
+      </div>
+      ${phoneHTML('browse', X, Y, Wd)}
+      <div class="note" style="left:590px;top:500px">App preview · demo data</div>`
+    calls.push({ text: 'Daily rate, kita agad', x: 580, target: at(X, Y, Wd, [372, 652]) })
+  }
+
+  if (n === 3) {
+    const X = 560, Y = 300, Wd = 460
+    html = `<div class="copy">
+        <div class="kicker">Explore the map</div>
+        <h1 style="font-size:76px">Cars &amp;<br>motorcycles,<br><span class="hl">one map.</span></h1>
+        <div class="support" style="max-width:440px">Switch All, Car or Moto and spot daily rates on the map.</div>
+      </div>
+      ${phoneHTML('map', X, Y, Wd, 0)}
+      <div class="note" style="left:72px;bottom:56px">App preview · demo data · Map tiles © Esri</div>`
+    calls.push({ text: 'All · Car · Moto', x: 110, target: at(X, Y, Wd, [24, 149]), side: 'left' })
+  }
+
+  if (n === 4) {
+    t.classList.add('dark')
+    html = `<div class="copy">
+        <img class="logo" src="${LOGO}" alt="RentaraH" style="height:58px;filter:brightness(0) invert(1)">
+        <div class="kicker">Know it before you book</div>
+        <h1 style="font-size:76px">See the full<br><span class="hl">trip total.</span></h1>
+        <div class="pill" style="font-size:24px;letter-spacing:2px"><span class="dot"></span>COMING SOON BY MOMENTRA LABS</div>
+        <div><div class="follow">Follow for launch updates →</div></div>
+      </div>
+      ${phoneHTML('detail-price', 600, 560, 440, 4)}
+      <div class="note" style="left:72px;bottom:56px">App preview · demo data</div>`
+  }
+
+  t.innerHTML = clouds + html
+  for (const c of calls) {
+    t.insertAdjacentHTML('beforeend', `<div class="callout" style="left:${c.x}px;top:${c.target[1] - 36}px"><span class="ic">✓</span>${c.text}</div>`)
+  }
+  if (calls.length) {
+    const els = [...t.querySelectorAll('.callout')]
+    let svg = '<svg class="leaders" viewBox="0 0 1080 1080">'
+    calls.forEach((c, i) => {
+      const r = els[i].getBoundingClientRect()
+      const x1 = c.side === 'left' ? r.right - 6 : r.left + 6
+      const [tx, ty] = c.target
+      svg += `<line x1="${x1}" y1="${ty}" x2="${tx}" y2="${ty}" stroke="#1a56db" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"/>
+        <circle cx="${tx}" cy="${ty}" r="12" fill="#1a56db" opacity=".22"/><circle cx="${tx}" cy="${ty}" r="6" fill="#1a56db"/>`
+    })
+    t.insertAdjacentHTML('beforeend', svg + '</svg>')
+  }
+}
+render(Number(new URLSearchParams(location.search).get('tile') || 1))
+</script>
+</body>
+</html>
