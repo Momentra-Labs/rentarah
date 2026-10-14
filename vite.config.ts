@@ -17,6 +17,24 @@ export default defineConfig({
       '@': path.resolve(rootDir, 'src'),
     },
   },
+  optimizeDeps: {
+    // Pre-bundle deps that only lazy routes import (car detail calendar, map). Otherwise Vite finds them
+    // mid-session, re-optimizes, and the open page mixes old/new chunks — e.g. CalendarPicker then reads a
+    // second copy of the pickers context and throws "Can not find utils in context".
+    include: [
+      '@mui/x-date-pickers',
+      '@mui/x-date-pickers/AdapterDayjs',
+      '@mui/x-date-pickers/CalendarPicker',
+      '@mui/x-date-pickers/PickersDay',
+      '@mui/x-date-pickers/TimePicker',
+      'dayjs',
+      'dayjs/plugin/relativeTime',
+      'leaflet',
+      'leaflet.markercluster',
+      'react-leaflet',
+      'react-leaflet-markercluster',
+    ],
+  },
   build: {
     chunkSizeWarningLimit: 900,
     rollupOptions: {

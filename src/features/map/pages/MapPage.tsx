@@ -1,23 +1,30 @@
 import ChevronLeft from '@mui/icons-material/ChevronLeft'
-import ChevronRight from '@mui/icons-material/ChevronRight'
 import AllInclusiveOutlined from '@mui/icons-material/AllInclusiveOutlined'
 import CloseRounded from '@mui/icons-material/CloseRounded'
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import Explore from '@mui/icons-material/Explore'
 import FitScreen from '@mui/icons-material/FitScreen'
+import FormatListBulleted from '@mui/icons-material/FormatListBulleted'
 import MyLocation from '@mui/icons-material/MyLocation'
 import RestartAlt from '@mui/icons-material/RestartAlt'
 import SearchOutlined from '@mui/icons-material/SearchOutlined'
+import TravelExploreOutlined from '@mui/icons-material/TravelExploreOutlined'
 import TuneRounded from '@mui/icons-material/TuneRounded'
 import TwoWheeler from '@mui/icons-material/TwoWheeler'
 import {
+  Badge,
   Box,
   Button,
+  Checkbox,
   Chip,
+  Collapse,
   Fade,
+  FormControlLabel,
   IconButton,
   InputAdornment,
+  MenuItem,
   Paper,
+  Select,
   Slider,
   Stack,
   SwipeableDrawer,
@@ -34,12 +41,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import ExploreMapListingStrip from '@/components/landing/ExploreMapListingStrip'
 import EmptyState from '@/components/ui/EmptyState'
-import PageHeader from '@/components/layout/PageHeader'
 import { MAP_PAGE_FLOAT_CLEAR_BOTTOM } from '@/components/layout/MobileBottomNav'
 import ExploreMapErrorBoundary from '@/components/map/ExploreMapErrorBoundary'
 import ExploreMapFallbackList from '@/components/map/ExploreMapFallbackList'
 import { MapPageResponsiveSplit } from '@/components/map/MapPageLayouts'
 import MapPageSkeleton, { MapSurfaceSkeleton } from '@/components/skeletons/MapPageSkeleton'
+import type { MapViewportBounds } from '@/features/landing/components/ExploreRentalsMapInner'
+import MapListingRow from '@/features/map/components/MapListingRow'
 import { useVehicles } from '@/hooks/useVehicles'
 import { useCarsStore } from '@/store/useCarsStore'
 import { useGeolocationStore } from '@/store/useGeolocationStore'
@@ -84,6 +92,31 @@ const mapIconBtnSx = {
   boxShadow: rhElev.elev1,
 } as const
 
+/** Floating map controls (desktop + mobile): stacked square buttons in one rounded card. */
+const mapControlBtnSx = {
+  width: 44,
+  height: 44,
+  borderRadius: 0,
+  color: 'text.primary',
+  '&:hover': { bgcolor: 'action.hover' },
+  '&.Mui-disabled': { bgcolor: 'transparent', opacity: 0.45 },
+} as const
+
+type MapListSort = 'recommended' | 'priceLow' | 'priceHigh' | 'rating'
+
+function sortListings(listings: ExploreMapListing[], sort: MapListSort): ExploreMapListing[] {
+  if (sort === 'recommended') return listings
+  const out = [...listings]
+  if (sort === 'priceLow') out.sort((a, b) => a.vehicle.pricePerDay - b.vehicle.pricePerDay)
+  else if (sort === 'priceHigh') out.sort((a, b) => b.vehicle.pricePerDay - a.vehicle.pricePerDay)
+  else out.sort((a, b) => b.vehicle.rating - a.vehicle.rating || b.vehicle.reviewCount - a.vehicle.reviewCount)
+  return out
+}
+
+function listingInBounds(l: ExploreMapListing, b: MapViewportBounds): boolean {
+  return l.latitude >= b.south && l.latitude <= b.north && l.longitude >= b.west && l.longitude <= b.east
+}
+
 /**
  * Full-screen map experience: type/price/location filters, lazy map, listing strip.
  * Swap `useCarsStore` for an API hook when backend is ready.
@@ -121,6 +154,14 @@ export default function MapPage() {
   const [hoveredListingId, setHoveredListingId] = useState<string | null>(null)
   /** Desktop /map — hide the tools column to widen the map. */
   const [desktopMapSidebarCollapsed, setDesktopMapSidebarCollapsed] = useState(false)
+  /** Desktop: price panel under the search row. */
+  const [priceFiltersOpen, setPriceFiltersOpen] = useState(false)
+  const [listSort, setListSort] = useState<MapListSort>('recommended')
+  /** Desktop: sidebar list mirrors the map area the user has panned/zoomed to. */
+  const [followMap, setFollowMap] = useState(true)
+  /** Last user-chosen map area; `null` = list every filtered result (initial view, after Fit, after filter edits). */
+  const [areaBounds, setAreaBounds] = useState<MapViewportBounds | null>(null)
+  const sidebarListRef = useRef<HTMLDivElement>(null)
 
   /**
    * Leaflet stays ~400–650. Map chrome sits at mobileStepper + n (~1005–1015).
@@ -172,16 +213,36 @@ export default function MapPage() {
       setSelectionFromListingStrip(true)
       setSelectedId(l.id)
       setListingScrollRequest((n) => n + 1)
-      if (isCompactLayout) {
-        setListingsDrawerOpen(true)
-      } else {
-        requestAnimationFrame(() => {
-          document.getElementById('explore-map-listing-strip')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        })
-      }
+      if (isCompactLayout) setListingsDrawerOpen(true)
+      // Desktop: the sidebar list scrolls the row into view (see effect below).
     },
     [isCompactLayout],
   )
+
+  /** Desktop sidebar row "show on map": select + fly the map to that pin and open its popup. */
+  const handleListRowFocus = useCallback((l: ExploreMapListing) => {
+    setSelectionFromListingStrip(true)
+    setSelectedId(l.id)
+    setMapFocusNonce((n) => n + 1)
+  }, [])
+
+  const handleUserViewportChange = useCallback((b: MapViewportBounds) => setAreaBounds(b), [])
+
+  /** Desktop: a pin picked on the map (or "Show in list") brings its sidebar row into view. */
+  useEffect(() => {
+    if (isCompactLayout || !selectedId) return
+    if (selectionFromListingStrip && listingScrollRequest === 0) return
+    const list = sidebarListRef.current
+    const row = list?.querySelector<HTMLElement>(`[data-listing-id="${selectedId}"]`)
+    if (!list || !row) return
+    // Scroll only the list (scrollIntoView can also nudge the overflow-hidden page shells).
+    const pad = 8
+    const top = row.offsetTop
+    const bottom = top + row.offsetHeight
+    if (top - pad < list.scrollTop) list.scrollTo({ top: top - pad, behavior: 'smooth' })
+    else if (bottom + pad > list.scrollTop + list.clientHeight)
+      list.scrollTo({ top: bottom + pad - list.clientHeight, behavior: 'smooth' })
+  }, [isCompactLayout, selectedId, selectionFromListingStrip, listingScrollRequest])
 
   const handleViewOnMap = useCallback(
     (l: ExploreMapListing) => {
@@ -205,9 +266,11 @@ export default function MapPage() {
 
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 12_000])
 
+  const [priceExtentMin, priceExtentMax] = priceExtent
+  /** Keyed on the numbers: a vehicles refetch rebuilds `priceExtent` and must not wipe the user's price filter. */
   useEffect(() => {
-    setPriceRange([priceExtent[0], priceExtent[1]])
-  }, [priceExtent])
+    setPriceRange([priceExtentMin, priceExtentMax])
+  }, [priceExtentMin, priceExtentMax])
 
   useEffect(() => {
     if (!isCompactLayout) {
@@ -256,6 +319,30 @@ export default function MapPage() {
     }
   }, [filtered, hoveredListingId])
 
+  /** Filter edits re-fit the map to every match, so the list goes back to every match too. */
+  const [priceMin, priceMax] = priceRange
+  useEffect(() => {
+    setAreaBounds(null)
+  }, [filterMode, locationQuery, priceMin, priceMax])
+
+  const areaActive = !isCompactLayout && followMap && areaBounds !== null
+
+  const sidebarListings = useMemo(() => {
+    const inArea = areaActive && areaBounds ? filtered.filter((l) => listingInBounds(l, areaBounds)) : filtered
+    return sortListings(inArea, listSort)
+  }, [filtered, areaActive, areaBounds, listSort])
+
+  const showAllResults = useCallback(() => {
+    setAreaBounds(null)
+    setFitBoundsNonce((n) => n + 1)
+  }, [])
+
+  const clearAllFilters = useCallback(() => {
+    setFilterMode('all')
+    setLocationQuery('')
+    setPriceRange([priceExtent[0], priceExtent[1]])
+  }, [priceExtent])
+
   const handleNearbyNavigate = useCallback(
     (dir: 'next' | 'prev') => {
       const cur = filtered.find((l) => l.id === selectedId)
@@ -284,7 +371,7 @@ export default function MapPage() {
     if (frac > 0.2) listingsDrawerFullSnapHapticGatedRef.current = false
   }, [])
 
-  const onViewDetails = (l: ExploreMapListing) => navigate(`/cars/${l.id}`)
+  const onViewDetails = useCallback((l: ExploreMapListing) => navigate(`/cars/${l.id}`), [navigate])
 
   const handleFilter = (_: React.MouseEvent<HTMLElement>, v: ExploreMapFilterMode | null) => {
     if (v != null) setFilterMode(v)
@@ -311,6 +398,31 @@ export default function MapPage() {
   )
 
   const mapSuspense = <MapSurfaceSkeleton />
+
+  /** Desktop: removable summary of what is narrowing the results. */
+  const activeFilterChips: { key: string; label: string; onClear: () => void }[] = [
+    ...(filterMode !== 'all'
+      ? [
+          {
+            key: 'type',
+            label: t(filterMode === 'cars' ? 'map.car' : filterMode === 'motorcycles' ? 'map.moto' : 'map.nearby'),
+            onClear: () => setFilterMode('all'),
+          },
+        ]
+      : []),
+    ...(locationQuery.trim()
+      ? [{ key: 'area', label: `“${locationQuery.trim()}”`, onClear: () => setLocationQuery('') }]
+      : []),
+    ...(priceFilterActive
+      ? [
+          {
+            key: 'price',
+            label: `${formatPesoShort(priceRange[0])} – ${formatPesoShort(priceRange[1])}`,
+            onClear: () => setPriceRange([priceExtent[0], priceExtent[1]]),
+          },
+        ]
+      : []),
+  ]
 
   const typeToggle = (
     <ToggleButtonGroup
@@ -553,7 +665,7 @@ export default function MapPage() {
   )
 
   const priceFilterCore = (
-    <Stack spacing={2}>
+    <Stack spacing={isCompactLayout ? 2 : 1.5}>
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1}>
         <Box sx={{ minWidth: 0 }}>
           <Typography
@@ -581,14 +693,6 @@ export default function MapPage() {
             </IconButton>
           </span>
         </Tooltip>
-      </Stack>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-          {t('map.minExtent', { value: formatPesoShort(priceExtent[0]) })}
-        </Typography>
-        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-          {t('map.maxExtent', { value: formatPesoShort(priceExtent[1]) })}
-        </Typography>
       </Stack>
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start', width: '100%' }}>
         <TextField
@@ -714,6 +818,7 @@ export default function MapPage() {
               zoomControlPosition={isCompactLayout ? 'bottomleft' : 'topright'}
               listingsDrawerOpen={isCompactLayout ? listingsDrawerOpen : false}
               mapSurface={isCompactLayout ? 'compact' : 'wide'}
+              onUserViewportChange={!isCompactLayout && followMap ? handleUserViewportChange : undefined}
             />
           </Box>
         </Suspense>
@@ -801,109 +906,193 @@ export default function MapPage() {
               zIndex: 1,
             }}
           >
-            {/*
-              Single scroll column: search, filters, header, price, listings — matches mobile “everything
-              scrolls” ergonomics and avoids nested scroll regions fighting each other.
-            */}
+            {/* Fixed header: title, search, filters, type. Only the listing column below scrolls. */}
+            <Box sx={{ flexShrink: 0, px: 2.5, pt: 2, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" gap={1}>
+                <Typography
+                  component="h1"
+                  sx={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', lineHeight: 1.2 }}
+                >
+                  {t('map.title')}
+                </Typography>
+                <Tooltip title={t('map.collapseSidebar')}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('map.collapseSidebarAria')}
+                    onClick={() => setDesktopMapSidebarCollapsed(true)}
+                    sx={{ ...mapIconBtnSx, boxShadow: 'none' }}
+                  >
+                    <ChevronLeft fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+
+              <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>{locationSearchField}</Box>
+                <Button
+                  variant="outlined"
+                  onClick={() => setPriceFiltersOpen((o) => !o)}
+                  aria-expanded={priceFiltersOpen}
+                  aria-controls="map-price-filters"
+                  startIcon={
+                    <Badge color="primary" variant="dot" invisible={!priceFilterActive}>
+                      <TuneRounded fontSize="small" />
+                    </Badge>
+                  }
+                  sx={(th) => ({
+                    flexShrink: 0,
+                    px: 1.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    color: 'text.primary',
+                    borderColor: priceFiltersOpen ? 'primary.main' : 'divider',
+                    bgcolor: priceFiltersOpen ? alpha(th.palette.primary.main, 0.06) : 'background.paper',
+                    '&:hover': { borderColor: 'primary.main', bgcolor: alpha(th.palette.primary.main, 0.06) },
+                  })}
+                >
+                  {t('map.filters')}
+                </Button>
+              </Stack>
+
+              <Box sx={{ mt: 1.25 }}>{typeToggle}</Box>
+
+              <Collapse in={priceFiltersOpen} unmountOnExit>
+                <Box
+                  id="map-price-filters"
+                  sx={{
+                    mt: 1.5,
+                    p: 2,
+                    pb: 1,
+                    borderRadius: `${rhRadius.md}px`,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.default',
+                  }}
+                >
+                  {priceFilterCore}
+                </Box>
+              </Collapse>
+
+              {filtersDirty ? (
+                <Stack direction="row" flexWrap="wrap" useFlexGap gap={0.75} alignItems="center" sx={{ mt: 1.25 }}>
+                  {activeFilterChips.map((c) => (
+                    <Chip
+                      key={c.key}
+                      size="small"
+                      label={c.label}
+                      onDelete={c.onClear}
+                      aria-label={t('map.removeFilter', { label: c.label })}
+                      sx={(th) => ({
+                        fontWeight: 700,
+                        bgcolor: alpha(th.palette.primary.main, 0.08),
+                        color: 'primary.main',
+                        '& .MuiChip-deleteIcon': { color: alpha(th.palette.primary.main, 0.6) },
+                        '& .MuiChip-deleteIcon:hover': { color: 'primary.main' },
+                      })}
+                    />
+                  ))}
+                  <Button
+                    size="small"
+                    onClick={clearAllFilters}
+                    sx={{ minHeight: 24, py: 0, px: 0.75, textTransform: 'none', fontWeight: 700, fontSize: '0.75rem' }}
+                  >
+                    {t('map.clearAll')}
+                  </Button>
+                </Stack>
+              ) : null}
+            </Box>
+
+            {/* Result count (live) + sort. */}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              gap={1}
+              sx={{ flexShrink: 0, px: 2.5, pt: 1.25, pb: 0.75 }}
+            >
+              <Stack direction="row" alignItems="center" gap={0.5} sx={{ minWidth: 0 }}>
+                <Typography
+                  aria-live="polite"
+                  sx={{ fontWeight: 700, fontSize: '0.8125rem', color: 'text.secondary', whiteSpace: 'nowrap' }}
+                >
+                  {areaActive
+                    ? t('map.inArea', { shown: sidebarListings.length, total: filtered.length })
+                    : t(filtered.length === 1 ? 'map.ridesOne' : 'map.ridesOther', { count: filtered.length })}
+                </Typography>
+                {areaActive && sidebarListings.length < filtered.length ? (
+                  <Button
+                    size="small"
+                    onClick={showAllResults}
+                    sx={{ minWidth: 0, minHeight: 24, py: 0, px: 0.75, textTransform: 'none', fontWeight: 700, fontSize: '0.8125rem' }}
+                  >
+                    {t('map.showAll')}
+                  </Button>
+                ) : null}
+              </Stack>
+              <Select
+                variant="standard"
+                disableUnderline
+                value={listSort}
+                onChange={(e) => setListSort(e.target.value as MapListSort)}
+                inputProps={{ 'aria-label': t('map.sort') }}
+                sx={{ flexShrink: 0, fontSize: '0.8125rem', fontWeight: 700, '& .MuiSelect-select': { py: 0.25 } }}
+              >
+                <MenuItem value="recommended">{t('map.sortRecommended')}</MenuItem>
+                <MenuItem value="priceLow">{t('map.sortPriceLow')}</MenuItem>
+                <MenuItem value="priceHigh">{t('map.sortPriceHigh')}</MenuItem>
+                <MenuItem value="rating">{t('map.sortRating')}</MenuItem>
+              </Select>
+            </Stack>
+
             <Box
+              ref={sidebarListRef}
+              id="explore-map-listing-strip"
               sx={{
+                /** Positioned so row `offsetTop` is relative to the list (see scroll-to-selected effect). */
+                position: 'relative',
                 flex: 1,
                 minHeight: 0,
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                WebkitOverflowScrolling: 'touch',
-                scrollbarGutter: 'stable',
+                scrollbarWidth: 'thin',
                 display: 'flex',
                 flexDirection: 'column',
-                px: { md: 3 },
-                pt: { md: 2 },
-                pb: { md: 2.5 },
+                gap: 0.5,
+                px: 1.5,
+                pt: 0.25,
+                pb: 2,
               }}
             >
-              <Box
-                sx={{
-                  flexShrink: 0,
-                  pb: { md: 2 },
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: 'background.paper',
-                }}
-              >
-                {locationSearchField}
-                <Box sx={{ mt: 1.75 }}>{typeToggle}</Box>
-              </Box>
-              <Stack
-                direction="row"
-                alignItems="flex-start"
-                justifyContent="space-between"
-                gap={1}
-                sx={{ flexShrink: 0, mt: { md: 2.5 } }}
-              >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <PageHeader
-                    overline={t('map.explore')}
-                    title={t('map.title')}
-                    subtitle={t('map.subtitle')}
-                    dense
-                    variant="mapSidebar"
-                  />
-                </Box>
-                <Stack direction="row" spacing={0.5} alignItems="flex-start" sx={{ flexShrink: 0, mt: 0.25 }}>
-                <Tooltip title={t('map.fitResults')}>
-                  <span>
-                    <IconButton
-                      size="small"
-                      aria-label={t('map.fitResults')}
-                      onClick={() => setFitBoundsNonce((n) => n + 1)}
-                      disabled={filtered.length === 0}
-                      sx={mapIconBtnSx}
-                    >
-                      <FitScreen fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <Tooltip title={t('map.collapseSidebar')}>
-                  <span>
-                    <IconButton
-                      size="small"
-                      aria-label={t('map.collapseSidebarAria')}
-                      onClick={() => setDesktopMapSidebarCollapsed(true)}
-                      sx={mapIconBtnSx}
-                    >
-                      <ChevronLeft fontSize="small" />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                </Stack>
-              </Stack>
-              <Box sx={{ mt: 2, flexShrink: 0 }}>{priceFilterCore}</Box>
-              <Box id="explore-map-listing-strip" sx={{ mt: 2, flexShrink: 0, minWidth: 0 }}>
-                <ExploreMapListingStrip
-                  listings={filtered}
-                  selectedId={selectedId}
-                  onSelect={handleListingStripSelect}
+              {sidebarListings.map((l) => (
+                <MapListingRow
+                  key={l.id}
+                  listing={l}
+                  selected={selectedId === l.id}
+                  hovered={hoveredListingId === l.id}
                   onViewDetails={onViewDetails}
-                  onViewOnMap={handleViewOnMap}
-                  autoScrollToSelected={selectionFromListingStrip}
-                  listingScrollRequest={listingScrollRequest}
-                  title={t('map.listingsOnMap')}
-                  orientation="vertical"
-                  listScrollMode="outer"
-                  onListingHover={setHoveredListingId}
-                  hoveredListingId={hoveredListingId}
-                  headerExtra={
-                    <Chip
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      label={t(filtered.length === 1 ? 'map.vehicleOnMapOne' : 'map.vehicleOnMapOther', {
-                        count: filtered.length,
-                      })}
-                      sx={{ fontWeight: 700 }}
-                    />
-                  }
+                  onShowOnMap={handleListRowFocus}
+                  onHover={setHoveredListingId}
                 />
-              </Box>
+              ))}
+              {sidebarListings.length === 0 ? (
+                <Stack alignItems="center" textAlign="center" spacing={1} sx={{ py: 6, px: 3 }}>
+                  <TravelExploreOutlined sx={{ fontSize: 40, color: 'text.disabled' }} />
+                  <Typography sx={{ fontWeight: 800 }}>
+                    {filtered.length === 0 ? t('map.emptyTitle') : t('map.noneInAreaTitle')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {filtered.length === 0 ? t('map.emptyDescription') : t('map.noneInAreaBody')}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    onClick={filtered.length === 0 ? clearAllFilters : showAllResults}
+                    sx={{ mt: 1, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+                  >
+                    {filtered.length === 0 ? t('map.clearFilters') : t('map.showAllResults')}
+                  </Button>
+                </Stack>
+              ) : null}
             </Box>
           </Stack>
         }
@@ -919,37 +1108,6 @@ export default function MapPage() {
               flexDirection: 'column',
             }}
           >
-            {!isCompactLayout && desktopMapSidebarCollapsed && (
-              <Tooltip title={t('map.expandSidebar')}>
-                <IconButton
-                  aria-label={t('map.expandSidebar')}
-                  size="small"
-                  onClick={() => setDesktopMapSidebarCollapsed(false)}
-                  sx={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 'calc(50% + 40px)',
-                    transform: 'translateY(-50%)',
-                    zIndex: (th) => th.zIndex.appBar + 2,
-                    width: 40,
-                    height: 48,
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: `0 ${rhRadius.pill}px ${rhRadius.pill}px 0`,
-                    borderLeft: 'none',
-                    color: 'primary.main',
-                    boxShadow: rhElev.elev1,
-                    '&:hover': {
-                      bgcolor: 'background.paper',
-                      borderColor: 'primary.main',
-                    },
-                  }}
-                >
-                  <ChevronRight />
-                </IconButton>
-              </Tooltip>
-            )}
             {isCompactLayout ? (
               <Box
                 className="pointer-events-none [&>*]:pointer-events-auto"
@@ -1027,25 +1185,98 @@ export default function MapPage() {
               />
             ) : null}
 
-            {!isCompactLayout && filtered.length > 0 ? (
-              <Fade in>
-                <Chip
-                  size="small"
-                  label={t('map.nearbyCount', { count: filtered.length })}
+            {!isCompactLayout && (desktopMapSidebarCollapsed || filtered.length > 0) ? (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ position: 'absolute', top: 12, left: 12, zIndex: zMap.toolbar, pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+              >
+                {desktopMapSidebarCollapsed ? (
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    startIcon={<FormatListBulleted fontSize="small" />}
+                    onClick={() => setDesktopMapSidebarCollapsed(false)}
+                    aria-label={t('map.expandSidebar')}
+                    sx={{
+                      borderRadius: `${rhRadius.pill}px`,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      px: 2,
+                      minHeight: 40,
+                      boxShadow: rhElev.elev1,
+                    }}
+                  >
+                    {t('map.showList')} · {sidebarListings.length}
+                  </Button>
+                ) : null}
+                {filtered.length > 0 ? (
+                <Paper
+                  elevation={0}
                   sx={{
-                    position: 'absolute',
-                    top: 16,
-                    left: desktopMapSidebarCollapsed ? 56 : 16,
-                    zIndex: zMap.hint,
-                    pointerEvents: 'none',
-                    fontWeight: 800,
-                    bgcolor: 'background.paper',
+                    borderRadius: `${rhRadius.pill}px`,
                     boxShadow: rhElev.elev1,
-                    border: 'none',
-                    transition: (th) => th.transitions.create('left', { duration: 280 }),
+                    bgcolor: 'background.paper',
+                    pl: 0.75,
+                    pr: 1.75,
+                    minHeight: 40,
+                    display: 'flex',
+                    alignItems: 'center',
                   }}
-                />
-              </Fade>
+                >
+                  <FormControlLabel
+                    sx={{ m: 0, '& .MuiFormControlLabel-label': { fontSize: '0.8125rem', fontWeight: 700 } }}
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={followMap}
+                        onChange={(e) => {
+                          setFollowMap(e.target.checked)
+                          setAreaBounds(null)
+                        }}
+                        sx={{ p: 0.5, mr: 0.5 }}
+                      />
+                    }
+                    label={t('map.followMap')}
+                  />
+                </Paper>
+                ) : null}
+              </Stack>
+            ) : null}
+
+            {!isCompactLayout && filtered.length > 0 ? (
+              <Paper
+                elevation={0}
+                sx={{
+                  position: 'absolute',
+                  right: 12,
+                  bottom: 24,
+                  zIndex: zMap.toolbar,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  borderRadius: `${rhRadius.md}px`,
+                  boxShadow: rhElev.elev1,
+                  bgcolor: 'background.paper',
+                }}
+              >
+                <Tooltip title={t('map.fitToResults')} placement="left">
+                  <IconButton aria-label={t('map.fitResults')} onClick={showAllResults} sx={mapControlBtnSx}>
+                    <FitScreen fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Box sx={{ height: '1px', bgcolor: 'divider' }} />
+                <Tooltip title={geoStatus === 'ready' ? t('map.recenter') : t('map.shareLocation')} placement="left">
+                  <IconButton
+                    aria-label={t('map.useMyLocation')}
+                    onClick={() => requestLocation()}
+                    sx={{ ...mapControlBtnSx, color: userLocation ? 'primary.main' : 'text.primary' }}
+                  >
+                    <MyLocation fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Paper>
             ) : null}
 
             {isCompactLayout && !filterDrawerOpen && !listingsDrawerOpen ? (
@@ -1172,9 +1403,16 @@ export default function MapPage() {
                       fontWeight={800}
                       sx={{ letterSpacing: '-0.02em', lineHeight: 1.2 }}
                     >
-                      {t(filtered.length === 1 ? 'map.vehicleNearbyOne' : 'map.vehicleNearbyOther', {
-                        count: filtered.length,
-                      })}
+                      {t(
+                        filterMode === 'nearby'
+                          ? filtered.length === 1
+                            ? 'map.vehicleNearbyOne'
+                            : 'map.vehicleNearbyOther'
+                          : filtered.length === 1
+                            ? 'map.vehicleOne'
+                            : 'map.vehicleOther',
+                        { count: filtered.length },
+                      )}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>
                       {t('map.peekHint')}

@@ -158,6 +158,82 @@ export type ExploreRentalsMapInnerProps = {
    * popup and use “View details” as the single primary CTA there (strip cards omit their own CTAs).
    */
   listingsDrawerOpen?: boolean
+  /**
+   * Fires after the **user** pans/zooms (drag, wheel, zoom buttons, cluster click, keyboard) — not after
+   * programmatic moves like fly-to-pin, popup auto-pan, or fit-to-results. Drives "list follows the map".
+   */
+  onUserViewportChange?: (bounds: MapViewportBounds) => void
+}
+
+/** Plain-object bounds so callers can filter listings without importing Leaflet. */
+export type MapViewportBounds = { south: number; west: number; north: number; east: number }
+
+/**
+ * A press / wheel / key inside the map arms "the next move is the user's"; leaving the map, pressing a single
+ * pin or popup, or pressing / typing anywhere else disarms it. No time window — Leaflet starts zoom
+ * animations on a later frame.
+ */
+function MapUserViewportReporter({ onChange }: { onChange: (bounds: MapViewportBounds) => void }) {
+  const map = useMap()
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+
+  useEffect(() => {
+    const container = map.getContainer()
+    let intentArmed = false
+    let userMove = false
+
+    const markIntent = (e: Event) => {
+      const el = e.target instanceof Element ? e.target : null
+      // Single-pin clicks and popup CTAs trigger programmatic fly-to / auto-pan — not "browse this area".
+      intentArmed = !el?.closest('.leaflet-popup, .rentara-explore-pin')
+    }
+    // List-row hovers (outside the map) open popups that auto-pan the map programmatically.
+    const disarm = () => {
+      intentArmed = false
+    }
+    const disarmIfOutside = (e: Event) => {
+      if (!(e.target instanceof Node && container.contains(e.target))) disarm()
+    }
+    const onMoveStart = () => {
+      userMove = intentArmed
+      intentArmed = false
+    }
+    const onDragStart = () => {
+      userMove = true
+    }
+    const onMoveEnd = () => {
+      if (!userMove) return
+      userMove = false
+      // Stay armed for chained follow-ups (e.g. the cluster-click extra zoom step) until the pointer leaves.
+      intentArmed = true
+      const b = map.getBounds()
+      onChangeRef.current({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() })
+    }
+
+    container.addEventListener('pointerdown', markIntent, true)
+    container.addEventListener('wheel', markIntent, { capture: true, passive: true })
+    container.addEventListener('keydown', markIntent, true)
+    container.addEventListener('pointerleave', disarm)
+    // Any press / keypress elsewhere (list rows, sort, keyboard tabbing out) means later moves aren't ours.
+    document.addEventListener('pointerdown', disarmIfOutside, true)
+    document.addEventListener('keydown', disarmIfOutside, true)
+    map.on('movestart', onMoveStart)
+    map.on('dragstart', onDragStart)
+    map.on('moveend', onMoveEnd)
+    return () => {
+      container.removeEventListener('pointerdown', markIntent, true)
+      container.removeEventListener('wheel', markIntent, true)
+      container.removeEventListener('keydown', markIntent, true)
+      container.removeEventListener('pointerleave', disarm)
+      document.removeEventListener('pointerdown', disarmIfOutside, true)
+      document.removeEventListener('keydown', disarmIfOutside, true)
+      map.off('movestart', onMoveStart)
+      map.off('dragstart', onDragStart)
+      map.off('moveend', onMoveEnd)
+    }
+  }, [map])
+  return null
 }
 
 /**
@@ -917,6 +993,7 @@ export default function ExploreRentalsMapInner({
   compactVehiclePopup = false,
   zoomControlPosition = 'topright',
   listingsDrawerOpen = false,
+  onUserViewportChange,
 }: ExploreRentalsMapInnerProps) {
   const markerRegistry = useRef<Map<string, L.Marker>>(new Map())
 
@@ -1000,6 +1077,7 @@ export default function ExploreRentalsMapInner({
             mapSurface={mapSurface}
           />
           <MapEnsurePhilippinesCenter />
+          {onUserViewportChange ? <MapUserViewportReporter onChange={onUserViewportChange} /> : null}
           <CenterExplorePopupOnOpen recenterCard={!enableFlyTo} />
           {enableFlyTo ? (
             <FlyToSelected
