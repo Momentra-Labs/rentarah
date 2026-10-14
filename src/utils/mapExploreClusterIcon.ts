@@ -1,5 +1,8 @@
 import L from 'leaflet'
 
+import { formatExplorePriceDayShort } from './mapExplorePriceBadge'
+import { exploreMapVehicleGlyphSvg } from './mapExploreMarkerGlyph'
+
 /** Show individual price-tag pins starting at this map zoom (≥). Leaflet.markercluster uses `− 1` for its internal grid ceiling. */
 export const RENTARA_CLUSTER_DISABLE_AT_MAP_ZOOM = 17
 
@@ -20,140 +23,100 @@ export const RENTARA_CLUSTER_CLICK_EXTRA_ZOOM_LEVELS = 1
 
 /**
  * Pixel radius used by DistanceGrid: larger ⇒ nearby pins merge into a cluster sooner (more
- * clustering). Default in leaflet.markercluster is 80 — we stayed below that for readability.
+ * clustering). Sized so ~100px-wide cluster pills (count + "from ₱X" + mix) don't overlap neighbours.
  */
-export const RENTARA_CLUSTER_MAX_RADIUS_PX = 76
-
-/** Macro vs micro cluster styling: fewer than this many markers ⇒ micro style. */
-export const RENTARA_CLUSTER_MICRO_STYLE_BELOW_N = 5
+export const RENTARA_CLUSTER_MAX_RADIUS_PX = 92
 
 /**
  * leaflet.markercluster `iconCreateFunction(cluster)` receives a MarkerClusterGroup-compatible cluster.
  */
 export interface RentaraClusterLike {
   getChildCount(): number
+  getAllChildMarkers(): L.Marker[]
 }
 
-/** Light sky → deep Renta blue — macro clusters (density). */
-export function densityBlueGradient(childCount: number): { fill: string; stroke: string } {
-  const t = Math.min(1, Math.log1p(childCount) / Math.log1p(80))
-  const r = Math.round(147 + (26 - 147) * t)
-  const g = Math.round(197 + (86 - 197) * t)
-  const b = Math.round(253 + (219 - 253) * t)
-  const fill = `rgb(${r}, ${g}, ${b})`
-  const stroke = `rgba(15, 23, 42, ${0.2 + t * 0.25})`
-  return { fill, stroke }
+/** Size tier: drives the count bubble size and the density halo (see `.rentara-cluster` in index.css). */
+function clusterTier(n: number): 'sm' | 'md' | 'lg' {
+  if (n < 5) return 'sm'
+  if (n < 15) return 'md'
+  return 'lg'
 }
 
-function microClusterDims(n: number): {
-  fill: string
-  stroke: string
-  w: number
-  h: number
-  numFs: number
-  capFs: number
-} {
-  return {
-    fill: '#0d9488',
-    stroke: 'rgba(13,148,136,0.95)',
-    w: Math.max(40, Math.min(52, 30 + String(n).length * 12)),
-    h: 38,
-    numFs: n >= 100 ? 12 : 13,
-    capFs: 7,
+const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+
+/** Most common pickup area among children, trimmed to the city part ("Makati, Metro Manila" → "Makati"). */
+function dominantArea(markers: L.Marker[]): string | null {
+  const counts = new Map<string, number>()
+  for (const m of markers) {
+    const label = m.options.explorePickupAreaLabel?.split(',')[0]?.trim()
+    if (label) counts.set(label, (counts.get(label) ?? 0) + 1)
   }
-}
-
-function macroClusterDims(n: number): {
-  fill: string
-  stroke: string
-  w: number
-  h: number
-  numFs: number
-  capFs: number
-} {
-  const { fill, stroke } = densityBlueGradient(n)
-  const digits = String(n).length
-  const w = Math.min(76, Math.max(52, 38 + digits * 10))
-  const h = 46
-  const numFs = n >= 100 ? 14 : n >= 10 ? 15 : 16
-  return { fill, stroke, w, h, numFs, capFs: digits >= 3 ? 7 : 8 }
+  let best: string | null = null
+  let bestN = 0
+  for (const [label, c] of counts) {
+    if (c > bestN) {
+      best = label
+      bestN = c
+    }
+  }
+  return best
 }
 
 /**
- * Cluster “mini card”: count + caption so clusters read as “grouped rentals”, not opaque dots.
+ * Cluster pill: count bubble + "from ₱X" (cheapest inside) + car / two-wheeler mix, so a cluster answers
+ * "how many, how cheap, what kind" before the user zooms in. One style for every size; bigger groups get a halo.
  */
 export function createRentaraDensityClusterIcon(cluster: RentaraClusterLike): L.DivIcon {
   const n = cluster.getChildCount()
-  const micro = n < RENTARA_CLUSTER_MICRO_STYLE_BELOW_N
-  const d = micro ? microClusterDims(n) : macroClusterDims(n)
-  const { fill, stroke, w, h, numFs, capFs } = d
+  const markers = cluster.getAllChildMarkers()
 
-  const captionMicro = 'Nearby'
-  const captionMacro = 'Rentals'
-  const caption = micro ? captionMicro : captionMacro
+  let cars = 0
+  let bikes = 0
+  let minPrice = Infinity
+  for (const m of markers) {
+    if (m.options.exploreVehicleBucket === 'two_wheeler') bikes += 1
+    else cars += 1
+    const p = m.options.explorePricePerDay
+    if (typeof p === 'number' && p < minPrice) minPrice = p
+  }
+  const hasPrice = Number.isFinite(minPrice)
+  const priceShort = hasPrice ? formatExplorePriceDayShort(minPrice) : null
+  const area = dominantArea(markers)
 
-  const pluralN = `${n}`
-  const aria = `${
-    n === 1
-      ? 'One rental grouped in this circle'
-      : `${pluralN} rentals grouped together in this circle`
-  }. Tap the cluster or zoom in to browse individual ₱ pins.`
-  const hoverTitle =
-    n === 1
-      ? `1 rental clustered here · Tap circle to zoom in on this area`
-      : `${pluralN} rentals clustered in this circle · Tap to zoom in closer`
+  const mixPart = (bucket: 'car' | 'two_wheeler', label: string) =>
+    `<span class="rentara-cluster__mix-item">${exploreMapVehicleGlyphSvg(bucket, 12)}${label}</span>`
+  const mix =
+    cars && bikes
+      ? mixPart('car', String(cars)) + mixPart('two_wheeler', String(bikes))
+      : bikes
+        ? mixPart('two_wheeler', bikes === 1 ? 'Bike' : 'Bikes')
+        : mixPart('car', cars === 1 ? 'Car' : 'Cars')
 
-  const microClass = micro ? 'rentara-cluster-icon--micro' : 'rentara-cluster-icon--macro'
-  const borderW = micro ? 1.5 : 2
-  const shadow = micro
-    ? '0 2px 8px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.35)'
-    : '0 2px 12px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.35)'
+  const carsText = `${cars} car${cars === 1 ? '' : 's'}`
+  const bikesText = `${bikes} two-wheeler${bikes === 1 ? '' : 's'}`
+  const what = cars && bikes ? `${carsText} and ${bikesText}` : bikes ? bikesText : carsText
+  const summary = [
+    `${n} rental${n === 1 ? '' : 's'}${area ? ` around ${area}` : ''}`,
+    what,
+    priceShort ? `from ${priceShort}/day` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  const label = `${summary}. Click to zoom in.`
 
-  const html = `
-<div class="rentara-cluster-icon ${microClass}"
-  aria-label="${aria.replace(/"/g, '&quot;')}"
-  title="${hoverTitle.replace(/"/g, '&quot;')}"
-  style="
-  box-sizing:border-box;
-  width:${w}px;
-  min-height:${h}px;
-  border-radius:${Math.round(Math.min(w, h) / 2)}px;
-  background:${fill};
-  border:${borderW}px solid ${stroke};
-  box-shadow:${shadow};
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:1px;
-  padding:6px ${micro ? '7px' : '9px'};
-  cursor:pointer;
-  font-family:system-ui,-apple-system,sans-serif;
-  font-weight:800;
-  line-height:1;
-  color:#fff;
-">
-  <span class="rentara-cluster-count" style="
-    font-size:${numFs}px;
-    letter-spacing:-0.02em;
-    text-shadow:0 1px 2px rgba(0,0,0,${micro ? '0.2' : '0.22'});
-  ">${n}</span>
-  <span class="rentara-cluster-caption" style="
-    font-size:${capFs}px;
-    font-weight:700;
-    letter-spacing:${micro ? '0.1em' : '0.12em'};
-    text-transform:uppercase;
-    opacity:0.95;
-    white-space:nowrap;
-    margin-top:${micro ? '-1px' : '0'};
-    text-shadow:0 1px 1px rgba(0,0,0,0.15);
-  ">${caption}</span>
-</div>`.trim()
+  const html = `<div class="rentara-cluster" data-tier="${clusterTier(n)}" role="button" aria-label="${escapeAttr(label)}" title="${escapeAttr(label)}">
+  <span class="rentara-cluster__count">${n}</span>
+  <span class="rentara-cluster__body">
+    ${priceShort ? `<span class="rentara-cluster__price"><span class="rentara-cluster__from">from</span>${priceShort}</span>` : ''}
+    <span class="rentara-cluster__mix">${mix}</span>
+  </span>
+</div>`
 
+  // Zero-size anchor at the cluster centre; the pill centres itself with CSS so its width can follow its content.
   return L.divIcon({
     className: 'rentara-cluster-marker rentara-cluster-marker--pill',
     html,
-    iconSize: [w, h],
-    iconAnchor: [Math.round(w / 2), Math.round(h / 2)],
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
   })
 }

@@ -80,6 +80,14 @@ const EXPLORE_CORE_ICONS = {
   map: <MapOutlined fontSize="small" />,
 } as const
 
+/**
+ * Viewport-height tiers: the desktop rail tightens spacing and drops secondary copy so the whole
+ * nav fits on short laptop screens without a scrollbar. Later tiers override earlier ones.
+ */
+const SHORT_VH = '@media (max-height: 900px)'
+const SHORTER_VH = '@media (max-height: 740px)'
+const TINY_VH = '@media (max-height: 620px)'
+
 function SectionLabel({ children }: { children: string }) {
   return (
     <Typography
@@ -95,6 +103,9 @@ function SectionLabel({ children }: { children: string }) {
         textTransform: 'uppercase',
         color: 'text.secondary',
         opacity: 0.8,
+        [SHORT_VH]: { pt: 1.25, pb: 0.5 },
+        [SHORTER_VH]: { pt: 0.75, pb: 0.25 },
+        [TINY_VH]: { display: 'none' },
       }}
     >
       {children}
@@ -134,6 +145,8 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
       transition: 'color 0.16s ease',
     },
     '&:hover .MuiListItemIcon-root': { color: selected ? primary : theme.palette.text.primary },
+    // Icon-only rail: labels live in the hover tooltip instead.
+    ...(rail ? { '& .MuiListItemText-root': { display: 'none' } } : {}),
     '&:active': {
       transform: 'scale(0.98)',
     },
@@ -141,6 +154,8 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
       outline: 'none',
       boxShadow: `0 0 0 3px ${alpha(primary, 0.32)}`,
     },
+    [SHORT_VH]: { minHeight: 40, py: 0.5 },
+    [SHORTER_VH]: { minHeight: 34, py: 0.25, mb: 0 },
     ...(selected
       ? {
           '&::before': {
@@ -198,12 +213,17 @@ function SignInCard({ onAuthOpen, onNavigate }: { onAuthOpen?: () => void; onNav
         bgcolor: (th) => alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.14 : 0.06),
         border: '1px solid',
         borderColor: (th) => alpha(th.palette.primary.main, 0.16),
+        [SHORTER_VH]: { p: 1.25 },
       }}
     >
       <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', letterSpacing: '-0.01em', lineHeight: 1.3 }}>
         {t('nav.signInCardTitle')}
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontSize: '0.8125rem', lineHeight: 1.45 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mt: 0.5, fontSize: '0.8125rem', lineHeight: 1.45, [SHORT_VH]: { display: 'none' } }}
+      >
         {t('nav.signInCardBody')}
       </Typography>
       <Button
@@ -221,7 +241,8 @@ function SignInCard({ onAuthOpen, onNavigate }: { onAuthOpen?: () => void; onNav
         fullWidth
         onPointerDown={() => prefetchAuthDialogChunk()}
         onClick={open}
-        sx={{ mt: 0.25, minHeight: 34, fontWeight: 700, borderRadius: `${rhRadius.md}px` }}
+        // Same dialog as Sign in; the top bar's Get Started covers it when height is tight.
+        sx={{ mt: 0.25, minHeight: 34, fontWeight: 700, borderRadius: `${rhRadius.md}px`, [SHORTER_VH]: { display: 'none' } }}
       >
         {t('nav.createAccount')}
       </Button>
@@ -257,6 +278,8 @@ function HostPromoCard({ onNavigate }: { onNavigate?: () => void }) {
         },
         '&:hover .host-arrow': { transform: 'translateX(2px)', color: 'primary.main' },
         '&:focus-visible': { outline: 'none', boxShadow: (th) => `0 0 0 3px ${alpha(th.palette.primary.main, 0.32)}` },
+        [SHORTER_VH]: { py: 1 },
+        [TINY_VH]: { display: 'none' },
       }}
     >
       <Box
@@ -275,7 +298,11 @@ function HostPromoCard({ onNavigate }: { onNavigate?: () => void }) {
       </Box>
       <Box sx={{ minWidth: 0, flex: 1 }}>
         <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', lineHeight: 1.25 }}>{t('nav.hostCardTitle')}</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.35 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', lineHeight: 1.35, [SHORT_VH]: { display: 'none' } }}
+        >
           {t('nav.hostCardBody')}
         </Typography>
       </Box>
@@ -571,7 +598,17 @@ export default function AppNavigationList({
       {list}
       {showHostPromo || showSignIn ? (
         // Pinned to the bottom of the flex-column nav container; scrolls with the list when space is short.
-        <Box sx={{ mt: 'auto', pt: 1.5, pb: 1.25, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box
+          sx={{
+            mt: 'auto',
+            pt: 1.5,
+            pb: 1.25,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            [SHORTER_VH]: { pt: 0.75, pb: 0.75, gap: 0.75 },
+          }}
+        >
           {showHostPromo ? <HostPromoCard onNavigate={onNavigate} /> : null}
           {showSignIn ? <SignInCard onAuthOpen={onAuthOpen} onNavigate={onNavigate} /> : null}
         </Box>
@@ -626,24 +663,14 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
         sx={{
           flexShrink: 0,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          gap: 0.5,
-          py: 1,
+          justifyContent: 'center',
+          minHeight: 64,
           borderBottom: 1,
           borderColor: 'divider',
+          boxSizing: 'border-box',
         }}
       >
-        <Tooltip title={t('nav.expandNav')} placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
-          <IconButton
-            aria-label={t('nav.expandNav')}
-            size="small"
-            onClick={() => setMapNavCollapsed(false)}
-            sx={{ color: 'text.secondary' }}
-          >
-            <ChevronRight fontSize="small" />
-          </IconButton>
-        </Tooltip>
         <Box
           component={RouterLink}
           to="/"
@@ -665,14 +692,36 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
       </Box>
     ) : (
       <Box
-        sx={{
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          minHeight: { md: 64 },
-          borderBottom: 1,
-          borderColor: 'divider',
-          boxSizing: 'border-box',
+        sx={(theme) => {
+          const primary = theme.palette.primary.main
+          const dark = theme.palette.mode === 'dark'
+          return {
+            position: 'relative',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: { md: 64 },
+            px: 1.5,
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            // Soft brand glow behind the mark + a faint top wash, so the header reads as "the brand" not a blank bar.
+            background: [
+              `radial-gradient(90px 56px at 26% 55%, ${alpha(primary, dark ? 0.3 : 0.18)}, transparent 75%)`,
+              `radial-gradient(160px 70px at 70% 0%, ${alpha('#3B82F6', dark ? 0.16 : 0.08)}, transparent 80%)`,
+              `linear-gradient(180deg, ${alpha(primary, dark ? 0.1 : 0.05)}, transparent)`,
+            ].join(', '),
+            // Gradient hairline instead of a flat divider: brand blue in the middle, fading at the edges.
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: '1px',
+              background: `linear-gradient(90deg, ${theme.palette.divider}, ${alpha(primary, 0.6)} 50%, ${theme.palette.divider})`,
+            },
+          }
         }}
       >
         <Box
@@ -680,35 +729,59 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           to="/"
           className="rentara-brand-lockup"
           sx={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'flex-start',
-            flex: 1,
-            minWidth: 0,
-            px: { xs: 2, md: 2.5 },
-            py: 0,
+            px: 1.25,
+            py: 0.5,
+            borderRadius: `${rhRadius.md}px`,
             textDecoration: 'none',
             color: 'inherit',
             transition: NAV_MOTION,
-            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06) },
+            '&:focus-visible': {
+              outline: 'none',
+              boxShadow: (theme) => `0 0 0 3px ${alpha(theme.palette.primary.main, 0.32)}`,
+            },
           }}
         >
           <RentaraLogoMark size="md" variant="navLockup" showTextFallback />
         </Box>
-        {isMapRoute ? (
-          <Tooltip title={t('nav.collapseNav')} placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
-            <IconButton
-              aria-label={t('nav.collapseNav')}
-              size="small"
-              onClick={() => setMapNavCollapsed(true)}
-              sx={{ mr: 1, flexShrink: 0, color: 'text.secondary' }}
-            >
-              <ChevronLeft fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        ) : null}
       </Box>
     )
+
+  // Collapse / expand toggle (map only), pinned under the nav so it never competes with the logo.
+  const toggleLabel = rail ? t('nav.expandNav') : t('nav.collapseNav')
+  const toggleRow = isMapRoute ? (
+    <Box
+      sx={{
+        flexShrink: 0,
+        display: 'flex',
+        justifyContent: rail ? 'center' : 'flex-end',
+        px: rail ? 0 : 1.25,
+        py: 1,
+        borderTop: 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Tooltip title={toggleLabel} placement="right" enterDelay={0} enterNextDelay={0} leaveDelay={0}>
+        <IconButton
+          aria-label={toggleLabel}
+          size="small"
+          onClick={() => setMapNavCollapsed(!rail)}
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: `${rhRadius.md}px`,
+            color: 'text.secondary',
+            transition: NAV_MOTION,
+            '&:hover': { color: 'text.primary', bgcolor: (theme) => alpha(theme.palette.text.primary, 0.06) },
+          }}
+        >
+          {rail ? <ChevronRight fontSize="small" /> : <ChevronLeft fontSize="small" />}
+        </IconButton>
+      </Tooltip>
+    </Box>
+  ) : null
 
   return (
     <Box
@@ -743,7 +816,9 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           py: 0.5,
           display: 'flex',
           flexDirection: 'column',
-          scrollbarWidth: 'thin',
+          // Height tiers above make the nav fit; on extreme heights it still wheel/touch-scrolls, but never shows a bar.
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
         }}
       >
         <AppNavigationList
@@ -752,6 +827,8 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
           density={rail ? 'rail' : 'comfortable'}
         />
       </Box>
+
+      {toggleRow}
     </Box>
   )
 }
