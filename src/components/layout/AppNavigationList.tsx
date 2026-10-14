@@ -1,4 +1,5 @@
 import ChevronLeft from '@mui/icons-material/ChevronLeft'
+import ArrowForward from '@mui/icons-material/ArrowForward'
 import ChevronRight from '@mui/icons-material/ChevronRight'
 import DirectionsCarOutlined from '@mui/icons-material/DirectionsCarOutlined'
 import ElectricMopedOutlined from '@mui/icons-material/ElectricMopedOutlined'
@@ -17,6 +18,7 @@ import {
   alpha,
   Badge,
   Box,
+  Button,
   IconButton,
   List,
   ListItemButton,
@@ -28,7 +30,7 @@ import {
 import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
 import type { Theme } from '@mui/material/styles'
 import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
 
 import RentaraLogoMark from '../brand/RentaraLogoMark'
@@ -36,7 +38,9 @@ import { prefetchAuthDialogChunk } from '../../lib/prefetchAuthDialog'
 import { prefetchExploreNavChunks, prefetchPath } from '../../lib/routePrefetch'
 import { useT } from '@/hooks/useT'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useCarsStore } from '../../store/useCarsStore'
 import { useChatUnreadForCurrentUser } from '../../store/useChatStore'
+import { rhRadius } from '../../theme/tokens'
 import type { VehicleType } from '../../types'
 import { resolveNavItemSelected } from './navSelection'
 
@@ -82,13 +86,15 @@ function SectionLabel({ children }: { children: string }) {
       component="div"
       variant="caption"
       sx={{
-        px: 2,
-        pt: 2,
-        pb: 1,
+        px: 2.75,
+        pt: 2.25,
+        pb: 0.75,
         fontWeight: 700,
-        letterSpacing: '0.06em',
+        fontSize: '0.6875rem',
+        letterSpacing: '0.12em',
         textTransform: 'uppercase',
         color: 'text.secondary',
+        opacity: 0.8,
       }}
     >
       {children}
@@ -99,38 +105,41 @@ function SectionLabel({ children }: { children: string }) {
 const NAV_MOTION = 'background-color 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease'
 
 function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
-  const iconColor = selected ? theme.palette.primary.main : theme.palette.text.secondary
+  const primary = theme.palette.primary.main
+  const selectedBg = alpha(primary, theme.palette.mode === 'dark' ? 0.2 : 0.1)
+  const hoverBg = selected
+    ? alpha(primary, theme.palette.mode === 'dark' ? 0.26 : 0.14)
+    : alpha(theme.palette.text.primary, 0.05)
   return {
     position: 'relative' as const,
-    mx: rail ? 0.5 : 1,
-    borderRadius: 2,
-    py: rail ? 1 : 1.15,
+    mx: rail ? 0.75 : 1.25,
+    borderRadius: `${rhRadius.md}px`,
+    py: rail ? 1 : 0.875,
     px: rail ? 0.5 : undefined,
-    pr: rail ? undefined : 1.5,
-    pl: rail ? undefined : 1.25,
+    pr: rail ? undefined : 1.25,
+    pl: rail ? undefined : 1.5,
     mb: 0.25,
-    minHeight: 48,
+    minHeight: 44,
     justifyContent: rail ? 'center' : undefined,
     transition: NAV_MOTION,
-    bgcolor: selected ? alpha(theme.palette.primary.main, 0.12) : undefined,
-    color: selected ? theme.palette.primary.main : undefined,
-    fontWeight: selected ? 700 : undefined,
+    color: selected ? primary : theme.palette.text.primary,
+    bgcolor: selected ? selectedBg : 'transparent',
+    '&.Mui-selected': { bgcolor: selectedBg },
+    '&.Mui-selected:hover, &:hover': { bgcolor: hoverBg },
     '& .MuiListItemIcon-root': {
-      minWidth: rail ? 0 : undefined,
+      minWidth: rail ? 0 : 36,
       justifyContent: rail ? 'center' : undefined,
       margin: rail ? 0 : undefined,
-      color: iconColor,
+      color: selected ? primary : theme.palette.text.secondary,
       transition: 'color 0.16s ease',
     },
-    '&:hover': {
-      bgcolor: alpha(theme.palette.primary.main, selected ? 0.16 : 0.06),
-    },
+    '&:hover .MuiListItemIcon-root': { color: selected ? primary : theme.palette.text.primary },
     '&:active': {
       transform: 'scale(0.98)',
     },
     '&:focus-visible': {
       outline: 'none',
-      boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.38)}`,
+      boxShadow: `0 0 0 3px ${alpha(primary, 0.32)}`,
     },
     ...(selected
       ? {
@@ -138,15 +147,141 @@ function navItemSx(theme: Theme, selected: boolean, rail: boolean) {
             content: '""',
             position: 'absolute',
             left: 0,
-            top: rail ? 10 : 8,
-            bottom: rail ? 10 : 8,
+            top: rail ? 10 : 11,
+            bottom: rail ? 10 : 11,
             width: 3,
             borderRadius: '0 3px 3px 0',
-            bgcolor: theme.palette.primary.main,
+            bgcolor: primary,
           },
         }
       : {}),
   }
+}
+
+/** Muted count pill at the end of a row (listings per vehicle type). */
+function CountPill({ value, selected }: { value: number; selected: boolean }) {
+  return (
+    <Box
+      component="span"
+      sx={{
+        ml: 1,
+        minWidth: 26,
+        px: 0.875,
+        py: 0.125,
+        borderRadius: `${rhRadius.pill}px`,
+        textAlign: 'center',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        fontVariantNumeric: 'tabular-nums',
+        color: selected ? 'primary.main' : 'text.secondary',
+        bgcolor: (th) => (selected ? alpha(th.palette.primary.main, 0.12) : alpha(th.palette.text.primary, 0.06)),
+      }}
+    >
+      {value}
+    </Box>
+  )
+}
+
+/** Guest sign-in card: replaces two nav rows that both opened the same dialog. */
+function SignInCard({ onAuthOpen, onNavigate }: { onAuthOpen?: () => void; onNavigate?: () => void }) {
+  const t = useT()
+  const open = () => {
+    onAuthOpen?.()
+    onNavigate?.()
+  }
+  return (
+    <Box
+      sx={{
+        mx: 1.25,
+        p: 1.75,
+        borderRadius: `${rhRadius.lg}px`,
+        bgcolor: (th) => alpha(th.palette.primary.main, th.palette.mode === 'dark' ? 0.14 : 0.06),
+        border: '1px solid',
+        borderColor: (th) => alpha(th.palette.primary.main, 0.16),
+      }}
+    >
+      <Typography sx={{ fontWeight: 800, fontSize: '0.9375rem', letterSpacing: '-0.01em', lineHeight: 1.3 }}>
+        {t('nav.signInCardTitle')}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontSize: '0.8125rem', lineHeight: 1.45 }}>
+        {t('nav.signInCardBody')}
+      </Typography>
+      <Button
+        fullWidth
+        variant="contained"
+        disableElevation
+        onPointerDown={() => prefetchAuthDialogChunk()}
+        onClick={open}
+        startIcon={<LoginOutlined fontSize="small" />}
+        sx={{ mt: 1.25, minHeight: 38, fontWeight: 700, borderRadius: `${rhRadius.md}px` }}
+      >
+        {t('nav.signIn')}
+      </Button>
+      <Button
+        fullWidth
+        onPointerDown={() => prefetchAuthDialogChunk()}
+        onClick={open}
+        sx={{ mt: 0.25, minHeight: 34, fontWeight: 700, borderRadius: `${rhRadius.md}px` }}
+      >
+        {t('nav.createAccount')}
+      </Button>
+    </Box>
+  )
+}
+
+/** Compact hosting promo for anyone who is not a host yet. */
+function HostPromoCard({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useT()
+  return (
+    <Box
+      component={RouterLink}
+      to="/become-a-host"
+      onPointerDown={() => prefetchPath('/become-a-host')}
+      onClick={() => onNavigate?.()}
+      sx={{
+        mx: 1.25,
+        p: 1.25,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.25,
+        borderRadius: `${rhRadius.lg}px`,
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+        color: 'text.primary',
+        textDecoration: 'none',
+        transition: NAV_MOTION,
+        '&:hover': {
+          borderColor: (th) => alpha(th.palette.primary.main, 0.4),
+          boxShadow: (th) => `0 6px 18px ${alpha(th.palette.common.black, 0.06)}`,
+        },
+        '&:hover .host-arrow': { transform: 'translateX(2px)', color: 'primary.main' },
+        '&:focus-visible': { outline: 'none', boxShadow: (th) => `0 0 0 3px ${alpha(th.palette.primary.main, 0.32)}` },
+      }}
+    >
+      <Box
+        sx={{
+          width: 36,
+          height: 36,
+          flexShrink: 0,
+          borderRadius: `${rhRadius.md}px`,
+          display: 'grid',
+          placeItems: 'center',
+          color: '#059669',
+          bgcolor: (th) => alpha('#10B981', th.palette.mode === 'dark' ? 0.2 : 0.12),
+        }}
+      >
+        <StorefrontOutlined fontSize="small" />
+      </Box>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '0.875rem', lineHeight: 1.25 }}>{t('nav.hostCardTitle')}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.35 }}>
+          {t('nav.hostCardBody')}
+        </Typography>
+      </Box>
+      <ArrowForward className="host-arrow" sx={{ fontSize: 18, color: 'text.secondary', transition: NAV_MOTION }} />
+    </Box>
+  )
 }
 
 export type AppNavigationListProps = {
@@ -170,7 +305,13 @@ export default function AppNavigationList({
   const search = location.search
   const user = useAuthStore((s) => s.user)
   const chatUnread = useChatUnreadForCurrentUser()
+  const cars = useCarsStore((s) => s.cars)
   const t = useT()
+  const typeCounts = useMemo(() => {
+    const out: Partial<Record<VehicleType, number>> = {}
+    for (const c of cars) out[c.vehicleType] = (out[c.vehicleType] ?? 0) + 1
+    return out
+  }, [cars])
 
   useLayoutEffect(() => {
     prefetchExploreNavChunks()
@@ -196,7 +337,7 @@ export default function AppNavigationList({
     { key: 'home', label: t('nav.home'), kind: 'link', to: '/', icon: EXPLORE_CORE_ICONS.home },
     { key: 'browse', label: t('nav.browse'), kind: 'link', to: '/search', icon: EXPLORE_CORE_ICONS.browse },
     { key: 'map', label: t('nav.map'), kind: 'link', to: '/map', icon: EXPLORE_CORE_ICONS.map },
-    hostRow,
+    ...(user?.isHost || rail ? [hostRow] : []),
   ]
 
   const accountLinks: NavRow[] = user
@@ -259,7 +400,7 @@ export default function AppNavigationList({
           }}
           sx={(theme) => navItemSx(theme, false, rail)}
         >
-          <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>{row.icon}</ListItemIcon>
+          <ListItemIcon>{row.icon}</ListItemIcon>
           <ListItemText primary={row.label} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
         </ListItemButton>
       )
@@ -276,7 +417,7 @@ export default function AppNavigationList({
           }}
           sx={(theme) => navItemSx(theme, false, rail)}
         >
-          <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>{row.icon}</ListItemIcon>
+          <ListItemIcon>{row.icon}</ListItemIcon>
           <ListItemText primary={row.label} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
         </ListItemButton>
       )
@@ -293,7 +434,7 @@ export default function AppNavigationList({
         onClick={() => onNavigate?.()}
         sx={(theme) => navItemSx(theme, selected, rail)}
       >
-        <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
+        <ListItemIcon>
           {row.key === 'messages' && chatUnread > 0 ? (
             <Badge
               color="error"
@@ -315,12 +456,12 @@ export default function AppNavigationList({
     return rail ? wrapRail(row.key, row.label, btn) : btn
   }
 
-  return (
+  const list = (
     <List component="nav" disablePadding sx={{ py: 1, ...(rail ? { px: 0.25 } : {}) }}>
       {!rail ? <SectionLabel>{t('nav.explore')}</SectionLabel> : null}
       {exploreNav.map(renderRow)}
 
-      {!user ? (
+      {(
         <>
           {!rail ? <SectionLabel>{t('nav.vehicles')}</SectionLabel> : null}
           {VEHICLE_QUICK_FILTER.map((row) => {
@@ -336,17 +477,20 @@ export default function AppNavigationList({
                 onClick={() => onNavigate?.()}
                 sx={(theme) => navItemSx(theme, selected, rail)}
               >
-                <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>{row.icon}</ListItemIcon>
+                <ListItemIcon>{row.icon}</ListItemIcon>
                 <ListItemText
                   primary={label}
                   primaryTypographyProps={{ fontWeight: selected ? 700 : 600, fontSize: '0.9375rem' }}
                 />
+                {!rail && (typeCounts[row.vt] ?? 0) > 0 ? (
+                  <CountPill value={typeCounts[row.vt] ?? 0} selected={selected} />
+                ) : null}
               </ListItemButton>
             )
             return rail ? wrapRail(row.key, label, vbtn) : vbtn
           })}
         </>
-      ) : null}
+      )}
 
       {user ? (
         <>
@@ -362,7 +506,7 @@ export default function AppNavigationList({
                 }}
                 sx={(theme) => navItemSx(theme, false, rail)}
               >
-                <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
+                <ListItemIcon>
                   <LogoutOutlined fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={t('nav.signOut')} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
@@ -371,9 +515,8 @@ export default function AppNavigationList({
             return rail ? wrapRail('sign-out', t('nav.signOut'), out) : out
           })()}
         </>
-      ) : (
+      ) : rail ? (
         <>
-          {!rail ? <SectionLabel>{t('nav.access')}</SectionLabel> : null}
           {(() => {
             const signIn = (
               <ListItemButton
@@ -385,7 +528,7 @@ export default function AppNavigationList({
                 }}
                 sx={(theme) => navItemSx(theme, false, rail)}
               >
-                <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
+                <ListItemIcon>
                   <LoginOutlined fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={t('nav.signIn')} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
@@ -401,27 +544,39 @@ export default function AppNavigationList({
                 }}
                 sx={(theme) => navItemSx(theme, false, rail)}
               >
-                <ListItemIcon sx={rail ? undefined : { minWidth: 40 }}>
+                <ListItemIcon>
                   <PersonAddOutlined fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary={t('nav.getStarted')} primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9375rem' }} />
               </ListItemButton>
             )
-            return rail ? (
+            return (
               <>
                 {wrapRail('sign-in', t('nav.signIn'), signIn)}
                 {wrapRail('get-started', t('nav.getStarted'), getStarted)}
               </>
-            ) : (
-              <>
-                {signIn}
-                {getStarted}
-              </>
             )
           })()}
         </>
-      )}
+      ) : null}
     </List>
+  )
+
+  if (rail) return list
+
+  const showHostPromo = !user?.isHost
+  const showSignIn = !user
+  return (
+    <>
+      {list}
+      {showHostPromo || showSignIn ? (
+        // Pinned to the bottom of the flex-column nav container; scrolls with the list when space is short.
+        <Box sx={{ mt: 'auto', pt: 1.5, pb: 1.25, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {showHostPromo ? <HostPromoCard onNavigate={onNavigate} /> : null}
+          {showSignIn ? <SignInCard onAuthOpen={onAuthOpen} onNavigate={onNavigate} /> : null}
+        </Box>
+      ) : null}
+    </>
   )
 }
 
@@ -564,7 +719,11 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
         flexDirection: 'column',
         width: navWidth,
         flexShrink: 0,
-        alignSelf: 'stretch',
+        // Sticky full-height rail: stays visible while the page scrolls, cards pinned to its bottom.
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        alignSelf: 'flex-start',
         minHeight: 0,
         overflow: 'hidden',
         borderRight: 1,
@@ -575,7 +734,18 @@ export function AppNavSidebar({ onAuthOpen, onLogout }: { onAuthOpen: () => void
     >
       {brandRow}
 
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', py: 0.5 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          py: 0.5,
+          display: 'flex',
+          flexDirection: 'column',
+          scrollbarWidth: 'thin',
+        }}
+      >
         <AppNavigationList
           onAuthOpen={onAuthOpen}
           onLogout={onLogout}

@@ -1,20 +1,29 @@
-import MapOutlined from '@mui/icons-material/MapOutlined'
+import ChatBubbleOutline from '@mui/icons-material/ChatBubbleOutline'
+import Close from '@mui/icons-material/Close'
+import DashboardOutlined from '@mui/icons-material/DashboardOutlined'
+import LogoutOutlined from '@mui/icons-material/LogoutOutlined'
+import LuggageOutlined from '@mui/icons-material/LuggageOutlined'
 import MenuIcon from '@mui/icons-material/Menu'
 import MyLocation from '@mui/icons-material/MyLocation'
 import NotificationsOutlined from '@mui/icons-material/NotificationsOutlined'
+import SearchRounded from '@mui/icons-material/SearchRounded'
+import StorefrontOutlined from '@mui/icons-material/StorefrontOutlined'
 import {
   AppBar,
   Badge,
   Box,
   Button,
+  ButtonBase,
   Divider,
   Drawer,
   IconButton,
+  ListItemIcon,
   Menu,
   MenuItem,
   Popover,
   Stack,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -155,7 +164,62 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
     setNotifEl(null)
   }, [location.pathname])
 
+  const onSearchPage = location.pathname.startsWith('/search')
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return
+      const el = e.target as HTMLElement | null
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return
+      if (onSearchPage) return
+      e.preventDefault()
+      navigate('/search')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [navigate, onSearchPage])
+
   const notifAria = `${t('nav.notifications')}${unread > 0 ? `, ${unread}` : ''}`
+  const closeAccountMenu = () => setAnchor(null)
+  const go = (to: string) => {
+    setAnchor(null)
+    navigate(to)
+  }
+  const menuIconSx = { minWidth: 36, color: 'text.secondary' } as const
+
+  const geoButton = (
+    <Tooltip title={geoActive ? t('nav.geoOn') : t('nav.geoOff')}>
+      <IconButton
+        onClick={() => openGeoDialog()}
+        aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
+        sx={{
+          minWidth: 44,
+          minHeight: 44,
+          color: geoActive ? 'primary.main' : 'text.secondary',
+          bgcolor: geoActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+          '&:hover': { bgcolor: alpha(theme.palette.primary.main, geoActive ? 0.16 : 0.06) },
+        }}
+      >
+        <MyLocation fontSize="small" />
+      </IconButton>
+    </Tooltip>
+  )
+
+  const bellButton = (
+    <Tooltip title={t('nav.notifications')}>
+      <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44, color: 'text.secondary' }}>
+        <Badge
+          color="error"
+          badgeContent={unread > 9 ? '9+' : unread}
+          invisible={unread === 0}
+          overlap="circular"
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 18, height: 18, fontWeight: 700 } }}
+        >
+          <NotificationsOutlined />
+        </Badge>
+      </IconButton>
+    </Tooltip>
+  )
 
   return (
     <>
@@ -165,39 +229,18 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
         elevation={0}
         sx={{
           color: 'text.primary',
-          border: 'none',
           overflow: 'visible',
-          backgroundColor: theme.palette.background.paper,
-          backgroundImage:
-            theme.palette.mode === 'dark'
-              ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, elevated ? 0.16 : 0.26)} 0%, ${theme.palette.background.paper} 100%)`
-              : elevated
-                ? `linear-gradient(180deg, #D6E6FF 0%, ${theme.palette.background.paper} 100%)`
-                : `linear-gradient(180deg, #8FB6F5 0%, #C5DAFB 42%, #F4F8FF 78%, ${theme.palette.background.paper} 100%)`,
+          bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.82 : 0.88),
+          backgroundImage: 'none',
+          backdropFilter: 'saturate(180%) blur(14px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(14px)',
+          borderBottom: '1px solid',
+          borderColor: elevated ? 'divider' : alpha(theme.palette.divider, 0.6),
           boxShadow: elevated
-            ? `0 12px 28px ${alpha(theme.palette.common.black, theme.palette.mode === 'dark' ? 0.28 : 0.08)}, 0 1px 0 ${alpha(theme.palette.primary.main, 0.12)}`
-            : `inset 0 1px 0 ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.06 : 0.55)}`,
+            ? `0 8px 24px ${alpha(theme.palette.common.black, theme.palette.mode === 'dark' ? 0.32 : 0.06)}`
+            : 'none',
+          transition: 'box-shadow 200ms ease, border-color 200ms ease',
           pt: { xs: 'env(safe-area-inset-top, 0px)', md: 0 },
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            height: 1,
-            pointerEvents: 'none',
-            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.14 : 0.7)} 22%, ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.22 : 0.9)} 50%, ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.14 : 0.7)} 78%, transparent 100%)`,
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: elevated ? -16 : -12,
-            height: elevated ? 17 : 13,
-            pointerEvents: 'none',
-            background: `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.28)} 12%, ${alpha(theme.palette.primary.light, theme.palette.mode === 'dark' ? 0.55 : 0.85)} 50%, ${alpha(theme.palette.primary.main, 0.28)} 88%, transparent 100%) 0 0 / 100% 1px no-repeat, linear-gradient(180deg, ${alpha(theme.palette.primary.main, elevated ? 0.2 : 0.12)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 38%, transparent 100%)`,
-          },
         }}
       >
         <Toolbar
@@ -235,77 +278,91 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
             <RentaraLogoMark size="sm" variant="navLockup" />
           </Stack>
 
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="flex-end"
-            spacing={1}
-            sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, pr: 1 }}
-          >
-            <Button
-              component={RouterLink}
-              to="/map"
-              color="primary"
-              variant="text"
-              size="medium"
-              startIcon={<MapOutlined />}
-              onPointerDown={() => prefetchPath('/map')}
-              sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
-            >
-              {t('nav.map')}
-            </Button>
-          </Stack>
+          <Box sx={{ flex: 1, minWidth: 0, display: { xs: 'none', md: 'flex' }, alignItems: 'center', pr: 2 }}>
+            {!onSearchPage ? (
+              <ButtonBase
+                onClick={() => navigate('/search')}
+                onPointerDown={() => prefetchPath('/search')}
+                aria-label={t('nav.searchPlaceholder')}
+                aria-keyshortcuts="/"
+                sx={{
+                  width: '100%',
+                  maxWidth: 460,
+                  height: 44,
+                  px: 1.75,
+                  gap: 1.25,
+                  justifyContent: 'flex-start',
+                  borderRadius: `${rhRadius.pill}px`,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.06 : 0.03),
+                  color: 'text.secondary',
+                  transition: 'border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease',
+                  '&:hover': {
+                    borderColor: alpha(theme.palette.primary.main, 0.45),
+                    bgcolor: 'background.paper',
+                    boxShadow: rhElev.elev1,
+                  },
+                  '&.Mui-focusVisible': { boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.3)}` },
+                }}
+              >
+                <SearchRounded sx={{ fontSize: 22, color: 'primary.main' }} />
+                <Typography noWrap sx={{ fontSize: '0.9375rem', fontWeight: 500 }}>
+                  {t('nav.searchPlaceholder')}
+                </Typography>
+                <Box
+                  component="kbd"
+                  sx={{
+                    ml: 'auto',
+                    px: 0.875,
+                    py: 0.125,
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    fontFamily: 'inherit',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  /
+                </Box>
+              </ButtonBase>
+            ) : null}
+          </Box>
 
           {!isMd &&
             (!user ? (
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexShrink: 0 }}>
                 <LanguageSwitcher compact />
-                <IconButton
-                  onClick={() => openGeoDialog()}
-                  aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
-                  sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
-                >
-                  <MyLocation fontSize="small" />
-                </IconButton>
+                {geoButton}
+                <Divider orientation="vertical" flexItem sx={{ my: 1.5, mx: 0.5 }} />
                 <Button
                   variant="text"
+                  color="inherit"
                   onPointerDown={() => prefetchAuthDialogChunk()}
                   onClick={() => onAuthOpen()}
-                  sx={{ fontWeight: 600 }}
+                  sx={{ fontWeight: 700, borderRadius: `${rhRadius.md}px`, px: 1.75, minHeight: 40 }}
                 >
                   {t('nav.signIn')}
                 </Button>
                 <Button
                   variant="contained"
+                  disableElevation
                   onPointerDown={() => prefetchAuthDialogChunk()}
                   onClick={() => onAuthOpen()}
-                  sx={{ fontWeight: 600, borderRadius: 2, px: 2.5 }}
+                  sx={{ fontWeight: 700, borderRadius: `${rhRadius.md}px`, px: 2.25, minHeight: 40 }}
                 >
                   {t('nav.getStarted')}
                 </Button>
               </Stack>
             ) : (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <IconButton
-                  onClick={() => openGeoDialog()}
-                  aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
-                  sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
-                >
-                  <MyLocation fontSize="small" />
-                </IconButton>
+              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
                 <LanguageSwitcher compact />
-                <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
-                  <Badge
-                    color="error"
-                    badgeContent={unread > 9 ? '9+' : unread}
-                    invisible={unread === 0}
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 18, height: 18, fontWeight: 700 } }}
-                  >
-                    <NotificationsOutlined />
-                  </Badge>
-                </IconButton>
+                {geoButton}
+                {bellButton}
                 <IconButton
                   ref={accountMenuButtonRef}
                   onClick={(e) => setAnchor(e.currentTarget)}
@@ -339,11 +396,14 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                     sx: {
                       minWidth: 288,
                       maxWidth: 320,
-                      borderRadius: 2.5,
+                      mt: 1,
+                      borderRadius: `${rhRadius.lg}px`,
                       overflow: 'hidden',
                       border: 1,
                       borderColor: 'divider',
-                      boxShadow: (t) => `0 4px 24px ${alpha(t.palette.common.black, 0.1)}`,
+                      boxShadow: rhElev.elev2,
+                      '& .MuiMenuItem-root': { minHeight: 44, mx: 0.75, borderRadius: `${rhRadius.sm}px`, fontWeight: 600, fontSize: '0.9375rem' },
+                      '& .MuiMenu-list': { py: 0.75 },
                     },
                   }}
                 >
@@ -387,65 +447,81 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
                       {t('nav.viewProfile')}
                     </Button>
                   </Box>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchor(null)
-                      navigate('/notifications')
-                    }}
-                  >
-                    {t('nav.notifications')}
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchor(null)
-                      navigate('/messages')
-                    }}
-                  >
-                    {t('nav.messages')}
-                    {chatUnread > 0 ? ` (${chatUnread > 9 ? '9+' : chatUnread})` : ''}
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchor(null)
-                      navigate('/dashboard?nav=trips')
-                    }}
-                  >
+                  <MenuItem onClick={() => go('/dashboard?nav=trips')}>
+                    <ListItemIcon sx={menuIconSx}>
+                      <LuggageOutlined fontSize="small" />
+                    </ListItemIcon>
                     {t('nav.myTrips')}
                   </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      setAnchor(null)
-                      navigate('/dashboard?nav=profile')
-                    }}
-                  >
+                  <MenuItem onClick={() => go('/messages')}>
+                    <ListItemIcon sx={menuIconSx}>
+                      <ChatBubbleOutline fontSize="small" />
+                    </ListItemIcon>
+                    {t('nav.messages')}
+                    {chatUnread > 0 ? (
+                      <Box
+                        component="span"
+                        sx={{
+                          ml: 'auto',
+                          pl: 2,
+                        }}
+                      >
+                        <Box
+                          component="span"
+                          sx={{
+                            px: 0.875,
+                            py: 0.125,
+                            borderRadius: `${rhRadius.pill}px`,
+                            bgcolor: 'error.main',
+                            color: 'common.white',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {chatUnread > 9 ? '9+' : chatUnread}
+                        </Box>
+                      </Box>
+                    ) : null}
+                  </MenuItem>
+                  <MenuItem onClick={() => go('/notifications')}>
+                    <ListItemIcon sx={menuIconSx}>
+                      <NotificationsOutlined fontSize="small" />
+                    </ListItemIcon>
+                    {t('nav.notifications')}
+                  </MenuItem>
+                  <MenuItem onClick={() => go('/dashboard?nav=profile')}>
+                    <ListItemIcon sx={menuIconSx}>
+                      <DashboardOutlined fontSize="small" />
+                    </ListItemIcon>
                     {t('nav.dashboard')}
                   </MenuItem>
-                  {!user.isHost && (
-                    <MenuItem
-                      onClick={() => {
-                        setAnchor(null)
-                        navigate('/host')
-                      }}
-                    >
+                  {user.isHost ? (
+                    <MenuItem onClick={() => go('/host')}>
+                      <ListItemIcon sx={menuIconSx}>
+                        <StorefrontOutlined fontSize="small" />
+                      </ListItemIcon>
+                      {t('nav.hostDashboard')}
+                    </MenuItem>
+                  ) : (
+                    <MenuItem onClick={() => go('/become-a-host')}>
+                      <ListItemIcon sx={menuIconSx}>
+                        <StorefrontOutlined fontSize="small" />
+                      </ListItemIcon>
                       {t('nav.becomeAHost')}
                     </MenuItem>
                   )}
-                  <MenuItem
-                    onClick={() => {
-                      setAnchor(null)
-                      navigate('/host')
-                    }}
-                  >
-                    {t('nav.hostDashboard')}
-                  </MenuItem>
                   <Divider />
                   <MenuItem
                     onClick={() => {
-                      setAnchor(null)
+                      closeAccountMenu()
                       logout()
                       navigate('/')
                     }}
+                    sx={{ color: 'error.main' }}
                   >
+                    <ListItemIcon sx={{ ...menuIconSx, color: 'error.main' }}>
+                      <LogoutOutlined fontSize="small" />
+                    </ListItemIcon>
                     {t('nav.signOut')}
                   </MenuItem>
                 </Menu>
@@ -460,27 +536,8 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
               sx={{ ml: 'auto', flexShrink: 0, pl: { xs: 1, sm: 0.5 } }}
             >
               <LanguageSwitcher compact />
-              <IconButton
-                onClick={() => openGeoDialog()}
-                aria-label={geoActive ? t('nav.geoOn') : t('nav.geoOff')}
-                sx={{ minWidth: 44, minHeight: 44, color: geoActive ? 'primary.main' : 'action.active' }}
-              >
-                <MyLocation fontSize="small" />
-              </IconButton>
-              {user && (
-                <IconButton onClick={onNotificationBellClick} aria-label={notifAria} sx={{ minWidth: 44, minHeight: 44 }}>
-                  <Badge
-                    color="error"
-                    badgeContent={unread > 9 ? '9+' : unread}
-                    invisible={unread === 0}
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-                    sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 18, height: 18, fontWeight: 700 } }}
-                  >
-                    <NotificationsOutlined />
-                  </Badge>
-                </IconButton>
-              )}
+              {geoButton}
+              {user && bellButton}
               <IconButton
                 ref={mobileMenuButtonRef}
                 onClick={openMobileDrawer}
@@ -545,9 +602,9 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
         }}
         PaperProps={{
           sx: {
-            width: { xs: 'min(100vw - 40px, 320px)', sm: 300 },
-            borderTopLeftRadius: 16,
-            borderBottomLeftRadius: 16,
+            width: { xs: 'min(100vw - 40px, 320px)', sm: 320 },
+            borderTopLeftRadius: 20,
+            borderBottomLeftRadius: 20,
             borderLeft: 1,
             borderColor: 'divider',
             bgcolor: 'background.default',
@@ -557,16 +614,34 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
         <Box
           sx={{
             width: '100%',
-            pt: 2,
-            pb: `max(16px, env(safe-area-inset-bottom))`,
-            px: 0.5,
+            minHeight: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            pt: 'env(safe-area-inset-top, 0px)',
+            pb: `max(12px, env(safe-area-inset-bottom))`,
           }}
           role="navigation"
-          aria-label="Mobile navigation"
+          aria-label={t('nav.mobileNav')}
         >
-          <Typography variant="overline" sx={{ px: 2, fontWeight: 700, letterSpacing: '0.08em', color: 'primary.main' }}>
-            {t('nav.menu')}
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ px: 2, py: 1.25, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Box
+              component={RouterLink}
+              to="/"
+              onClick={closeMobileDrawer}
+              className="rentara-brand-lockup"
+              sx={{ display: 'inline-flex', textDecoration: 'none', color: 'inherit' }}
+            >
+              <RentaraLogoMark size="sm" variant="navLockup" />
+            </Box>
+            <IconButton onClick={closeMobileDrawer} aria-label={t('nav.closeMenu')} sx={{ minWidth: 44, minHeight: 44 }}>
+              <Close />
+            </IconButton>
+          </Stack>
           <AppNavigationList
             onNavigate={closeMobileDrawer}
             onAuthOpen={onAuthOpen}
