@@ -8,6 +8,13 @@ export const en = {
     filipino: 'Filipino',
   },
   nav: {
+    searchPlaceholder: 'Search cars & bikes by city',
+    closeMenu: 'Close menu',
+    createAccount: 'Create account',
+    signInCardTitle: 'Book faster with an account',
+    signInCardBody: 'Save rides, message hosts and track trips.',
+    hostCardTitle: 'Become a host',
+    hostCardBody: 'Earn with your car or bike',
     home: 'Home',
     browse: 'Browse vehicles',
     browseShort: 'Browse',

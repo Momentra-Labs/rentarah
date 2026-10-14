@@ -10,6 +10,13 @@ export const fil: Messages = {
     filipino: 'Filipino',
   },
   nav: {
+    searchPlaceholder: 'Maghanap ng kotse at motor ayon sa lungsod',
+    closeMenu: 'Isara ang menu',
+    createAccount: 'Gumawa ng account',
+    signInCardTitle: 'Mas mabilis mag-book kapag may account',
+    signInCardBody: 'I-save ang sasakyan, mag-message sa host at subaybayan ang biyahe.',
+    hostCardTitle: 'Maging host',
+    hostCardBody: 'Kumita gamit ang kotse o motor mo',
     home: 'Home',
     browse: 'Maghanap ng sasakyan',
     browseShort: 'Hanapin',
