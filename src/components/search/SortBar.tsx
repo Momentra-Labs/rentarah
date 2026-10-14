@@ -58,7 +58,7 @@ export default function SortBar({
             <Skeleton variant="text" animation="wave" width={180} sx={{ display: 'inline-block' }} />
           ) : (
             <>
-              <strong>{total}</strong> {t('search.vehiclesInRest', { area: areaLabel })}
+              <strong>{total}</strong> {t(total === 1 ? 'search.vehicleInRest' : 'search.vehiclesInRest', { area: areaLabel })}
             </>
           )}
         </Typography>

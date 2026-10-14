@@ -1,7 +1,6 @@
 import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded'
 import ArrowForwardRounded from '@mui/icons-material/ArrowForwardRounded'
 import ChatBubbleOutlineOutlined from '@mui/icons-material/ChatBubbleOutlineOutlined'
-import DirectionsCarOutlined from '@mui/icons-material/DirectionsCarOutlined'
 import SearchRounded from '@mui/icons-material/SearchRounded'
 import VerifiedUserOutlined from '@mui/icons-material/VerifiedUserOutlined'
 import {
@@ -19,6 +18,7 @@ import { alpha, useTheme } from '@mui/material/styles'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 
+import RentaraLogoMark from '../brand/RentaraLogoMark'
 import OnboardingSlide from './OnboardingSlide'
 
 export type OnboardingModalStep = 'welcome' | 'features'
@@ -121,12 +121,9 @@ export default function OnboardingModal({
           ) : (
             <Box sx={{ width: 40 }} />
           )}
-          <Stack direction="row" spacing={0.75} alignItems="center">
-            <DirectionsCarOutlined sx={{ fontSize: 22, color: 'primary.main' }} />
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-              RentaraH
-            </Typography>
-          </Stack>
+          <Box sx={{ transform: 'scale(0.82)', transformOrigin: 'center' }}>
+            <RentaraLogoMark size="sm" variant="navLockup" />
+          </Box>
           <Button size="small" onClick={onSkip} sx={{ fontWeight: 700, minWidth: 64 }}>
             Skip
           </Button>

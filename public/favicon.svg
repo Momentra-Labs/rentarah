@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="RentaraH"><defs><linearGradient id="tile-bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#3A7BFA"/><stop offset="0.55" stop-color="#1A56DB"/><stop offset="1" stop-color="#163FA6"/></linearGradient></defs><rect width="1024" height="1024" rx="230.4" fill="url(#tile-bg)"/><svg x="81.9" y="148.5" width="860.2" height="706.5" viewBox="64 30 711 584"><g style="color:#FFFFFF"><defs>
+  <mask id="rh-car-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="660">
+    <rect width="900" height="660" fill="#fff"/>
+    <path d="M104 372 C130 362 160 345 236 300 C300 292 352 300 378 324 C392 338 396 352 398 368 L420 372 C400 410 372 440 336 455 L216 455 C205 425 150 418 135 440 L106 430 Z" fill="#000"/>
+  </mask>
+</defs>
+<g fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+  <path mask="url(#rh-car-cut)" d="M413.4 586 L259.8 327.6 A178.6 178.6 0 1 1 567 327.6 Z"/>
+  <path d="M327.6 252.4 A87.5 87.5 0 1 1 496 267.1 C481 309 458 345 437 372 C415 401 376 443 330 467"/>
+  <path d="M240 360 H516"/>
+  <path d="M236 290 C300 284 352 294 378 320 C390 333 394 346 395 360"/>
+  <path d="M236 290 C200 300 176 318 148 339 C130 352 112 356 102 359 Q92 362 92 376 V420 Q93 436 113 440 L138 446"/>
+  <path d="M216 467 H330"/>
+  <circle cx="177.1" cy="452.8" r="39.6"/>
+  <path d="M546 362 L590 348 C620 344 645 340 660 334 L638 312 Q630 300 636 290 Q642 284 652 286 C680 292 702 312 712 344 Q714 356 704 360 C680 368 652 380 634 398 Q618 414 602 425 L506 425 Z" fill="currentColor" stroke-width="6"/>
+  <path d="M488 461 H606"/>
+  <circle cx="700.4" cy="444.8" r="46.3"/>
+</g></g></svg></svg>

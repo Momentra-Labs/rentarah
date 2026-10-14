@@ -12,6 +12,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  Chip,
   Container,
   Grid,
   InputAdornment,
@@ -24,7 +25,6 @@ import {
 } from '@mui/material'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
@@ -32,13 +32,16 @@ import { MOBILE_TAB_BAR_INSET_PX } from '@/components/layout/MobileBottomNav'
 import { prefetchPath } from '@/lib/routePrefetch'
 import { useOfferGeoPrompt } from '@/hooks/useOfferGeoPrompt'
 import DateRangePicker, { mergePickerInputLabelProps } from '@/components/common/DateRangePicker'
-import HeroAmbientBackground from '@/components/landing/HeroAmbientBackground'
-import { HERO_TRUST_SPECS, HeroTrustStatCell } from '@/components/landing/HeroTrustStats'
 import { highlightPickupMatch, pickupAreaFilter } from '@/components/search/PhPickupCityAutocomplete'
 import LandingAudiencePaths from '@/features/landing/components/LandingAudiencePaths'
+import LandingFeaturedRides from '@/features/landing/components/LandingFeaturedRides'
+import HeroProofRow from '@/features/landing/components/HeroProofRow'
 import TripClockSummary from '@/features/landing/components/TripClockSummary'
+import TripVehicleTypePicker, { type TripVehicleType } from '@/features/landing/components/TripVehicleTypePicker'
+import { useTripSearchPreview } from '@/features/landing/hooks/useTripSearchPreview'
 import { useSearchStore } from '@/store/useSearchStore'
-import { withLandingCtaSx, softShadow, softShadowHover } from '@/theme/pageStyles'
+import { withLandingCtaSx } from '@/theme/pageStyles'
+import { rhElev, rhFocusRing, rhRadius } from '@/theme/tokens'
 import { PH_PICKUP_AREAS } from '@/data/phPickupAreas'
 import { useT } from '@/hooks/useT'
 import { formatSearchDateTimeParam, withDefaultDropoffTime, withDefaultPickupTime } from '@/utils/dateUtils'
@@ -54,12 +57,10 @@ function WhyPointRow({
   Icon,
   title,
   line,
-  compact,
 }: {
   Icon: (typeof WHY_RENTARAH)[number]['Icon']
   title: string
   line: string
-  compact?: boolean
 }) {
   return (
     <Stack
@@ -72,8 +73,8 @@ function WhyPointRow({
         sx={{
           width: { xs: 28, sm: 32 },
           height: { xs: 28, sm: 32 },
-          borderRadius: 1.5,
-          bgcolor: (th) => alpha(th.palette.primary.main, 0.1),
+          borderRadius: `${rhRadius.md}px`,
+          bgcolor: (th) => alpha(th.palette.primary.main, 0.08),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -87,7 +88,6 @@ function WhyPointRow({
         <Typography
           variant="body2"
           fontWeight={800}
-          title={compact ? `${title} · ${line}` : undefined}
           sx={{
             fontSize: { xs: '0.75rem', sm: '0.8125rem' },
             lineHeight: 1.25,
@@ -107,6 +107,16 @@ function WhyPointRow({
   )
 }
 
+/** Hidden visually, still read by screen readers (keeps the section labelled on phones). */
+const visuallyHiddenSx = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+} as const
+
 export default function LandingPage() {
   const t = useT()
   const theme = useTheme()
@@ -118,9 +128,6 @@ export default function LandingPage() {
   const landingHeadingMb = { xs: 2.5, md: 3 } as const
   const isMobile = useMediaQuery(theme.breakpoints.down('md'), { noSsr: true })
   const isXs = useMediaQuery(theme.breakpoints.down('sm'), { noSsr: true })
-  const reduceWhyMotion = useReducedMotion()
-  const [whyIndex, setWhyIndex] = useState(0)
-  const whyPoint = WHY_RENTARAH[whyIndex]
   const navigate = useNavigate()
   const setLocation = useSearchStore((s) => s.setLocation)
   const setDates = useSearchStore((s) => s.setDates)
@@ -135,21 +142,13 @@ export default function LandingPage() {
     prefetchPath('/become-a-host')
   }, [])
 
-  useEffect(() => {
-    if (!isXs) {
-      setWhyIndex(0)
-      return
-    }
-    const id = window.setInterval(() => {
-      setWhyIndex((i) => (i + 1) % WHY_RENTARAH.length)
-    }, 2000)
-    return () => window.clearInterval(id)
-  }, [isXs])
-
   const [loc, setLoc] = useState('')
   const [pickupAreaQuery, setPickupAreaQuery] = useState('')
   const [pickup, setPickup] = useState<Dayjs | null>(() => withDefaultPickupTime(dayjs().add(1, 'day')))
   const [dropoff, setDropoff] = useState<Dayjs | null>(() => withDefaultDropoffTime(dayjs().add(4, 'day')))
+  const [vehicleType, setVehicleType] = useState<TripVehicleType>('all')
+  const preview = useTripSearchPreview(loc.trim() || 'Philippines', vehicleType, pickup, dropoff)
+  const placeLabel = loc === 'BGC, Taguig' ? 'BGC' : loc.trim()
 
   const tripPlannerFieldSx = useMemo(
     () => ({
@@ -158,29 +157,23 @@ export default function LandingPage() {
       },
       '& .MuiOutlinedInput-root': {
         overflow: 'visible',
-        borderRadius: 2,
-        bgcolor:
-          theme.palette.mode === 'dark'
-            ? alpha(theme.palette.common.white, 0.06)
-            : alpha(theme.palette.grey[50], 0.96),
+        borderRadius: `${rhRadius.md}px`,
+        bgcolor: 'background.paper',
         transition: 'background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.18s ease',
         '& fieldset': {
-          borderColor: alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.55 : 0.92),
-          transition: 'border-color 0.18s ease, border-width 0.08s ease',
+          borderColor: 'divider',
+          transition: 'border-color 0.18s ease',
         },
         '&:hover fieldset': {
-          borderColor: alpha(theme.palette.primary.main, 0.32),
-        },
-        '&:hover': {
-          bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.045),
+          borderColor: alpha(theme.palette.primary.main, 0.4),
         },
         '&.Mui-focused': {
-          bgcolor: theme.palette.background.paper,
-          boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.14)}`,
+          bgcolor: 'background.paper',
+          boxShadow: rhFocusRing,
         },
         '&.Mui-focused fieldset': {
-          borderWidth: '2px',
-          borderColor: alpha(theme.palette.primary.main, 0.55),
+          borderWidth: '1px',
+          borderColor: theme.palette.primary.main,
         },
         [theme.breakpoints.down('sm')]: {
           alignItems: 'center',
@@ -277,9 +270,10 @@ export default function LandingPage() {
     const area = loc.trim() || 'Philippines'
     setLocation(area)
     setDates(pickup, dropoff)
-    setFilter({ types: [], vehicleType: 'all' })
+    setFilter({ types: [], vehicleType })
     const params = new URLSearchParams()
     params.set('location', area)
+    if (vehicleType !== 'all') params.set('vt', vehicleType)
     if (pickup?.isValid()) params.set('pickup', formatSearchDateTimeParam(pickup))
     if (dropoff?.isValid()) params.set('dropoff', formatSearchDateTimeParam(dropoff))
     navigate(`/search?${params.toString()}`)
@@ -313,18 +307,17 @@ export default function LandingPage() {
         sx={{
           position: 'relative',
           overflow: 'hidden',
-          background: `linear-gradient(168deg, ${alpha(theme.palette.primary.main, 0.078)} 0%, ${theme.palette.background.default} 38%, ${alpha(theme.palette.grey[50], 1)} 92%)`,
+          bgcolor: 'background.default',
           pt: { xs: 2, sm: landingSectionPy.sm, md: landingSectionPy.md },
           pb: { xs: 2, sm: landingSectionPy.sm, md: landingSectionPy.md },
         }}
       >
-        <HeroAmbientBackground />
         <Container maxWidth="lg" sx={{ px: landingGutters, position: 'relative', zIndex: 1 }}>
-          <Grid container spacing={{ xs: 1, md: 4 }} alignItems="stretch">
+          <Grid container spacing={{ xs: 2.5, md: 4 }} alignItems="stretch">
             <Grid item xs={12} md={6} lg={7} sx={{ order: { xs: 1, md: 1 }, display: 'flex', alignItems: { xs: 'stretch', md: 'center' } }}>
               <Stack
                 data-onboarding="hero"
-                spacing={{ xs: 1, md: 1.75 }}
+                spacing={{ xs: 1.5, md: 1.75 }}
                 sx={{
                   width: '100%',
                   pr: { md: 0.5 },
@@ -348,8 +341,7 @@ export default function LandingPage() {
                     variant="body1"
                     color="text.secondary"
                     sx={{
-                      display: { xs: 'none', sm: 'block' },
-                      fontSize: { xs: '0.975rem', sm: '1.0625rem' },
+                      fontSize: { xs: '0.9375rem', sm: '1.0625rem' },
                       lineHeight: 1.55,
                       maxWidth: '36em',
                       fontWeight: 500,
@@ -365,7 +357,7 @@ export default function LandingPage() {
                     <Button
                       component={RouterLink}
                       to="/map"
-                      variant="contained"
+                      variant="outlined"
                       size="large"
                       startIcon={<MapOutlined />}
                       endIcon={<ArrowForward />}
@@ -373,12 +365,13 @@ export default function LandingPage() {
                         theme,
                         {
                           fontWeight: 800,
-                          borderRadius: 2,
+                          borderRadius: `${rhRadius.md}px`,
                           minHeight: 48,
                           px: 2.25,
-                          flex: { sm: 1 },
+                          flex: { sm: '0 0 auto' },
+                          borderWidth: '1.5px',
+                          '&:hover': { borderWidth: '1.5px' },
                         },
-                        true,
                       )}
                     >
                       {t('landing.exploreMap')}
@@ -386,22 +379,19 @@ export default function LandingPage() {
                     <Button
                       component={RouterLink}
                       to="/become-a-host"
-                      variant="outlined"
+                      variant="text"
                       color="inherit"
                       size="large"
                       startIcon={<GarageOutlined />}
                       sx={withLandingCtaSx(theme, {
-                        fontWeight: 800,
-                        borderRadius: 2,
+                        fontWeight: 700,
+                        borderRadius: `${rhRadius.md}px`,
                         minHeight: 48,
-                        px: 2.25,
-                        flex: { sm: 1 },
-                        borderColor: alpha(theme.palette.text.primary, 0.18),
+                        px: 1.75,
+                        flex: { sm: '0 0 auto' },
+                        color: 'text.secondary',
                         '@media (hover: hover) and (pointer: fine)': {
-                          '&:hover': {
-                            borderColor: alpha(theme.palette.primary.main, 0.35),
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          },
+                          '&:hover': { color: 'text.primary', bgcolor: alpha(theme.palette.text.primary, 0.04) },
                         },
                       })}
                     >
@@ -409,35 +399,9 @@ export default function LandingPage() {
                     </Button>
                   </Stack>
 
-                <Stack
-                  direction="row"
-                  sx={{
-                    display: { xs: 'none', sm: 'flex' },
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: alpha(theme.palette.divider, 0.95),
-                    overflow: 'hidden',
-                    bgcolor: alpha(theme.palette.background.paper, 0.82),
-                    width: '100%',
-                  }}
-                  aria-label="RentaraH at a glance"
-                >
-                  {HERO_TRUST_SPECS.map((spec, i) => (
-                    <Box
-                      key={spec.key}
-                      sx={{
-                        flex: 1,
-                        minWidth: 0,
-                        px: { xs: 1.15, sm: 1.75, md: 2 },
-                        py: { xs: 1.35, md: 1.75 },
-                        borderLeft: i > 0 ? '1px solid' : 'none',
-                        borderColor: 'divider',
-                      }}
-                    >
-                      <HeroTrustStatCell spec={spec} index={i} />
-                    </Box>
-                  ))}
-                </Stack>
+                <Box sx={{ pt: { md: 0.5 } }}>
+                  <HeroProofRow />
+                </Box>
 
                 <Box component="section" aria-labelledby="landing-trust-heading">
                   <Stack
@@ -446,7 +410,10 @@ export default function LandingPage() {
                     alignItems="baseline"
                     flexWrap="wrap"
                     useFlexGap
-                    sx={{ mb: { xs: 1, sm: 1.25 } }}
+                    sx={{
+                      mb: { sm: 1.25 },
+                      [theme.breakpoints.down('sm')]: visuallyHiddenSx,
+                    }}
                   >
                     <Typography
                       id="landing-trust-heading"
@@ -471,31 +438,44 @@ export default function LandingPage() {
                     </Typography>
                   </Stack>
                   <Box
+                    component="ul"
                     sx={{
-                      display: { xs: 'block', sm: 'none' },
-                      overflow: 'hidden',
-                      minHeight: 48,
+                      display: { xs: 'grid', sm: 'none' },
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: 0.75,
+                      listStyle: 'none',
+                      m: 0,
+                      p: 0,
                     }}
-                    aria-live="polite"
                   >
-                    <AnimatePresence mode="wait" initial={false}>
-                      <Box
-                        key={whyPoint.titleKey}
-                        component={motion.div}
-                        initial={reduceWhyMotion ? false : { y: 12, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={reduceWhyMotion ? { opacity: 1 } : { y: -12, opacity: 0 }}
-                        transition={{ duration: 0.28, ease: 'easeOut' }}
-                        sx={{ display: 'flex', alignItems: 'flex-start' }}
+                    {WHY_RENTARAH.map(({ Icon, titleKey }) => (
+                      <Stack
+                        key={titleKey}
+                        component="li"
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.6}
+                        sx={{
+                          minWidth: 0,
+                          pl: 1,
+                          pr: 1.25,
+                          py: 0.6,
+                          borderRadius: `${rhRadius.pill}px`,
+                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                          border: '1px solid',
+                          borderColor: alpha(theme.palette.primary.main, 0.12),
+                        }}
                       >
-                        <WhyPointRow
-                          Icon={whyPoint.Icon}
-                          title={t(whyPoint.titleKey)}
-                          line={t(whyPoint.lineKey)}
-                          compact
-                        />
-                      </Box>
-                    </AnimatePresence>
+                        <Icon sx={{ fontSize: 16, color: 'primary.main' }} aria-hidden />
+                        <Typography
+                          component="span"
+                          noWrap
+                          sx={{ fontWeight: 700, fontSize: '0.8125rem', lineHeight: 1.2, color: 'text.primary', minWidth: 0 }}
+                        >
+                          {t(titleKey)}
+                        </Typography>
+                      </Stack>
+                    ))}
                   </Box>
                   <Box
                     sx={{
@@ -524,51 +504,40 @@ export default function LandingPage() {
                     overflow: 'hidden',
                     height: '100%',
                     scrollMarginBottom: { xs: mobileNavClearBottom, md: undefined },
-                    px: { xs: 1.75, sm: 2.25, md: 2.5 },
-                    pb: { xs: 1.75, sm: 2.25, md: 2.5 },
-                    pt: { xs: 1.75, sm: 2.25, md: 2.5 },
-                    borderRadius: { xs: 2.75, md: 3 },
+                    px: { xs: 2, sm: 2.25, md: 2.5 },
+                    pb: { xs: 2, sm: 2.25, md: 2.5 },
+                    pt: { xs: 2, sm: 2.25, md: 2.5 },
+                    borderRadius: `${rhRadius.lg}px`,
                     border: '1px solid',
-                    borderColor: { xs: alpha(theme.palette.divider, 0.9), sm: 'divider' },
-                    boxShadow: { xs: `0 1px 0 ${alpha('#000', 0.04)}, 0 8px 24px ${alpha('#000', 0.07)}`, sm: softShadow },
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    boxShadow: rhElev.elev1,
                     transition: 'box-shadow 0.25s ease, border-color 0.2s ease',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      inset: '0 0 auto 0',
-                      height: 3,
-                      background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.light, 0.75)})`,
-                    },
                     '@media (hover: hover)': {
                       '&:hover': {
-                        boxShadow: softShadowHover,
-                        borderColor: alpha(theme.palette.primary.main, 0.15),
+                        boxShadow: rhElev.elev2,
+                        borderColor: 'divider',
                       },
                     },
                   }}
                 >
                   <Stack spacing={{ xs: 1.5, sm: 1.5, md: 1.75 }}>
-                    <Stack
-                      direction="row"
-                      spacing={1.25}
-                      alignItems="flex-start"
-                      sx={{ display: { xs: 'none', sm: 'flex' } }}
-                    >
+                    <Stack direction="row" spacing={1.25} alignItems="center">
                       <Box
                         sx={{
-                          width: { xs: 38, sm: 42 },
-                          height: { xs: 38, sm: 42 },
+                          width: { xs: 34, sm: 38 },
+                          height: { xs: 34, sm: 38 },
                           flexShrink: 0,
-                          borderRadius: 2,
-                          display: { xs: 'none', sm: 'flex' },
+                          borderRadius: `${rhRadius.md}px`,
+                          display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          bgcolor: alpha(theme.palette.primary.main, 0.08),
                           color: 'primary.main',
                         }}
                         aria-hidden
                       >
-                        <DirectionsCar sx={{ fontSize: { xs: 20, sm: 22 } }} />
+                        <DirectionsCar sx={{ fontSize: { xs: 19, sm: 21 } }} />
                       </Box>
                       <Box sx={{ minWidth: 0, flex: 1 }}>
                         <Typography
@@ -576,29 +545,23 @@ export default function LandingPage() {
                           component="h2"
                           sx={{
                             fontWeight: 800,
-                            letterSpacing: '-0.025em',
-                            fontSize: { xs: '1.15rem', sm: '1.3rem' },
+                            letterSpacing: '-0.02em',
+                            fontSize: { xs: '1.125rem', sm: '1.3rem' },
                             lineHeight: 1.2,
                           }}
                         >
                           {t('landing.findVehicle')}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: { xs: 'none', sm: 'block' },
-                            mt: 0.4,
-                            lineHeight: 1.5,
-                            fontWeight: 500,
-                            fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                          }}
-                        >
-                          {t('landing.findVehicleHint')}
-                        </Typography>
                       </Box>
                     </Stack>
 
+                    <TripVehicleTypePicker
+                      value={vehicleType}
+                      onChange={setVehicleType}
+                      availableTypes={preview.availableTypes}
+                    />
+
+                    <Box>
                     <Autocomplete
                         options={[...PH_PICKUP_AREAS]}
                         value={loc || null}
@@ -625,8 +588,8 @@ export default function LandingPage() {
                         clearOnBlur={false}
                         noOptionsText={
                           pickupAreaQuery.trim()
-                            ? `No city matches “${pickupAreaQuery.trim()}”`
-                            : 'Start typing a city'
+                            ? t('landing.noCityMatch', { query: pickupAreaQuery.trim() })
+                            : t('landing.startTypingCity')
                         }
                         ListboxProps={{
                           sx: { maxHeight: 300 },
@@ -643,17 +606,17 @@ export default function LandingPage() {
                         }}
                         slotProps={{
                           paper: {
-                            elevation: 8,
+                            elevation: 0,
                             sx: {
                               mt: 1,
-                              borderRadius: 2,
+                              borderRadius: `${rhRadius.md}px`,
                               border: '1px solid',
-                              borderColor: alpha(theme.palette.divider, 0.9),
-                              boxShadow: `0 14px 42px ${alpha('#000', 0.1)}`,
+                              borderColor: 'divider',
+                              boxShadow: rhElev.elev2,
                               '& .MuiAutocomplete-listbox': {
                                 py: 0.5,
                                 '& .MuiAutocomplete-option': {
-                                  borderRadius: 1.25,
+                                  borderRadius: `${rhRadius.sm}px`,
                                   mx: 0.75,
                                   my: 0.125,
                                   minHeight: 44,
@@ -691,7 +654,7 @@ export default function LandingPage() {
                                     letterSpacing: '0.02em',
                                   }}
                                 >
-                                  All cities
+                                  {t('landing.allCities')}
                                 </Typography>
                               )}
                             </Box>
@@ -703,12 +666,8 @@ export default function LandingPage() {
                             margin="none"
                             size={isMobile ? 'small' : 'medium'}
                             sx={tripPlannerFieldSx}
-                            label="Pickup city"
-                            placeholder="Type to search — Cebu, Davao, Makati…"
-                            helperText={loc ? t('landing.searchAround', { place: loc }) : undefined}
-                            FormHelperTextProps={{
-                              sx: { display: { xs: 'none', sm: 'block' }, mx: 0, mt: 0.6, fontWeight: 600 },
-                            }}
+                            label={t('landing.pickupCity')}
+                            placeholder={t('landing.pickupCityPlaceholder')}
                             InputProps={{
                               ...params.InputProps,
                               startAdornment: (
@@ -726,11 +685,50 @@ export default function LandingPage() {
                                 </>
                               ),
                             }}
-                            inputProps={{ ...params.inputProps, 'aria-label': 'Pickup city', autoComplete: 'off' }}
+                            inputProps={{ ...params.inputProps, 'aria-label': t('landing.pickupCity'), autoComplete: 'off' }}
                             InputLabelProps={mergePickerInputLabelProps(params.InputLabelProps)}
                           />
                         )}
                       />
+                      {!loc && preview.popularAreas.length > 0 ? (
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.75}
+                          sx={{
+                            mt: 1,
+                            overflowX: 'auto',
+                            scrollbarWidth: 'none',
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            '& > *': { flexShrink: 0 },
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mr: 0.25 }}>
+                            {t('landing.popular')}
+                          </Typography>
+                          {preview.popularAreas.map((area) => (
+                            <Chip
+                              key={area}
+                              label={area.split(',')[0]}
+                              size="small"
+                              clickable
+                              onClick={() => {
+                                setLoc(area)
+                                setPickupAreaQuery(area)
+                              }}
+                              sx={{
+                                height: 28,
+                                fontWeight: 600,
+                                fontSize: '0.8125rem',
+                                borderRadius: `${rhRadius.pill}px`,
+                                bgcolor: alpha(theme.palette.text.primary, 0.05),
+                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' },
+                              }}
+                            />
+                          ))}
+                        </Stack>
+                      ) : null}
+                    </Box>
 
                     <Stack spacing={{ xs: 1.5, sm: 0.75 }} sx={{ pt: 0 }}>
                       <DateRangePicker
@@ -755,8 +753,45 @@ export default function LandingPage() {
                           },
                         }}
                       />
-                      <TripClockSummary pickup={pickup} dropoff={dropoff} />
+                      <TripClockSummary pickup={pickup} dropoff={dropoff} compact />
                     </Stack>
+
+                    {preview.matchCount === 0 ? (
+                      <Box
+                        role="status"
+                        sx={{
+                          px: 1.5,
+                          py: 1.25,
+                          borderRadius: `${rhRadius.md}px`,
+                          bgcolor: alpha(theme.palette.warning.main, 0.1),
+                          border: '1px solid',
+                          borderColor: alpha(theme.palette.warning.main, 0.3),
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          {t('landing.noMatches', { place: placeLabel || t('landing.thePhilippines') })}
+                        </Typography>
+                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 0.75 }}>
+                          {vehicleType !== 'all' ? (
+                            <Button size="small" onClick={() => setVehicleType('all')} sx={{ fontWeight: 700, px: 1, minHeight: 32 }}>
+                              {t('landing.tryAnyType')}
+                            </Button>
+                          ) : null}
+                          {loc ? (
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setLoc('')
+                                setPickupAreaQuery('')
+                              }}
+                              sx={{ fontWeight: 700, px: 1, minHeight: 32 }}
+                            >
+                              {t('landing.tryAllPh')}
+                            </Button>
+                          ) : null}
+                        </Stack>
+                      </Box>
+                    ) : null}
 
                     <Button
                       variant="contained"
@@ -769,16 +804,27 @@ export default function LandingPage() {
                         {
                           py: { xs: 1.1, sm: 1.2 },
                           minHeight: { xs: 46, sm: 48 },
-                          borderRadius: 2,
+                          borderRadius: `${rhRadius.md}px`,
                           fontSize: { xs: '0.9375rem', sm: '1rem' },
                           fontWeight: 800,
                         },
                         true,
                       )}
                     >
-                      {loc.trim()
-                        ? t('landing.searchIn', { place: loc === 'BGC, Taguig' ? 'BGC' : loc })
-                        : t('landing.searchAvailable')}
+                      {preview.matchCount && preview.matchCount > 0
+                        ? t(
+                            placeLabel
+                              ? preview.matchCount === 1
+                                ? 'landing.showRidesInOne'
+                                : 'landing.showRidesInOther'
+                              : preview.matchCount === 1
+                                ? 'landing.showRidesOne'
+                                : 'landing.showRidesOther',
+                            { count: preview.matchCount, place: placeLabel },
+                          )
+                        : placeLabel
+                          ? t('landing.searchIn', { place: placeLabel })
+                          : t('landing.searchAvailable')}
                     </Button>
                   </Stack>
                 </Paper>
@@ -787,6 +833,12 @@ export default function LandingPage() {
           </Grid>
         </Container>
       </Box>
+
+      <LandingFeaturedRides
+        sectionPy={{ xs: 3, sm: landingSectionPy.sm, md: landingSectionPy.md }}
+        headingMb={landingHeadingMb}
+        gutters={landingGutters}
+      />
 
       <LandingAudiencePaths
         onFindVehicle={focusTripPlanner}

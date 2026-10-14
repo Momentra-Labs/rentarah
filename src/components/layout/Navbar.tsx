@@ -224,22 +224,15 @@ export default memo(function Navbar({ onAuthOpen }: NavbarProps) {
               flex: '0 0 auto',
               display: { xs: 'flex', md: 'none' },
               borderRadius: 2,
-              overflow: 'hidden',
-              transition: 'none',
-              '& [data-rentara-logo]': {
-                minWidth: 0,
-                height: 46,
-                width: 'auto',
-                maxWidth: 'none',
-                objectFit: 'cover',
-                objectPosition: 'left center',
-              },
+              px: 0.5,
+              py: 0.5,
+              ml: -0.5,
+              transition: 'background-color 160ms ease',
               '&:hover': { bgcolor: (t) => alpha(t.palette.primary.main, 0.06) },
+              '&:focus-visible': { outline: 'none', boxShadow: (t) => `0 0 0 3px ${alpha(t.palette.primary.main, 0.28)}` },
             }}
           >
-            <Box sx={{ width: 46, height: 46, overflow: 'hidden', minWidth: 0, flexShrink: 0 }}>
-              <RentaraLogoMark size="sm" variant="mark" showTextFallback={false} />
-            </Box>
+            <RentaraLogoMark size="sm" variant="navLockup" />
           </Stack>
 
           <Stack

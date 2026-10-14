@@ -1,7 +1,7 @@
 import { Box, LinearProgress, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 
-import RentaraLoadingLogo from './RentaraLoadingLogo'
+import { RentaraMarkSvg, RentaraWordmarkSvg } from './RentaraLogoMark'
 
 /** Fast first paint: solid card, single progress bar — no Framer, no animated road scene, no backdrop blur. */
 export default function LoadingScreen() {
@@ -79,26 +79,12 @@ export default function LoadingScreen() {
                   : `0 16px 48px -18px ${alpha(theme.palette.grey[900], 0.12)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.92)}`,
             }}
           >
-            <RentaraLoadingLogo />
-
-            <Typography
-              component="span"
-              variant="subtitle1"
-              sx={{
-                mt: 1.75,
-                fontWeight: 800,
-                fontSize: isXs ? '1.2rem' : '1.28rem',
-                letterSpacing: '-0.035em',
-                color: theme.palette.text.primary,
-                fontFamily: theme.typography.fontFamily,
-              }}
-            >
-              RentaraH
-            </Typography>
+            <RentaraMarkSvg height={isXs ? 72 : 88} title="RentaraH" />
+            <RentaraWordmarkSvg height={isXs ? 22 : 26} sx={{ mt: 2 }} />
             <Typography
               variant="caption"
               sx={{
-                mt: 0.35,
+                mt: 1,
                 display: 'block',
                 fontWeight: 600,
                 fontSize: '0.68rem',

@@ -27,6 +27,8 @@ export interface CarCardProps {
   showDateAvailabilityHint?: boolean
   /** Distance from the user’s search area (km); omitted when unknown. */
   distanceKm?: number | null
+  /** Shows the vehicle class (Car, Scooter…) as a pill on the photo — useful in mixed-type rails. */
+  showTypeBadge?: boolean
 }
 
 const GRID_PHOTO_H = { xs: 220, sm: 240 }
@@ -39,6 +41,7 @@ function CarCard({
   onNavigate,
   showDateAvailabilityHint = false,
   distanceKm,
+  showTypeBadge = false,
 }: CarCardProps) {
   const t = useT()
   const toggleSaved = useCarsStore((s) => s.toggleSaved)
@@ -90,7 +93,7 @@ function CarCard({
         alignSelf: 'stretch',
         boxSizing: 'border-box',
         borderRadius: `${rhRadius.lg}px`,
-        bgcolor: twoWheeler ? 'grey.100' : 'grey.200',
+        bgcolor: 'grey.200',
         overflow: 'hidden',
         transition: 'box-shadow 0.2s ease',
         '@media (hover: hover) and (pointer: fine)': {
@@ -135,13 +138,13 @@ function CarCard({
             display: 'block',
             width: '100%',
             height: '100%',
-            objectFit: twoWheeler ? 'contain' : 'cover',
+            objectFit: 'cover',
             objectPosition: 'center',
-            bgcolor: twoWheeler ? 'grey.50' : 'grey.200',
+            bgcolor: 'grey.200',
             opacity: unavailable ? 0.55 : 1,
             transition: 'transform 0.35s ease',
             '@media (hover: hover) and (pointer: fine)': {
-              '.listing-card:hover &': { transform: twoWheeler ? 'none' : 'scale(1.04)' },
+              '.listing-card:hover &': { transform: 'scale(1.04)' },
             },
           }}
         />
@@ -175,6 +178,24 @@ function CarCard({
             }}
           >
             Unavailable
+          </Box>
+        ) : showTypeBadge ? (
+          <Box
+            component="span"
+            sx={{
+              px: 1,
+              py: 0.375,
+              borderRadius: `${rhRadius.pill}px`,
+              bgcolor: (th) => alpha(th.palette.common.white, 0.94),
+              color: 'text.primary',
+              boxShadow: '0 1px 6px rgba(15,23,42,0.16)',
+              fontSize: '0.6875rem',
+              fontWeight: 700,
+              letterSpacing: '0.01em',
+              lineHeight: 1.4,
+            }}
+          >
+            {VEHICLE_TYPE_LABELS[vehicleClass]}
           </Box>
         ) : null}
       </Stack>

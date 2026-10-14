@@ -5,7 +5,6 @@ import {
   Button,
   IconButton,
   Tooltip,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material'
@@ -13,7 +12,7 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { PropsWithChildren, ReactElement, ReactNode } from 'react'
-import { Children, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 
 type LandingListingCarouselProps = {
@@ -243,11 +242,6 @@ export function LandingListingCarousel({
     pt: 0,
   }
 
-  const exploreCtaSlot =
-    exploreCta != null ? (
-      <Box sx={{ mt: { xs: 1.125, sm: 1.25, md: 1.5 }, width: '100%', minWidth: 0 }}>{exploreCta}</Box>
-    ) : null
-
   const sectionShellSx: SxProps<Theme> = useMemo(() => {
     const floaterTransitions = '.22s ease'
     const baseFloaterOpacity = () => ({
@@ -283,8 +277,6 @@ export function LandingListingCarousel({
         : {}),
     }
   }, [needsScroll, showNavigation, isMdUp])
-
-  const childCount = Children.count(children)
 
   const sxLeft = carouselFloaterSx(theme, 'left')
   const sxRight = carouselFloaterSx(theme, 'right')
@@ -355,79 +347,7 @@ export function LandingListingCarousel({
         ) : null}
       </Box>
 
-      {showNavigation && needsScroll ? (
-        <Box
-          sx={[
-            captionRailSx,
-            captionRailAfterTrackSx,
-          ]}
-        >
-          <Typography
-            component="span"
-            variant="caption"
-            sx={{
-              display: 'block',
-              textAlign: 'center',
-              px: { xs: 0, md: 0 },
-              py: { xs: 0, md: 0 },
-              mb: { xs: 0.25, md: 0.35 },
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              fontSize: { xs: '0.625rem', sm: '0.6875rem' },
-              color: 'text.secondary',
-              userSelect: 'none',
-            }}
-          >
-            {childCount > 1
-              ? `${childCount} listings · swipe or use side arrows`
-              : 'Swipe or use side arrows'}
-          </Typography>
-          {isMdUp ? (
-            <Typography
-              component="span"
-              variant="caption"
-              sx={{
-                mt: 0,
-                display: 'block',
-                textAlign: 'center',
-                fontWeight: 500,
-                letterSpacing: '0.055em',
-                fontSize: { xs: '0.583rem', sm: '0.61rem' },
-                color: 'text.secondary',
-                opacity: 0.85,
-                userSelect: 'none',
-              }}
-            >
-              Hover this row to show arrow buttons
-            </Typography>
-          ) : null}
-          {exploreCtaSlot}
-        </Box>
-      ) : showNavigation ? (
-        <Box
-          sx={[
-            captionRailSx,
-            captionRailAfterTrackSx,
-          ]}
-        >
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              fontSize: '0.6875rem',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              fontWeight: 600,
-              textAlign: 'center',
-              display: 'block',
-            }}
-          >
-            All {childCount} listing{childCount === 1 ? '' : 's'} visible in this view
-          </Typography>
-          {exploreCtaSlot}
-        </Box>
-      ) : exploreCta != null ? (
+      {exploreCta != null ? (
         <Box
           sx={[
             captionRailSx,
