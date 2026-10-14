@@ -3,11 +3,14 @@ import type { SxProps, Theme } from '@mui/material/styles'
 import { animate, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
+import { useT } from '@/hooks/useT'
+import type { MessageKey } from '@/i18n/translate'
+
 /** Hero trust-strip figures (marketing copy — animated tally on landing load). */
 export const HERO_TRUST_SPECS = [
-  { key: 'fleet', subtitle: 'vehicles listed', mode: 'int' as const, target: 2400, suffix: '+' },
-  { key: 'renters', subtitle: 'happy renters', mode: 'percent' as const, target: 98 },
-  { key: 'fees', subtitle: 'hidden fees', mode: 'peso' as const, target: 0 },
+  { key: 'fleet', subtitleKey: 'landing.trustFleet' as const satisfies MessageKey, mode: 'int' as const, target: 2400, suffix: '+' },
+  { key: 'renters', subtitleKey: 'landing.trustRenters' as const satisfies MessageKey, mode: 'percent' as const, target: 98 },
+  { key: 'fees', subtitleKey: 'landing.trustFees' as const satisfies MessageKey, mode: 'peso' as const, target: 0 },
 ] as const
 
 export type HeroTrustSpec = (typeof HERO_TRUST_SPECS)[number]
@@ -81,6 +84,7 @@ type HeroTrustStatCellProps = {
 }
 
 export function HeroTrustStatCell({ spec, index }: HeroTrustStatCellProps) {
+  const t = useT()
   const reduceMotion = useReducedMotion()
   const text = useAnimatedTrustFigure(spec, index)
 
@@ -101,7 +105,7 @@ export function HeroTrustStatCell({ spec, index }: HeroTrustStatCellProps) {
         </Typography>
       </motion.span>
       <Typography component="span" variant="body2" color="text.secondary" sx={subtitleSx}>
-        {spec.subtitle}
+        {t(spec.subtitleKey)}
       </Typography>
     </>
   )

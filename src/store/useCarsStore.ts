@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { mockCars } from '../data/mockCars'
 import { getVehicles } from '../services/vehicleService'
 import type { Car } from '../types'
+import { resolveVehicleImagePlaceholder } from '../utils/vehicleImagePlaceholders'
 
 export type VehiclesLoadStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -134,7 +135,9 @@ export const useCarsStore = create<CarsStoreState>()(
           rating: 0,
           reviewCount: 0,
           bookedDates: carData.bookedDates ?? [],
-          images: carData.images?.length ? carData.images : ['/vite.svg'],
+          images: carData.images?.length
+            ? carData.images
+            : [resolveVehicleImagePlaceholder(carData.vehicleType ?? 'car', carData.type)],
           features: carData.features ?? [],
           tags: carData.tags ?? [],
           available: carData.available ?? true,

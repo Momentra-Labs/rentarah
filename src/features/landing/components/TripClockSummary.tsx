@@ -4,14 +4,17 @@ import { alpha } from '@mui/material/styles'
 import type { Dayjs } from 'dayjs'
 
 import { useT } from '@/hooks/useT'
+import { rhRadius } from '@/theme/tokens'
 import { formatClockHoursLabel, getPickupReturnRentSpan } from '@/utils/dateUtils'
 
 export type TripClockSummaryProps = {
   pickup: Dayjs | null
   dropoff: Dayjs | null
+  /** Single quiet line (homepage search card) instead of the highlighted summary panel. */
+  compact?: boolean
 }
 
-export default function TripClockSummary({ pickup, dropoff }: TripClockSummaryProps) {
+export default function TripClockSummary({ pickup, dropoff, compact = false }: TripClockSummaryProps) {
   const t = useT()
   if (!pickup || !dropoff) return null
   const span = getPickupReturnRentSpan(pickup, dropoff)
@@ -30,6 +33,35 @@ export default function TripClockSummary({ pickup, dropoff }: TripClockSummaryPr
   const headline = parts.length > 0 ? parts.join(' · ') : t('picker.minsLabel', { count: span.minutes })
   const clockHours = t('picker.clockHours', { hours: formatClockHoursLabel(span.totalHoursRounded) })
 
+  if (compact) {
+    return (
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.75}
+        role="status"
+        aria-live="polite"
+        aria-label={`${t('picker.tripLength')}. ${headline}. ${clockHours}`}
+        sx={{ px: 0.25, color: 'text.secondary', minWidth: 0 }}
+      >
+        <ScheduleOutlined sx={{ fontSize: 17, color: 'primary.main' }} aria-hidden />
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 700, color: 'text.primary', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
+        >
+          {t('picker.tripLength')}: {headline}
+        </Typography>
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums', minWidth: 0 }}
+        >
+          · {clockHours}
+        </Typography>
+      </Stack>
+    )
+  }
+
   return (
     <Stack
       direction="row"
@@ -41,7 +73,7 @@ export default function TripClockSummary({ pickup, dropoff }: TripClockSummaryPr
       sx={{
         px: { xs: 1.25, sm: 1.5 },
         py: { xs: 1, sm: 1.1 },
-        borderRadius: 2,
+        borderRadius: `${rhRadius.md}px`,
         bgcolor: (th) => alpha(th.palette.primary.main, 0.06),
         border: '1px solid',
         borderColor: (th) => alpha(th.palette.primary.main, 0.14),
@@ -51,7 +83,7 @@ export default function TripClockSummary({ pickup, dropoff }: TripClockSummaryPr
         sx={{
           width: { xs: 32, sm: 36 },
           height: { xs: 32, sm: 36 },
-          borderRadius: 1.5,
+          borderRadius: `${rhRadius.sm}px`,
           bgcolor: (th) => alpha(th.palette.primary.main, 0.12),
           color: 'primary.main',
           display: 'grid',

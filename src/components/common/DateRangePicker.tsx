@@ -197,7 +197,7 @@ export default function DateRangePicker({
   const { sx: pickupSx, ...pickupRest } = pickupField
   const { sx: dropoffSx, ...dropoffRest } = dropoffField
 
-  const outlineRadius = splitDateTime ? INPUT_RADIUS_SPLIT : 2
+  const outlineRadius = INPUT_RADIUS_SPLIT
 
   const fieldSxBase: SxProps<Theme> = {
     minWidth: 0,

@@ -38,7 +38,6 @@ import AvailabilityCalendar from '@/components/detail/AvailabilityCalendar'
 import ReviewsList from '@/components/detail/ReviewsList'
 import CarDetailSkeleton from '@/components/skeletons/CarDetailSkeleton'
 import ListingPhotoGallery from '@/features/catalog/components/ListingPhotoGallery'
-import ListingShareControl from '@/features/catalog/components/ListingShareControl'
 import VehicleFacts from '@/features/catalog/components/VehicleFacts'
 import TripClockSummary from '@/features/landing/components/TripClockSummary'
 import { useDateValidation } from '@/hooks/useDateValidation'
@@ -309,16 +308,6 @@ export default function CarDetailPage() {
     />
   )
 
-  const shareControl = (
-    <ListingShareControl
-      carId={car.id}
-      title={`${car.year} ${car.make} ${car.model}`}
-      location={car.location}
-      priceLabel={formatPeso(car.pricePerDay)}
-      variant="button"
-    />
-  )
-
   const titleBlock = (
     <Box sx={{ mt: { xs: 0.5, md: 2.5 } }}>
       <Stack direction="row" spacing={1.5} alignItems="flex-start" justifyContent="space-between">
@@ -329,7 +318,6 @@ export default function CarDetailPage() {
         >
           {car.year} {car.make} {car.model}
         </Typography>
-        {shareControl}
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
         {specLine}

@@ -92,9 +92,9 @@ const TWO_WHEELER_BODY_TYPES = [
 
 const PLACEHOLDER_IMAGE: Record<VehicleType, string> = {
   car: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&auto=format&fit=crop',
-  motorcycle: 'https://images.unsplash.com/photo-1558980664-1db506751c3d?w=800&auto=format&fit=crop',
-  scooter: 'https://images.unsplash.com/photo-1611250506729-1dd776f09033?w=800&auto=format&fit=crop',
-  bigbike: 'https://images.unsplash.com/photo-1568702846914-96b0d1d58ac7?w=800&auto=format&fit=crop',
+  motorcycle: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop',
+  scooter: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=800&auto=format&fit=crop',
+  bigbike: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800&auto=format&fit=crop',
 }
 
 export interface ListingFormProps {
