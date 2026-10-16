@@ -2,6 +2,7 @@ import ArrowForward from '@mui/icons-material/ArrowForward'
 import DirectionsCar from '@mui/icons-material/DirectionsCar'
 import GarageOutlined from '@mui/icons-material/GarageOutlined'
 import MapOutlined from '@mui/icons-material/MapOutlined'
+import TrendingUp from '@mui/icons-material/TrendingUp'
 import Key from '@mui/icons-material/Key'
 import LocationOnOutlined from '@mui/icons-material/LocationOnOutlined'
 import Security from '@mui/icons-material/Security'
@@ -46,60 +47,69 @@ import { PH_PICKUP_AREAS } from '@/data/phPickupAreas'
 import { useT } from '@/hooks/useT'
 import { formatSearchDateTimeParam, withDefaultDropoffTime, withDefaultPickupTime } from '@/utils/dateUtils'
 
+/** Each point gets its own hue so the four read as distinct promises, not one grey block. */
 const WHY_RENTARAH = [
-  { Icon: Shield, titleKey: 'landing.insured' as const, lineKey: 'landing.insuredLine' as const },
-  { Icon: Verified, titleKey: 'landing.verified' as const, lineKey: 'landing.verifiedLine' as const },
-  { Icon: Security, titleKey: 'landing.secure' as const, lineKey: 'landing.secureLine' as const },
-  { Icon: Key, titleKey: 'landing.flexible' as const, lineKey: 'landing.flexibleLine' as const },
+  { Icon: Shield, titleKey: 'landing.insured' as const, lineKey: 'landing.insuredLine' as const, tone: '#059669' },
+  { Icon: Verified, titleKey: 'landing.verified' as const, lineKey: 'landing.verifiedLine' as const, tone: '#1A56DB' },
+  { Icon: Security, titleKey: 'landing.secure' as const, lineKey: 'landing.secureLine' as const, tone: '#7C3AED' },
+  { Icon: Key, titleKey: 'landing.flexible' as const, lineKey: 'landing.flexibleLine' as const, tone: '#D97706' },
 ] as const
 
-function WhyPointRow({
+function WhyPointCard({
   Icon,
   title,
   line,
+  tone,
 }: {
   Icon: (typeof WHY_RENTARAH)[number]['Icon']
   title: string
   line: string
+  tone: string
 }) {
   return (
     <Stack
       direction="row"
-      spacing={1}
+      spacing={1.25}
       alignItems="flex-start"
-      sx={{ minWidth: 0, width: '100%' }}
+      sx={(th) => ({
+        minWidth: 0,
+        width: '100%',
+        p: 1.25,
+        borderRadius: `${rhRadius.md}px`,
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: alpha(th.palette.text.primary, 0.08),
+        boxShadow: `0 1px 2px ${alpha(th.palette.common.black, 0.04)}`,
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            borderColor: alpha(tone, 0.35),
+            boxShadow: `0 10px 24px ${alpha(tone, 0.14)}`,
+          },
+        },
+      })}
     >
       <Box
         sx={{
-          width: { xs: 28, sm: 32 },
-          height: { xs: 28, sm: 32 },
-          borderRadius: `${rhRadius.md}px`,
-          bgcolor: (th) => alpha(th.palette.primary.main, 0.08),
+          width: 36,
+          height: 36,
+          borderRadius: `${rhRadius.sm + 2}px`,
+          background: `linear-gradient(135deg, ${alpha(tone, 0.18)}, ${alpha(tone, 0.08)})`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'primary.main',
+          color: tone,
           flexShrink: 0,
         }}
       >
-        <Icon sx={{ fontSize: { xs: 15, sm: 16 } }} aria-hidden />
+        <Icon sx={{ fontSize: 19 }} aria-hidden />
       </Box>
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography
-          variant="body2"
-          fontWeight={800}
-          sx={{
-            fontSize: { xs: '0.75rem', sm: '0.8125rem' },
-            lineHeight: 1.25,
-          }}
-        >
+        <Typography variant="body2" fontWeight={800} sx={{ fontSize: '0.875rem', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
           {title}
         </Typography>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: 'block', mt: 0.15, lineHeight: 1.4 }}
-        >
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.4 }}>
           {line}
         </Typography>
       </Box>
@@ -310,6 +320,27 @@ export default function LandingPage() {
           bgcolor: 'background.default',
           pt: { xs: 2, sm: landingSectionPy.sm, md: landingSectionPy.md },
           pb: { xs: 2, sm: landingSectionPy.sm, md: landingSectionPy.md },
+          // Soft brand glow + dotted "map" texture behind the headline; fades out before the search card.
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            background: [
+              `radial-gradient(520px 340px at 12% 18%, ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1)}, transparent 70%)`,
+              `radial-gradient(420px 300px at 48% 92%, ${alpha('#7C3AED', theme.palette.mode === 'dark' ? 0.12 : 0.05)}, transparent 70%)`,
+            ].join(', '),
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            backgroundImage: `radial-gradient(${alpha(theme.palette.primary.main, 0.16)} 1px, transparent 1.2px)`,
+            backgroundSize: '22px 22px',
+            maskImage: 'radial-gradient(560px 380px at 22% 40%, #000 20%, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(560px 380px at 22% 40%, #000 20%, transparent 75%)',
+          },
         }}
       >
         <Container maxWidth="lg" sx={{ px: landingGutters, position: 'relative', zIndex: 1 }}>
@@ -323,19 +354,89 @@ export default function LandingPage() {
                   pr: { md: 0.5 },
                 }}
               >
+                  <Box
+                    sx={{
+                      alignSelf: 'flex-start',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      pl: 1,
+                      pr: 1.5,
+                      py: 0.5,
+                      borderRadius: `${rhRadius.pill}px`,
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      border: '1px solid',
+                      borderColor: alpha(theme.palette.primary.main, 0.18),
+                      color: 'primary.main',
+                      fontSize: { xs: '0.6875rem', sm: '0.75rem' },
+                      fontWeight: 800,
+                      letterSpacing: '0.02em',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      aria-hidden
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: '#10B981',
+                        boxShadow: `0 0 0 4px ${alpha('#10B981', 0.18)}`,
+                        '@media (prefers-reduced-motion: no-preference)': {
+                          animation: 'rh-live-pulse 2.4s ease-in-out infinite',
+                        },
+                        '@keyframes rh-live-pulse': {
+                          '0%, 100%': { boxShadow: `0 0 0 3px ${alpha('#10B981', 0.22)}` },
+                          '50%': { boxShadow: `0 0 0 7px ${alpha('#10B981', 0.06)}` },
+                        },
+                      }}
+                    />
+                    {t('landing.heroEyebrow')}
+                  </Box>
                   <Typography
                     component="h1"
                     variant="h1"
                     sx={{
                       letterSpacing: '-0.035em',
                       lineHeight: { xs: 1.15, md: 1.08 },
-                      fontSize: { xs: '1.7rem', sm: '2.25rem', md: 'clamp(2.15rem, 3.2vw, 2.65rem)' },
+                      fontSize: { xs: '1.85rem', sm: '2.5rem', md: 'clamp(2.4rem, 3.6vw, 3.1rem)' },
                       fontWeight: 800,
                       color: 'text.primary',
                       textWrap: 'balance',
                     }}
                   >
-                    {t('landing.heroTitle')}
+                    {t('landing.heroTitleLead')}{' '}
+                    <Box
+                      component="span"
+                      sx={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        whiteSpace: 'nowrap',
+                        background: `linear-gradient(100deg, ${theme.palette.primary.main} 10%, #3B82F6 55%, #7C3AED 100%)`,
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        color: 'transparent',
+                      }}
+                    >
+                      {t('landing.heroTitleAccent')}
+                      {/* Hand-drawn underline swoosh. */}
+                      <Box
+                        component="svg"
+                        aria-hidden
+                        viewBox="0 0 300 16"
+                        preserveAspectRatio="none"
+                        sx={{ position: 'absolute', left: '2%', bottom: '-0.18em', width: '92%', height: '0.32em', overflow: 'visible' }}
+                      >
+                        <path
+                          d="M4 11 C 70 3, 150 2, 296 7"
+                          fill="none"
+                          stroke={alpha('#F5A524', 0.9)}
+                          strokeWidth="5"
+                          strokeLinecap="round"
+                        />
+                      </Box>
+                    </Box>
                   </Typography>
                   <Typography
                     variant="body1"
@@ -357,20 +458,29 @@ export default function LandingPage() {
                     <Button
                       component={RouterLink}
                       to="/map"
-                      variant="outlined"
+                      variant="contained"
                       size="large"
+                      disableElevation
                       startIcon={<MapOutlined />}
-                      endIcon={<ArrowForward />}
+                      endIcon={<ArrowForward className="cta-arrow" />}
                       sx={withLandingCtaSx(
                         theme,
                         {
                           fontWeight: 800,
                           borderRadius: `${rhRadius.md}px`,
                           minHeight: 48,
-                          px: 2.25,
+                          px: 2.5,
                           flex: { sm: '0 0 auto' },
-                          borderWidth: '1.5px',
-                          '&:hover': { borderWidth: '1.5px' },
+                          boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.28)}`,
+                          transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                          '& .cta-arrow': { transition: 'transform 0.18s ease' },
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              transform: 'translateY(-1px)',
+                              boxShadow: `0 12px 26px ${alpha(theme.palette.primary.main, 0.36)}`,
+                            },
+                            '&:hover .cta-arrow': { transform: 'translateX(3px)' },
+                          },
                         },
                       )}
                     >
@@ -399,7 +509,24 @@ export default function LandingPage() {
                     </Button>
                   </Stack>
 
-                <Box sx={{ pt: { md: 0.5 } }}>
+                <Box
+                  sx={{
+                    alignSelf: 'flex-start',
+                    mt: { md: 0.5 },
+                    maxWidth: '100%',
+                    // Pill only where the proof line fits on one row; phones keep it flat so it doesn't wrap.
+                    [theme.breakpoints.up('sm')]: {
+                      py: 0.75,
+                      pl: 1,
+                      pr: 2,
+                      borderRadius: `${rhRadius.pill}px`,
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: alpha(theme.palette.text.primary, 0.08),
+                      boxShadow: `0 6px 18px ${alpha(theme.palette.common.black, 0.06)}`,
+                    },
+                  }}
+                >
                   <HeroProofRow />
                 </Box>
 
@@ -448,7 +575,7 @@ export default function LandingPage() {
                       p: 0,
                     }}
                   >
-                    {WHY_RENTARAH.map(({ Icon, titleKey }) => (
+                    {WHY_RENTARAH.map(({ Icon, titleKey, tone }) => (
                       <Stack
                         key={titleKey}
                         component="li"
@@ -466,7 +593,7 @@ export default function LandingPage() {
                           borderColor: alpha(theme.palette.primary.main, 0.12),
                         }}
                       >
-                        <Icon sx={{ fontSize: 16, color: 'primary.main' }} aria-hidden />
+                        <Icon sx={{ fontSize: 16, color: tone }} aria-hidden />
                         <Typography
                           component="span"
                           noWrap
@@ -484,8 +611,8 @@ export default function LandingPage() {
                       gap: 1.25,
                     }}
                   >
-                    {WHY_RENTARAH.map(({ Icon, titleKey, lineKey }) => (
-                      <WhyPointRow key={titleKey} Icon={Icon} title={t(titleKey)} line={t(lineKey)} />
+                    {WHY_RENTARAH.map(({ Icon, titleKey, lineKey, tone }) => (
+                      <WhyPointCard key={titleKey} Icon={Icon} title={t(titleKey)} line={t(lineKey)} tone={tone} />
                     ))}
                   </Box>
                 </Box>
@@ -507,54 +634,110 @@ export default function LandingPage() {
                     px: { xs: 2, sm: 2.25, md: 2.5 },
                     pb: { xs: 2, sm: 2.25, md: 2.5 },
                     pt: { xs: 2, sm: 2.25, md: 2.5 },
-                    borderRadius: `${rhRadius.lg}px`,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper',
-                    boxShadow: rhElev.elev1,
-                    transition: 'box-shadow 0.25s ease, border-color 0.2s ease',
+                    borderRadius: `${rhRadius.lg + 4}px`,
+                    // Gradient hairline border: paper fill on the padding box, brand gradient on the border box.
+                    border: '1.5px solid transparent',
+                    background: `linear-gradient(${theme.palette.background.paper}, ${theme.palette.background.paper}) padding-box, linear-gradient(140deg, ${alpha(theme.palette.primary.main, 0.55)}, ${alpha('#7C3AED', 0.25)} 45%, ${alpha(theme.palette.text.primary, 0.08)} 75%) border-box`,
+                    boxShadow: `0 24px 60px ${alpha(theme.palette.primary.main, 0.14)}, 0 4px 14px ${alpha(theme.palette.common.black, 0.06)}`,
+                    transition: 'box-shadow 0.25s ease',
                     '@media (hover: hover)': {
                       '&:hover': {
-                        boxShadow: rhElev.elev2,
-                        borderColor: 'divider',
+                        boxShadow: `0 28px 70px ${alpha(theme.palette.primary.main, 0.2)}, 0 6px 18px ${alpha(theme.palette.common.black, 0.08)}`,
                       },
                     },
                   }}
                 >
-                  <Stack spacing={{ xs: 1.5, sm: 1.5, md: 1.75 }}>
-                    <Stack direction="row" spacing={1.25} alignItems="center">
+                    {/* Brand header band, bleeding to the card edges. */}
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        mx: { xs: -2, sm: -2.25, md: -2.5 },
+                        mt: { xs: -2, sm: -2.25, md: -2.5 },
+                        px: { xs: 2, sm: 2.25, md: 2.5 },
+                        pt: { xs: 1.75, sm: 2 },
+                        pb: { xs: 1.75, sm: 2 },
+                        mb: { xs: 1.5, sm: 1.75 },
+                        color: 'common.white',
+                        background: `linear-gradient(125deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 45%, #3B82F6 75%, #6366F1 100%)`,
+                      }}
+                    >
+                      {/* Dotted route doodle in the band's corner. */}
                       <Box
-                        sx={{
-                          width: { xs: 34, sm: 38 },
-                          height: { xs: 34, sm: 38 },
-                          flexShrink: 0,
-                          borderRadius: `${rhRadius.md}px`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: alpha(theme.palette.primary.main, 0.08),
-                          color: 'primary.main',
-                        }}
+                        component="svg"
                         aria-hidden
+                        viewBox="0 0 220 90"
+                        sx={{ display: { xs: 'none', sm: 'block' }, position: 'absolute', right: -14, bottom: -18, width: 220, height: 90, opacity: 0.2, pointerEvents: 'none' }}
                       >
-                        <DirectionsCar sx={{ fontSize: { xs: 19, sm: 21 } }} />
+                        <path d="M6 80 C 60 70, 70 20, 120 30 S 190 60, 214 8" fill="none" stroke="#fff" strokeWidth="2.5" strokeDasharray="2 9" strokeLinecap="round" />
+                        <circle cx="214" cy="8" r="5" fill="#fff" />
                       </Box>
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography
-                          variant="h6"
-                          component="h2"
+                      <Stack direction="row" spacing={1.25} alignItems="center" sx={{ position: 'relative' }}>
+                        <Box
                           sx={{
-                            fontWeight: 800,
-                            letterSpacing: '-0.02em',
-                            fontSize: { xs: '1.125rem', sm: '1.3rem' },
-                            lineHeight: 1.2,
+                            width: { xs: 38, sm: 42 },
+                            height: { xs: 38, sm: 42 },
+                            flexShrink: 0,
+                            borderRadius: `${rhRadius.md}px`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: alpha('#fff', 0.16),
+                            border: `1px solid ${alpha('#fff', 0.28)}`,
+                            color: 'common.white',
                           }}
+                          aria-hidden
                         >
-                          {t('landing.findVehicle')}
-                        </Typography>
-                      </Box>
-                    </Stack>
+                          <DirectionsCar sx={{ fontSize: { xs: 20, sm: 22 } }} />
+                        </Box>
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography
+                            variant="h6"
+                            component="h2"
+                            sx={{
+                              fontWeight: 800,
+                              letterSpacing: '-0.02em',
+                              fontSize: { xs: '1.125rem', sm: '1.3rem' },
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {t('landing.findVehicle')}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', mt: 0.25, lineHeight: 1.35, color: alpha('#fff', 0.82), fontWeight: 500 }}
+                          >
+                            {t('landing.findVehicleHint')}
+                          </Typography>
+                        </Box>
+                        {preview.matchCount != null && preview.matchCount > 0 ? (
+                          <Box
+                            aria-live="polite"
+                            sx={{
+                              display: { xs: 'none', sm: 'inline-flex' },
+                              alignItems: 'center',
+                              gap: 0.75,
+                              flexShrink: 0,
+                              alignSelf: 'flex-start',
+                              px: 1.25,
+                              py: 0.5,
+                              borderRadius: `${rhRadius.pill}px`,
+                              bgcolor: alpha('#fff', 0.16),
+                              border: `1px solid ${alpha('#fff', 0.3)}`,
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              whiteSpace: 'nowrap',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            <Box component="span" aria-hidden sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: '#34D399', boxShadow: `0 0 0 3px ${alpha('#34D399', 0.3)}` }} />
+                            {t('landing.availableNow', { count: preview.matchCount })}
+                          </Box>
+                        ) : null}
+                      </Stack>
+                    </Box>
 
+                  <Stack spacing={{ xs: 1.5, sm: 1.5, md: 1.75 }}>
                     <TripVehicleTypePicker
                       value={vehicleType}
                       onChange={setVehicleType}
@@ -703,9 +886,12 @@ export default function LandingPage() {
                             '& > *': { flexShrink: 0 },
                           }}
                         >
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mr: 0.25 }}>
-                            {t('landing.popular')}
-                          </Typography>
+                          <Stack direction="row" alignItems="center" spacing={0.4} sx={{ color: 'text.secondary', mr: 0.25 }}>
+                            <TrendingUp sx={{ fontSize: 16, color: '#F59E0B' }} aria-hidden />
+                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                              {t('landing.popular')}
+                            </Typography>
+                          </Stack>
                           {preview.popularAreas.map((area) => (
                             <Chip
                               key={area}
@@ -718,11 +904,18 @@ export default function LandingPage() {
                               }}
                               sx={{
                                 height: 28,
-                                fontWeight: 600,
+                                fontWeight: 700,
                                 fontSize: '0.8125rem',
                                 borderRadius: `${rhRadius.pill}px`,
-                                bgcolor: alpha(theme.palette.text.primary, 0.05),
-                                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' },
+                                bgcolor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: alpha(theme.palette.text.primary, 0.12),
+                                transition: 'all 0.15s ease',
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                  borderColor: alpha(theme.palette.primary.main, 0.45),
+                                  color: 'primary.main',
+                                },
                               }}
                             />
                           ))}
@@ -730,7 +923,16 @@ export default function LandingPage() {
                       ) : null}
                     </Box>
 
-                    <Stack spacing={{ xs: 1.5, sm: 0.75 }} sx={{ pt: 0 }}>
+                    <Stack
+                      spacing={{ xs: 1.5, sm: 1 }}
+                      sx={{
+                        p: { xs: 1.25, sm: 1.5 },
+                        borderRadius: `${rhRadius.md + 2}px`,
+                        bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.1 : 0.04),
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.primary.main, 0.12),
+                      }}
+                    >
                       <DateRangePicker
                         pickup={pickup}
                         dropoff={dropoff}
@@ -798,15 +1000,27 @@ export default function LandingPage() {
                       size="large"
                       fullWidth
                       onClick={search}
-                      endIcon={<ArrowForward sx={{ fontSize: { xs: 18, sm: 20 } }} />}
+                      endIcon={<ArrowForward className="cta-arrow" sx={{ fontSize: { xs: 18, sm: 20 } }} />}
                       sx={withLandingCtaSx(
                         theme,
                         {
-                          py: { xs: 1.1, sm: 1.2 },
-                          minHeight: { xs: 46, sm: 48 },
+                          py: { xs: 1.1, sm: 1.3 },
+                          minHeight: { xs: 48, sm: 52 },
                           borderRadius: `${rhRadius.md}px`,
-                          fontSize: { xs: '0.9375rem', sm: '1rem' },
+                          fontSize: { xs: '0.9375rem', sm: '1.0625rem' },
                           fontWeight: 800,
+                          background: `linear-gradient(100deg, ${theme.palette.primary.main}, #3B82F6 60%, #6366F1)`,
+                          boxShadow: `0 12px 28px ${alpha(theme.palette.primary.main, 0.35)}`,
+                          transition: 'transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease',
+                          '& .cta-arrow': { transition: 'transform 0.18s ease' },
+                          '@media (hover: hover) and (pointer: fine)': {
+                            '&:hover': {
+                              transform: 'translateY(-1px)',
+                              filter: 'brightness(1.05)',
+                              boxShadow: `0 16px 34px ${alpha(theme.palette.primary.main, 0.45)}`,
+                            },
+                            '&:hover .cta-arrow': { transform: 'translateX(4px)' },
+                          },
                         },
                         true,
                       )}
