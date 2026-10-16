@@ -42,7 +42,18 @@ export default function TripClockSummary({ pickup, dropoff, compact = false }: T
         role="status"
         aria-live="polite"
         aria-label={`${t('picker.tripLength')}. ${headline}. ${clockHours}`}
-        sx={{ px: 0.25, color: 'text.secondary', minWidth: 0 }}
+        sx={{
+          alignSelf: 'flex-start',
+          maxWidth: '100%',
+          px: 1.25,
+          py: 0.6,
+          borderRadius: `${rhRadius.pill}px`,
+          bgcolor: 'background.paper',
+          border: '1px solid',
+          borderColor: (th) => alpha(th.palette.primary.main, 0.16),
+          color: 'text.secondary',
+          minWidth: 0,
+        }}
       >
         <ScheduleOutlined sx={{ fontSize: 17, color: 'primary.main' }} aria-hidden />
         <Typography

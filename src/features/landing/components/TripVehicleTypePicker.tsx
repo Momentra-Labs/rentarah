@@ -71,13 +71,21 @@ export default function TripVehicleTypePicker({ value, onChange, availableTypes 
             lineHeight: 1.2,
             color: 'text.secondary',
             bgcolor: 'background.paper',
-            transition: 'background-color 140ms ease, border-color 140ms ease, color 140ms ease',
+            transition: 'background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease',
             '& .MuiSvgIcon-root': { fontSize: { xs: 20, sm: 22 } },
-            '&:hover': { bgcolor: (th) => alpha(th.palette.primary.main, 0.04) },
-            '&.Mui-selected, &.Mui-selected:hover': {
+            '&:hover': {
+              bgcolor: (th) => alpha(th.palette.primary.main, 0.05),
+              borderColor: (th) => `${alpha(th.palette.primary.main, 0.35)} !important`,
               color: 'primary.main',
-              bgcolor: (th) => alpha(th.palette.primary.main, 0.08),
-              borderColor: 'primary.main',
+            },
+            '@media (hover: hover) and (pointer: fine)': {
+              '&:hover': { transform: 'translateY(-1px)' },
+            },
+            '&.Mui-selected, &.Mui-selected:hover': {
+              color: 'common.white',
+              background: (th) => `linear-gradient(160deg, #3B82F6, ${th.palette.primary.main})`,
+              borderColor: (th) => `${th.palette.primary.main} !important`,
+              boxShadow: (th) => `0 8px 18px ${alpha(th.palette.primary.main, 0.3)}`,
             },
             '&.Mui-focusVisible': { boxShadow: 'var(--rh-focus-ring)' },
           }}

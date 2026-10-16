@@ -92,9 +92,13 @@ export const en = {
   },
   landing: {
     heroTitle: 'Need a ride in the Philippines?',
+    heroTitleLead: 'Need a ride in',
+    heroTitleAccent: 'the Philippines?',
+    heroEyebrow: 'Car & motorbike rentals · Philippines',
     heroSubtitle: 'Book a car or motorcycle from verified hosts — clear PHP daily rates, pickup where you are.',
     findVehicle: 'Find a vehicle',
     findVehicleHint: 'Choose a pickup city and trip dates, then see what’s free nearby.',
+    availableNow: '{{count}} available',
     pickupCity: 'Pickup city',
     pickupCityPlaceholder: 'Type to search — Cebu, Davao, Makati…',
     allCities: 'All cities',

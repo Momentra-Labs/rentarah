@@ -94,9 +94,13 @@ export const fil: Messages = {
   },
   landing: {
     heroTitle: 'Kailangan mo ng sasakyan sa Pilipinas?',
+    heroTitleLead: 'Kailangan mo ng sasakyan',
+    heroTitleAccent: 'sa Pilipinas?',
+    heroEyebrow: 'Paupahang kotse at motor · Pilipinas',
     heroSubtitle: 'Mag-book ng kotse o motorsiklo mula sa beripikadong host — malinaw na daily rate sa PHP, pickup kung nasaan ka.',
     findVehicle: 'Maghanap ng sasakyan',
     findVehicleHint: 'Pumili ng pickup city at petsa ng biyahe, tapos tingnan kung ano ang bakante.',
+    availableNow: 'May {{count}} available',
     pickupCity: 'Pickup city',
     pickupCityPlaceholder: 'Mag-type para maghanap — Cebu, Davao, Makati…',
     allCities: 'Lahat ng lungsod',
