@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RentaraH Teaser — The Problem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* Facebook feed post, 4:5 portrait (1080x1350 — the largest feed shape). Rendered at 2x.
+     Story: top half = how renting a ride in the PH feels today (a dramatised "hm po?" chat with the
+     pain points called out), bottom half = the RentaraH way (clear all-in price, verified host, book in minutes).
+     In the phone feed this shows ~400px wide, so text stays large and short. */
+  :root{ --blue:#1A56DB; --sky:#93C5FD; --ink:#0B1530; --slate:#64748B; --green:#34D399; --amber:#FBBF24; --red:#F87171; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1350px;overflow:hidden;background:#071233}
+  body{font-family:"Urbanist","Segoe UI",sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+
+  .canvas{position:relative;width:1080px;height:1350px;overflow:hidden;padding:56px 72px 48px;
+    background:
+      radial-gradient(520px 420px at 15% 8%, rgba(59,130,246,.38), transparent 70%),
+      radial-gradient(640px 520px at 92% 88%, rgba(26,86,219,.65), transparent 65%),
+      linear-gradient(165deg,#071233 0%,#0C2161 55%,#1446C0 100%);}
+  .grid{position:absolute;inset:0;opacity:.12;pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);
+    background-size:54px 54px}
+  .content{position:relative;height:100%;display:flex;flex-direction:column}
+
+  /* header */
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .eyebrow{display:inline-flex;align-items:center;gap:12px;padding:11px 22px;border-radius:999px;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.26);
+    font-size:22px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+  .eyebrow i{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 0 6px rgba(52,211,153,.22)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand .icon{width:56px;height:56px;border-radius:16px}
+  .brand .word{height:34px}
+
+  h1{margin-top:36px;font-size:78px;line-height:1.0;font-weight:900;letter-spacing:-.035em}
+  h1 .q{color:var(--amber)}
+  .sub{margin-top:12px;font-size:30px;font-weight:600;color:rgba(255,255,255,.75)}
+
+  /* the problem: a messy DM thread */
+  .chat{position:relative;margin-top:28px;margin-right:230px;padding:22px 24px 20px;border-radius:30px;background:#fff;color:var(--ink);
+    box-shadow:0 34px 70px rgba(2,8,30,.5);transform:rotate(-1.6deg)}
+  .chat .head{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:2px solid #EEF2F7}
+  .chat .av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#CBD5E1,#94A3B8);display:grid;place-items:center;color:#fff;font-weight:900;font-size:20px}
+  .chat .who b{display:block;font-size:22px;font-weight:800}
+  .chat .who small{font-size:17px;font-weight:600;color:var(--slate)}
+  .msgs{display:flex;flex-direction:column;gap:9px;padding-top:14px}
+  .b{max-width:80%;padding:13px 18px;border-radius:22px;font-size:22px;font-weight:600;line-height:1.3}
+  .b.me{align-self:flex-end;background:#0866FF;color:#fff;border-bottom-right-radius:8px}
+  .b.them{align-self:flex-start;background:#F0F2F5;color:var(--ink);border-bottom-left-radius:8px}
+  .stamp{align-self:center;font-size:16px;font-weight:700;color:#94A3B8;letter-spacing:.04em;padding:2px 0}
+  .seen{align-self:flex-end;font-size:16px;font-weight:700;color:#94A3B8}
+
+  /* pain tags pinned beside the chat */
+  .tags{position:absolute;right:-232px;top:12px;display:flex;flex-direction:column;gap:16px;transform:rotate(1.6deg)}
+  .tag{display:flex;align-items:center;gap:12px;width:226px;padding:12px 16px;border-radius:18px;
+    background:rgba(15,23,42,.55);border:2px solid rgba(248,113,113,.55);backdrop-filter:blur(4px);
+    font-size:21px;font-weight:800;line-height:1.15;color:#fff;box-shadow:0 14px 30px rgba(2,8,30,.35)}
+  .tag .x{flex:none;width:34px;height:34px;border-radius:50%;background:var(--red);display:grid;place-items:center}
+  .tag .x svg{width:18px;height:18px}
+
+  /* turn */
+  .turn{margin-top:34px;display:flex;align-items:center;gap:18px;font-size:34px;font-weight:900;letter-spacing:-.02em}
+  .turn .line{flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(147,197,253,.7),rgba(147,197,253,0))}
+  .turn .hl{background:linear-gradient(90deg,#93C5FD,#fff 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  /* the fix: a RentaraH listing */
+  .card{margin-top:20px;display:flex;gap:22px;padding:18px;border-radius:30px;background:#fff;color:var(--ink);
+    box-shadow:0 34px 70px rgba(2,8,30,.5)}
+  .card .photo{width:250px;height:184px;flex:none;border-radius:20px;overflow:hidden;background:#E2E8F0}
+  .card .photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .info{flex:1;min-width:0;display:flex;flex-direction:column;padding:4px 4px 2px 0}
+  .card .name{font-size:30px;font-weight:900;letter-spacing:-.02em}
+  .card .meta{margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 14px;font-size:19px;font-weight:700;color:var(--slate)}
+  .card .meta span{display:inline-flex;align-items:center;gap:6px}
+  .card .meta svg{width:20px;height:20px}
+  .card .row{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+  .card .price{font-size:40px;font-weight:900;letter-spacing:-.03em;line-height:1}
+  .card .price small{font-size:20px;font-weight:700;color:var(--slate);letter-spacing:0}
+  .card .allin{display:block;margin-top:6px;font-size:17px;font-weight:800;color:#059669;letter-spacing:.02em}
+  .card .book{padding:16px 24px;border-radius:16px;background:var(--blue);color:#fff;font-size:22px;font-weight:900;white-space:nowrap;
+    box-shadow:0 12px 24px rgba(26,86,219,.35)}
+
+  .wins{margin-top:18px;display:flex;gap:12px}
+  .win{flex:1;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;
+    background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.18);font-size:20px;font-weight:800;line-height:1.15}
+  .win .ok{flex:none;width:32px;height:32px;border-radius:50%;background:var(--green);display:grid;place-items:center}
+  .win .ok svg{width:18px;height:18px}
+
+  .foot{margin-top:auto;padding-top:18px;display:flex;align-items:center;justify-content:space-between;font-size:22px;font-weight:700;color:rgba(255,255,255,.72)}
+  .foot b{color:#fff;font-weight:900}
+  .follow{display:inline-flex;align-items:center;gap:10px;padding:12px 24px;border-radius:999px;background:#fff;color:var(--blue);font-size:22px;font-weight:900}
+  .follow svg{width:24px;height:24px}
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid"></div>
+  <div class="content">
+
+    <div class="top">
+      <span class="eyebrow"><i></i>Coming soon</span>
+      <span class="brand">
+        <img class="icon" src="../../docs/brand/svg/rentarah-app-icon.svg" alt="">
+        <img class="word" src="../../docs/brand/svg/rentarah-wordmark-white.svg" alt="RentaraH">
+      </span>
+    </div>
+
+    <h1>Renting a ride shouldn’t<br>start with <span class="q">“hm po?”</span></h1>
+    <p class="sub">Sound familiar?</p>
+
+    <!-- Dramatised, generic thread — not a real conversation or person. -->
+    <div class="chat">
+      <div class="head">
+        <span class="av">R</span>
+        <span class="who"><b>Rent-a-Car PH (Page)</b><small>Typically replies in a few days</small></span>
+      </div>
+      <div class="msgs">
+        <span class="b me">Hi! Available pa po this Sat–Mon? Hm po? 🙏</span>
+        <span class="stamp">SEEN · 2 DAYS LATER</span>
+        <span class="b them">₱2,500/day po. + gas, + delivery, + driver fee</span>
+        <span class="b them">Send 50% downpayment via GCash muna para ma-reserve</span>
+        <span class="b me">Legit po ba kayo? May reviews?</span>
+        <span class="seen">Seen</span>
+      </div>
+
+      <div class="tags">
+        <span class="tag"><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>Days of waiting</span>
+        <span class="tag"><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>Surprise fees</span>
+        <span class="tag"><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>Paying a stranger first</span>
+        <span class="tag"><span class="x"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>No reviews to trust</span>
+      </div>
+    </div>
+
+    <div class="turn"><span class="hl">Soon, there’s a better way.</span><span class="line"></span></div>
+
+    <!-- The RentaraH way: one listing, everything answered upfront. -->
+    <div class="card">
+      <div class="photo"><img src="https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=640&fit=crop&q=80" alt=""></div>
+      <div class="info">
+        <span class="name">2023 Toyota Camry</span>
+        <span class="meta">
+          <span><svg viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>4.8 (94)</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Verified host</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="#1A56DB" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Makati · 1.2 km</span>
+        </span>
+        <span class="row">
+          <span><span class="price">₱3,500<small> /day</small></span><span class="allin">ALL-IN · NO HIDDEN FEES</span></span>
+          <span class="book">Book in minutes</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="wins">
+      <span class="win"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#06281B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg></span>Clear prices upfront</span>
+      <span class="win"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#06281B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg></span>Real reviews</span>
+      <span class="win"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#06281B" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4.5 4.5L19 7"/></svg></span>Secure payments</span>
+    </div>
+
+    <div class="foot">
+      <span><b>Cars &amp; motorbikes</b> · from verified hosts across the PH</span>
+      <span class="follow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Follow for launch</span>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

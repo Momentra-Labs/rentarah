@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RentaraH Facebook Cover (refreshed brand)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* Facebook cover: 1640 x 856 (rendered at 2x).
+     Built mobile-app first (measured from the FB Android app):
+       - visible width   ~ x 185-1475 (sides cropped)
+       - profile photo   circle centred x 820, y 700, r ~285 (covers centre-bottom)
+       - app buttons     top-left (menu) and top-right (edit/search/more) above y ~160
+     Desktop shows the full width but only the band y ~116-740.
+     => key content: centre column above y 410, phones left/right of the photo, y 165-740. */
+  :root{ --blue:#1A56DB; --sky:#93C5FD; --ink:#0B1530; --navy:#0A1A44; --green:#34D399; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1640px;height:856px;overflow:hidden;background:var(--navy)}
+  body{font-family:"Urbanist","Segoe UI",sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+
+  .cover{position:relative;width:1640px;height:856px;overflow:hidden;
+    background:
+      radial-gradient(520px 420px at 50% 34%, rgba(59,130,246,.42), transparent 70%),
+      radial-gradient(700px 520px at 90% 80%, rgba(26,86,219,.55), transparent 60%),
+      radial-gradient(700px 520px at 8% 85%, rgba(26,86,219,.45), transparent 60%),
+      linear-gradient(160deg,#071233 0%,#0C2161 50%,#1446C0 100%);}
+  .grid{position:absolute;inset:0;opacity:.16;
+    background-image:linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px);
+    background-size:48px 48px;
+    -webkit-mask-image:radial-gradient(ellipse at 50% 45%,#000 30%,transparent 72%);}
+  .route{position:absolute;inset:0}
+
+  /* ---------- centre column (above the profile photo) ---------- */
+  .copy{position:absolute;left:530px;top:160px;width:580px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .logo{display:inline-flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:6px 14px 6px 10px;
+    box-shadow:0 10px 30px rgba(2,8,30,.35)}
+  .logo img{height:32px;display:block}
+  .logo span{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--blue);border-left:1px solid #DBEAFE;padding-left:12px}
+  h1{margin-top:16px;font-size:44px;line-height:1.02;font-weight:900;letter-spacing:-.025em}
+  h1 .hl{background:linear-gradient(90deg,#93C5FD,#fff 50%,#93C5FD);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .problem{margin-top:10px;font-size:17px;line-height:1.35;font-weight:500;color:rgba(255,255,255,.8)}
+  .problem s{text-decoration-color:rgba(248,113,113,.95);text-decoration-thickness:2px;color:rgba(255,255,255,.6)}
+  .problem b{color:#fff;font-weight:800}
+  .pills{display:flex;gap:8px;margin-top:12px;justify-content:center}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);font-weight:700;font-size:13.5px}
+  .pill svg{width:15px;height:15px;flex:none}
+
+  /* desktop-only extra (sits behind the profile photo on mobile) */
+  .cta{position:absolute;left:0;width:1640px;top:560px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 24px;border-radius:999px;background:#fff;color:var(--blue);
+    font-weight:800;font-size:18px;box-shadow:0 12px 30px rgba(3,10,40,.35)}
+  .url{font-weight:600;font-size:15px;color:rgba(255,255,255,.72)}
+
+  /* ---------- phones ---------- */
+  .phone{position:absolute;border-radius:36px;padding:8px;
+    background:linear-gradient(145deg,#1f2937,#0b1020);box-shadow:0 30px 60px rgba(2,8,30,.6),inset 0 0 0 2px rgba(255,255,255,.12)}
+  .phone .screen{width:100%;height:100%;border-radius:29px;overflow:hidden;position:relative;background:#EEF3FF;
+    /* status-bar strip: keeps the app header (logo + wordmark) clear of the notch, as on a real phone */
+    padding-top:22px}
+  .phone img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+  .notch{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:58px;height:16px;border-radius:12px;background:#0b1020;z-index:2}
+  .p-search{left:226px;top:214px;width:190px;height:412px;transform:rotate(-6deg);z-index:1}
+  .p-book{left:346px;top:184px;width:204px;height:442px;transform:rotate(-3deg);z-index:2}
+  .p-pick{left:1090px;top:184px;width:204px;height:442px;transform:rotate(3deg);z-index:2}
+  .tag{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);z-index:4;display:inline-flex;align-items:center;gap:7px;
+    padding:7px 14px;border-radius:999px;background:var(--blue);color:#fff;font-weight:800;font-size:15px;white-space:nowrap;
+    box-shadow:0 10px 24px rgba(2,8,30,.45),0 0 0 3px rgba(255,255,255,.9)}
+  .p-search .tag{left:30%}
+  .tag b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#fff;color:var(--blue);font-size:12px}
+
+  /* ---------- floating chips (right column) ---------- */
+  /* outer-right card stack: mirrors the Search phone's footprint around the centre line */
+  .stack{position:absolute;left:1238px;top:236px;width:210px;display:flex;flex-direction:column;align-items:flex-start;gap:58px;transform:rotate(6deg);z-index:5}
+  .chip{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:#fff;color:var(--ink);
+    box-shadow:0 18px 40px rgba(2,8,30,.4);font-weight:700;font-size:14px;white-space:nowrap}
+  .chip .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none}
+  .chip small{display:block;font-size:12px;font-weight:600;color:#64748B;letter-spacing:.02em}
+  .chip strong{font-size:17px;font-weight:800}
+  .c-host .ic{background:#ECFDF5;color:#059669}
+  .c-pay{margin-left:-14px;align-items:flex-start}
+  .c-pay .ic{background:#EFF6FF;color:var(--blue);margin-top:2px}
+  /* Local payment methods: text badges in each brand's colour (2x2 keeps the card inside the mobile crop) */
+  .pay{display:grid;grid-template-columns:auto auto;gap:5px;margin-top:6px}
+  .pm{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:22px;padding:0 9px;border-radius:7px;
+    font-size:12.5px;font-weight:800;letter-spacing:-.01em;line-height:1}
+  .pm.gcash{background:#007DFE;color:#fff}
+  .pm.maya{background:#0F172A;color:#3EE07F}
+  .pm.grab{background:#00B14F;color:#fff}
+  .pm.bank{background:#EEF2F7;color:var(--ink)}
+  .pm.bank svg{width:13px;height:13px;flex:none}
+  .c-near .ic{background:#FFF7ED;color:#EA580C}
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="grid"></div>
+  <svg class="route" viewBox="0 0 1640 856" fill="none">
+    <path d="M-20 700 C 200 640, 300 520, 560 560 S 1000 760, 1240 640 S 1520 420, 1680 460"
+          stroke="rgba(147,197,253,.2)" stroke-width="3" stroke-dasharray="2 12" stroke-linecap="round"/>
+  </svg>
+
+  <div class="copy">
+    <div class="logo"><img src="../docs/brand/svg/rentarah-logo.svg" alt="RentaraH"><span>PHILIPPINES</span></div>
+    <h1>Rent a car or motorbike<br><span class="hl">from locals near you.</span></h1>
+    <p class="problem">No more <s>hidden fees</s>, <s>unverified owners</s> or <s>endless haggling</s>.<br>
+      <b>Book verified hosts at clear &#8369; daily rates.</b></p>
+    <div class="pills">
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Verified hosts</span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>&#8369;0 hidden fees</span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Pickup near you</span>
+    </div>
+  </div>
+
+  <div class="cta">
+    <span class="btn">Find your ride
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    <span class="url">or list your vehicle &amp; earn</span>
+  </div>
+
+  <div class="phone p-search"><div class="notch"></div><div class="screen"><img src="source/v2/app-mobile-home.png" alt="Search"></div>
+    <span class="tag"><b>1</b>Search</span></div>
+  <div class="phone p-book"><div class="notch"></div><div class="screen"><img src="source/v2/app-mobile-book.png" alt="Book"></div>
+    <span class="tag"><b>2</b>Book</span></div>
+  <div class="phone p-pick"><div class="notch"></div><div class="screen"><img src="source/v2/app-mobile-pickup.png" alt="Pick up"></div>
+    <span class="tag"><b>3</b>Pick up</span></div>
+
+  <div class="stack">
+    <div class="chip c-host"><span class="ic">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+      <span><small>Booking confirmed</small><strong>Verified host</strong></span></div>
+    <div class="chip c-pay"><span class="ic">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V7z"/><path d="M4 7l11-3v3"/><circle cx="16" cy="13.5" r="1.3" fill="currentColor"/></svg></span>
+      <span><small>Pay your way</small>
+        <span class="pay">
+          <span class="pm gcash">GCash</span><span class="pm maya">Maya</span>
+          <span class="pm grab">GrabPay</span>
+          <span class="pm bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.7 10v8M14.3 10v8M19 10v8M3 20h18"/></svg>Banks</span>
+        </span></span></div>
+    <div class="chip c-near"><span class="ic">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+      <span><small>Pickup point</small><strong>1.1 km from you</strong></span></div>
+  </div>
+</div>
+</body>
+</html>

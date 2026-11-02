@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff}iframe{border:0;width:390px;height:844px;display:block}</style>
+</head><body>
+<script>
+  // Promo screenshot helper: loads an app route in a true 390x844 phone viewport.
+  // Usage: shoot.html#<path>|<scrollY>   e.g. #cars/car_006|2470
+  localStorage.setItem('rentarah_onboarding_done', '1');
+  localStorage.setItem('rentara:geo-user-wants-sharing', 'true');
+  ['landing', 'car-detail'].forEach((k) => sessionStorage.setItem('rentara:geo-auto-' + k, '1'));
+
+  const [path, y] = (location.hash.slice(1) || '').split('|');
+  // Sample renter position in Makati so maps show "You" instead of a blocked-location notice.
+  const fakeGeo = {
+    getCurrentPosition: (ok) => setTimeout(() => ok({ coords: { latitude: 14.5535, longitude: 121.0215, accuracy: 20 }, timestamp: Date.now() }), 50),
+    watchPosition: (ok) => { fakeGeo.getCurrentPosition(ok); return 1; },
+    clearWatch: () => {},
+  };
+  const f = document.createElement('iframe');
+  f.src = '/' + (path || '');
+  document.body.appendChild(f);
+  // Patch geolocation in the iframe as soon as its real document exists (before app modules run).
+  const patch = setInterval(() => {
+    try {
+      const w = f.contentWindow;
+      if (w.location.href === 'about:blank') return;
+      Object.defineProperty(w.navigator, 'geolocation', { value: fakeGeo, configurable: true });
+      if (w.navigator.permissions) w.navigator.permissions.query = () => Promise.resolve({ state: 'granted', onchange: null });
+      clearInterval(patch);
+    } catch (e) {}
+  }, 1);
+  // Load the search page first (vehicles cached), then route in-app to the target and scroll.
+  f.src = '/search';
+  f.onload = () => setTimeout(() => {
+    const w = f.contentWindow;
+    w.history.pushState({}, '', '/' + (path || ''));
+    w.dispatchEvent(new w.PopStateEvent('popstate'));
+    setTimeout(() => w.scrollTo(0, +y || 0), 2500);
+  }, 2500);
+</script>
+</body></html>

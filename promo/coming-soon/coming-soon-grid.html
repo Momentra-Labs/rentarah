@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RentaraH Coming Soon Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* Facebook 4-photo post: four 1080x1080 squares → Facebook lays them out as a 2x2 grid.
+     The page is one 2160x2160 canvas (rendered at 2x, then cut into quadrants), so the background,
+     grid lines and the dotted route flow across all four tiles, while every tile's content stays
+     inside its own square (each image must also work alone when tapped).
+     In the feed each tile shows at ~250px on phones → text is large and short. */
+  :root{ --blue:#1A56DB; --sky:#93C5FD; --ink:#0B1530; --green:#34D399; --amber:#FBBF24; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:2160px;height:2160px;overflow:hidden;background:#071233}
+  body{font-family:"Urbanist","Segoe UI",sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+
+  .canvas{position:relative;width:2160px;height:2160px;overflow:hidden;
+    background:
+      radial-gradient(760px 620px at 22% 24%, rgba(59,130,246,.45), transparent 70%),
+      radial-gradient(820px 700px at 80% 78%, rgba(26,86,219,.6), transparent 65%),
+      radial-gradient(700px 600px at 85% 15%, rgba(37,99,235,.35), transparent 65%),
+      linear-gradient(155deg,#071233 0%,#0C2161 48%,#1446C0 100%);}
+  .grid{position:absolute;inset:0;opacity:.14;
+    background-image:linear-gradient(rgba(255,255,255,.14) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.14) 1px,transparent 1px);
+    background-size:60px 60px}
+  .route{position:absolute;inset:0}
+
+  /* each tile: its own 1080 square; content never crosses a seam */
+  .tile{position:absolute;width:1080px;height:1080px;padding:96px}
+  .t1{left:0;top:0}.t2{left:1080px;top:0;overflow:hidden /* phone bleeds off this tile's bottom edge, never into tile 4 */}.t3{left:0;top:1080px}.t4{left:1080px;top:1080px}
+  .num{position:absolute;right:64px;bottom:56px;font-size:30px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.55)}
+
+  .eyebrow{display:inline-flex;align-items:center;gap:14px;padding:14px 26px;border-radius:999px;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.28);
+    font-size:32px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+  .eyebrow i{width:16px;height:16px;border-radius:50%;background:var(--green);box-shadow:0 0 0 8px rgba(52,211,153,.22)}
+
+  /* 1 — Coming soon */
+  .t1{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:0}
+  .t1 .appicon{width:400px;height:400px;margin-top:56px;filter:drop-shadow(0 40px 70px rgba(2,8,30,.55))}
+  .t1 .word{width:640px;margin-top:64px;display:block}
+  .t1 .soon{margin-top:34px;font-size:46px;font-weight:700;color:rgba(255,255,255,.82)}
+
+  /* 2 — What it is */
+  .t2 h2{font-size:92px;line-height:1.0;font-weight:900;letter-spacing:-.03em}
+  .t2 h2 .hl{background:linear-gradient(90deg,#93C5FD,#fff 60%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .phone{position:absolute;border-radius:64px;padding:14px;
+    background:linear-gradient(145deg,#1f2937,#0b1020);box-shadow:0 50px 90px rgba(2,8,30,.6),inset 0 0 0 3px rgba(255,255,255,.12)}
+  .phone .screen{width:100%;height:100%;border-radius:52px;overflow:hidden;background:#EEF3FF;padding-top:40px}
+  .phone img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:110px;height:30px;border-radius:20px;background:#0b1020;z-index:2}
+  .t2 .phone{left:360px;top:450px;width:420px;height:880px;transform:rotate(-6deg)}
+  .t2 .price{position:absolute;left:600px;top:610px;z-index:3;display:flex;align-items:center;gap:18px;padding:22px 28px;border-radius:28px;
+    background:#fff;color:var(--ink);box-shadow:0 30px 60px rgba(2,8,30,.45);transform:rotate(4deg)}
+  .t2 .price .ic{width:68px;height:68px;border-radius:20px;background:#ECFDF5;color:#059669;display:grid;place-items:center}
+  .t2 .price small{display:block;font-size:26px;font-weight:600;color:#64748B}
+  .t2 .price strong{font-size:38px;font-weight:900;letter-spacing:-.02em}
+  .t2 .tags{position:absolute;left:96px;top:410px;display:flex;flex-direction:column;gap:16px;z-index:3}
+  .t2 .tags span{display:inline-flex;align-items:center;gap:12px;padding:14px 24px;border-radius:999px;background:var(--blue);
+    font-size:34px;font-weight:800;box-shadow:0 16px 34px rgba(2,8,30,.45),0 0 0 4px rgba(255,255,255,.9)}
+  .t2 .tags b{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#fff;color:var(--blue);font-size:24px}
+
+  /* 3 — Why */
+  .t3 h2{font-size:84px;line-height:1.02;font-weight:900;letter-spacing:-.03em}
+  .t3 ul{list-style:none;margin-top:56px;display:flex;flex-direction:column;gap:30px}
+  .t3 li{display:flex;align-items:center;gap:28px;font-size:52px;font-weight:800;letter-spacing:-.01em}
+  .t3 li .ic{width:96px;height:96px;border-radius:28px;display:grid;place-items:center;flex:none;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.22)}
+  .t3 li .ic svg{width:50px;height:50px}
+  .t3 .pay{margin-top:60px}
+  .t3 .pay small{display:block;font-size:32px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+  .t3 .badges{display:flex;flex-wrap:wrap;gap:16px;margin-top:20px}
+  .pm{display:inline-flex;align-items:center;gap:10px;height:72px;padding:0 28px;border-radius:20px;font-size:38px;font-weight:900;letter-spacing:-.01em;
+    box-shadow:0 14px 30px rgba(2,8,30,.35)}
+  .pm.gcash{background:#007DFE;color:#fff}
+  .pm.maya{background:#0F172A;color:#3EE07F;box-shadow:0 14px 30px rgba(2,8,30,.35),inset 0 0 0 2px rgba(255,255,255,.14)}
+  .pm.grab{background:#00B14F;color:#fff}
+  .pm.bank{background:#fff;color:var(--ink)}
+  .pm.bank svg{width:36px;height:36px}
+
+  /* 4 — Follow */
+  .t4{display:flex;flex-direction:column;justify-content:center}
+  .t4 .bell{width:120px;height:120px;border-radius:36px;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.24);display:grid;place-items:center}
+  .t4 .bell svg{width:64px;height:64px}
+  .t4 h2{margin-top:44px;font-size:132px;line-height:.95;font-weight:900;letter-spacing:-.035em}
+  .t4 h2 .hl{background:linear-gradient(90deg,#93C5FD,#fff 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .t4 p{margin-top:34px;font-size:46px;line-height:1.3;font-weight:600;color:rgba(255,255,255,.82);max-width:800px}
+  .t4 .follow{margin-top:64px;align-self:flex-start;display:inline-flex;align-items:center;gap:20px;padding:28px 52px;border-radius:999px;background:#fff;color:var(--blue);
+    font-size:52px;font-weight:900;box-shadow:0 24px 50px rgba(2,8,30,.45)}
+  .t4 .follow svg{width:52px;height:52px}
+  .t4 .cursor{position:absolute;left:560px;top:830px;width:90px;filter:drop-shadow(0 10px 18px rgba(2,8,30,.5))}
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grid"></div>
+  <!-- the road: starts by the logo (tile 1), winds through tiles 2 and 3, ends at the Follow button (tile 4) -->
+  <svg class="route" viewBox="0 0 2160 2160" fill="none">
+    <path d="M760 820 C 980 900, 1060 980, 1180 1000 S 1500 960, 1700 1120 S 1180 1500, 900 1380 S 360 1500, 520 1780 S 1050 1900, 1300 1950"
+          stroke="rgba(147,197,253,.32)" stroke-width="7" stroke-dasharray="3 26" stroke-linecap="round"/>
+  </svg>
+
+  <!-- 1 / 4 — Coming soon -->
+  <section class="tile t1">
+    <span class="eyebrow"><i></i>Coming soon</span>
+    <img class="appicon" src="../../docs/brand/svg/rentarah-app-icon.svg" alt="RentaraH app icon">
+    <img class="word" src="../../docs/brand/svg/rentarah-wordmark-white.svg" alt="RentaraH">
+    <p class="soon">Car &amp; motorbike rentals · Philippines</p>
+    <span class="num">1 / 4</span>
+  </section>
+
+  <!-- 2 / 4 — What it is -->
+  <section class="tile t2">
+    <h2>Rent cars &amp; motorbikes<br><span class="hl">from locals near you.</span></h2>
+    <div class="tags">
+      <span><b>1</b>Search</span>
+      <span><b>2</b>Book</span>
+      <span><b>3</b>Drive</span>
+    </div>
+    <div class="phone"><div class="notch"></div><div class="screen"><img src="../source/v2/app-mobile-book.png" alt=""></div></div>
+    <div class="price"><span class="ic">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+      <span><small>Booking confirmed</small><strong>Verified host</strong></span></div>
+    <span class="num">2 / 4</span>
+  </section>
+
+  <!-- 3 / 4 — Why RentaraH -->
+  <section class="tile t3">
+    <h2>Rent with<br>peace of mind.</h2>
+    <ul>
+      <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>Verified hosts</li>
+      <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></span>₱0 hidden fees</li>
+      <li><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#93C5FD" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Pickup near you</li>
+    </ul>
+    <div class="pay"><small>Pay your way</small>
+      <div class="badges">
+        <span class="pm gcash">GCash</span><span class="pm maya">Maya</span><span class="pm grab">GrabPay</span>
+        <span class="pm bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.7 10v8M14.3 10v8M19 10v8M3 20h18"/></svg>Banks</span>
+      </div>
+    </div>
+    <span class="num">3 / 4</span>
+  </section>
+
+  <!-- 4 / 4 — Follow -->
+  <section class="tile t4">
+    <span class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></span>
+    <h2>Follow us<br><span class="hl">for updates.</span></h2>
+    <p>Be the first to know when RentaraH launches.</p>
+    <span class="follow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Follow</span>
+    <svg class="cursor" viewBox="0 0 24 24"><path d="M5 3l14 7-6 2-2 6z" fill="#fff" stroke="#0B1530" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    <span class="num">4 / 4</span>
+  </section>
+</div>
+</body>
+</html>
